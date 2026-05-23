@@ -19,11 +19,10 @@ function App() {
           <Route path="/" element={<Navbar />} />
           <Route path="/home" element={<Home />} />
           <Route path="/aboutus" element={<AboutUs />} />
+          <AppRoutes />
         </Routes>
       </div>
       {/* <Footer /> */}
     </BrowserRouter>
   );
 }
-
-export default App;
