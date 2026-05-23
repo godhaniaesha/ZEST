@@ -1,21 +1,15 @@
-import logo from './logo.svg';
-import './App.css';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import '../src/styles/d_style.css';
-import '../src/styles/h_style.css';
-import '../src/styles/x_style.css';
-import '../src/styles/z_style.css';
-import Home from './pages/Home';
-import Navbar from './components/Navbar';
-function App() {
+import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './styles/d_style.css';
+import AppRoutes from './admin/Approutes';
+
+/* Google Fonts loaded via index.html */
+
+export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navbar />} />
-        <Route path="/home" element={<Home />} />
-      </Routes>
+      <AppRoutes />
     </BrowserRouter>
   );
 }
-
-export default App;
