@@ -15,6 +15,7 @@ function App() {
       <Navbar />
       <div style={{ marginTop: '70px' }}>
         <Routes>
+          <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Navbar />} />
           <Route path="/home" element={<Home />} />
           <Route path="/aboutus" element={<AboutUs />} />
