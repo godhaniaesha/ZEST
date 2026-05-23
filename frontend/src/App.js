@@ -7,10 +7,12 @@ import '../src/styles/x_style.css';
 import '../src/styles/z_style.css';
 import Home from './pages/Home';
 import Navbar from './components/Navbar';
+import Auth from './components/Auth';
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/auth" element={<Auth />} />
         <Route path="/" element={<Navbar />} />
         <Route path="/home" element={<Home />} />
       </Routes>
