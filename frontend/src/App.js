@@ -8,6 +8,9 @@ import Home from './pages/Home';
 import ContactUs from './pages/ContactUs';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import Auth from './components/Auth';
+import AboutUs from './pages/AboutUs';
+import AppRoutes from '../src/admin/Approutes';
 
 function App() {
   return (
