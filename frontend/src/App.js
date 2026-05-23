@@ -25,6 +25,7 @@ function App() {
 
         {/* User Routes */}
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route path="/navbar" element={<Navbar />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/home" element={<Home />} />
