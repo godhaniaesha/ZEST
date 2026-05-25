@@ -16,7 +16,7 @@ import Settings from './pages/Settings/Settings';
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/admin" element={<Layout />}>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="menu" element={<Menu />} />
         <Route path="orders" element={<Orders />} />
@@ -27,7 +27,7 @@ export default function AppRoutes() {
         <Route path="reviews" element={<Reviews />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="404" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
     </Routes>
   );

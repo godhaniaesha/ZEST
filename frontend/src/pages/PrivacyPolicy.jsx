@@ -136,7 +136,7 @@ const PrivacyPolicy = () => {
       </section>
 
       {/* Key Topics */}
-      <section className="x_privacy_topics container">
+      {/* <section className="x_privacy_topics container">
         <div className="x_privacy_topics_grid">
           {policyTopics.map((topic) => (
             <div className="x_privacy_topic_card" key={topic.id}>
@@ -146,7 +146,7 @@ const PrivacyPolicy = () => {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* Detailed Policy */}
       <section className="x_privacy_details container">

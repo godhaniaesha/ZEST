@@ -22,7 +22,7 @@ function App() {
   return (
     <BrowserRouter>
 
-      {/* <Navbar /> */}
+      <Navbar />
 
       <div style={{ marginTop: '70px' }}>
 

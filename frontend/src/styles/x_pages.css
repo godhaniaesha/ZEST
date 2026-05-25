@@ -68,6 +68,8 @@ body {
   --d-transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+
+
 .x_contact_page,
 .x_services_page,
 .x_privacy_page,
@@ -173,6 +175,7 @@ body {
   z-index: 1;
   padding: 80px 0 60px;
   text-align: center;
+  margin-top: 35px;
 }
 
 .x_contact_hero_content,
@@ -960,7 +963,7 @@ body {
   z-index: 1;
   background: linear-gradient(135deg, var(--d-primary), var(--d-primary-light));
   padding: 70px 0;
-  margin: 60px 0;
+  margin: 60px 0px 0px 0px;
   text-align: center;
   overflow: hidden;
 }
@@ -1329,7 +1332,7 @@ body {
   z-index: 1;
 }
 
-.x_privacy_contact_box > p {
+.x_privacy_contact_box>p {
   margin: 0 0 32px;
   color: var(--d-accent-muted);
   font-size: 1.05rem;
@@ -1513,8 +1516,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
   margin-bottom: 16px;
   border: 2px solid var(--d-border);
   border-radius: var(--d-radius-md);
@@ -1527,7 +1530,7 @@ body {
   border-color: var(--d-gold);
   background: var(--d-gold);
   color: var(--d-white);
-  transform: scale(1.2) rotate(-15deg);
+  transform: scale(1.1) rotate(-12deg);
   box-shadow: 0 12px 28px rgba(201, 168, 76, 0.4);
 }
 
@@ -1652,6 +1655,7 @@ body {
     max-height: 0;
     overflow: hidden;
   }
+
   to {
     opacity: 1;
     max-height: 500px;
@@ -1752,7 +1756,7 @@ body {
   z-index: 1;
   background: linear-gradient(135deg, var(--d-primary), var(--d-primary-light));
   padding: 70px 0;
-  margin: 60px 0;
+  margin: 60px 0px 0px 0px;
   text-align: center;
   overflow: hidden;
 }
@@ -1937,6 +1941,7 @@ body {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2134,10 +2139,6 @@ body {
 
   .x_services_cta h2 {
     font-size: 1.8rem;
-  }
-
-  .x_services_cta_buttons {
-    flex-direction: column;
   }
 
   .x_services_cta_btn {
@@ -2402,6 +2403,14 @@ body {
     font-size: 0.9rem;
   }
 
+  .x_services_cta_buttons {
+    flex-direction: column;
+  }
+
+  .x_services_cta {
+    padding: 60px 20px;
+  }
+
   .x_service_card {
     padding: 16px;
   }
@@ -2539,6 +2548,9 @@ body {
   .x_form_textarea {
     padding: 6px 8px;
     font-size: 14px;
+  }
+  .x_services_cta {
+    padding: 50px 10px;
   }
 
   .x_service_card {
