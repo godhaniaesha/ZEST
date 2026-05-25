@@ -17,7 +17,7 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<Dashboard />} />
         <Route path="menu" element={<Menu />} />
         <Route path="orders" element={<Orders />} />
         <Route path="reservations" element={<Reservations />} />
@@ -27,7 +27,7 @@ export default function AppRoutes() {
         <Route path="reviews" element={<Reviews />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="404" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   );
