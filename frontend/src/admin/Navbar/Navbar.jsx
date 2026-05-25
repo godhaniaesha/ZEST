@@ -18,6 +18,7 @@ const PAGE_TITLES = {
 export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar }) {
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
 
   const meta = PAGE_TITLES[location.pathname] || { title: 'Page', sub: '' };
@@ -32,7 +33,7 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar }) {
       {/* Left */}
       <div className="d-navbar-left">
         <button
-          className={`d-hamburger-btn ${sidebarOpen ? 'd-ham-open' : ''}`}
+          className={'d-hamburger-btn ' + (sidebarOpen ? 'd-ham-open' : '')}
           onClick={onToggleSidebar}
           aria-label="Toggle sidebar"
         >
@@ -62,14 +63,52 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar }) {
 
       {/* Right */}
       <div className="d-navbar-right">
-        <button className="d-navbar-icon-btn d-hide-mobile" aria-label="Fullscreen">
+        <button 
+          className="d-navbar-icon-btn d-hide-mobile" 
+          aria-label="Fullscreen"
+          onClick={() => {
+            if (!document.fullscreenElement) {
+              document.documentElement.requestFullscreen();
+            } else {
+              document.exitFullscreen();
+            }
+          }}
+        >
           <MdFullscreen />
         </button>
 
-        <button className="d-navbar-icon-btn" aria-label="Notifications">
-          <MdNotifications />
-          <span className="d-badge-dot" />
-        </button>
+        <div className="d-profile-container">
+          <button 
+            className="d-navbar-icon-btn" 
+            aria-label="Notifications"
+            onClick={() => setNotificationOpen(!notificationOpen)}
+          >
+            <MdNotifications />
+            <span className="d-badge-dot" />
+          </button>
+
+          {notificationOpen && (
+            <div className="d-profile-dropdown" style={{ width: '280px' }}>
+              <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--d-border)', marginBottom: '8px' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--d-primary)' }}>Notifications</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--d-text-muted)' }}>You have 3 new notifications</div>
+              </div>
+              <button className="d-dropdown-item" onClick={() => setNotificationOpen(false)}>
+                <MdNotifications /> New order received
+              </button>
+              <button className="d-dropdown-item" onClick={() => setNotificationOpen(false)}>
+                <MdNotifications /> Table reservation confirmed
+              </button>
+              <button className="d-dropdown-item" onClick={() => setNotificationOpen(false)}>
+                <MdNotifications /> Low stock alert: Coffee beans
+              </button>
+              <div className="d-dropdown-divider" />
+              <button className="d-dropdown-item" onClick={() => setNotificationOpen(false)}>
+                View all notifications
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="d-divider-v" />
 

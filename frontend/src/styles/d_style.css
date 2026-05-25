@@ -1,5 +1,5 @@
-/* =============================================
-   ROOT COLOR VARIABLES — Café & Bar Admin
+﻿/* =============================================
+   ROOT COLOR VARIABLES â€” CafÃ© & Bar Admin
    ============================================= */
 :root {
   /* Brand Colors */
@@ -87,7 +87,7 @@ body {
 .d-page-body {
   padding: 28px 32px;
   flex: 1;
-  margin-top: var(--d-navbar-height);
+  /* margin-top: var(--d-navbar-height); */
   min-width: 0;
 }
 
@@ -958,6 +958,22 @@ body {
   .d-avatar-info { display: none; }
   .d-page-body { padding: 20px 16px; }
   .d-hide-mobile { display: none !important; }
+  
+  /* Force labels and logo to be visible on mobile even if collapsed state is active */
+  .d-sidebar.d-collapsed .d-nav-label,
+  .d-sidebar.d-collapsed .d-nav-badge,
+  .d-sidebar.d-collapsed .d-logo-text,
+  .d-sidebar.d-collapsed .d-nav-group-label {
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
+    padding: inherit !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
+  }
+
+  .d-nav-item .d-tooltip { display: none !important; }
+
   .d-navbar-search-box {
     width: 160px;
     margin-left: 8px;
@@ -975,10 +991,16 @@ body {
   .d-stat-card { padding: 16px; }
   .d-stat-value { font-size: 1.3rem; }
   .d-navbar-right,.d-navbar-left{
-    gap: 0px;
+    gap: 4px;
   }
   .d-navbar{
-    padding: initial !important;
-    margin: auto !important;
+    padding: 0 12px !important;
+  }
+  .d-hamburger-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .d-hamburger-btn .d-ham-line {
+    width: 18px;
   }
 }

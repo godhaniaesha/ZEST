@@ -1,5 +1,9 @@
-import React from 'react';
-import { MdWarning, MdAdd } from 'react-icons/md';
+import React, { useState } from 'react';
+import { Row, Col, ProgressBar } from 'react-bootstrap';
+import { 
+  MdWarning, MdAdd, MdSearch, MdInventory, 
+  MdError, MdCheckCircle, MdMoreVert, MdHistory 
+} from 'react-icons/md';
 
 const STOCK = [
   { name: 'Arborio Rice',     unit: 'kg',  qty: 12,  min: 5,   status: 'Good' },
@@ -15,67 +19,96 @@ const STOCK = [
 const STATUS_CLASS = { Good: 'd-chip-green', Low: 'd-chip-gold', Critical: 'd-chip-red' };
 
 export default function Inventory() {
-  const critical = STOCK.filter(s => s.status === 'Critical').length;
+  const [searchTerm, setSearchTerm] = useState('');
+  const criticalCount = STOCK.filter(s => s.status === 'Critical').length;
+  const lowCount = STOCK.filter(s => s.status === 'Low').length;
+
+  const filtered = STOCK.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Inventory</div>
-          <div className="d-page-sub">Monitor and manage stock levels</div>
+          <div className="d-page-heading">Stock & Inventory</div>
+          <div className="d-page-sub">Monitor supplies for your kitchen and bar</div>
         </div>
-        <button className="d-btn-primary"><MdAdd /> Add Stock</button>
+        <div className="d-flex gap-2">
+          <button className="d-btn-outline d-hide-mobile"><MdHistory /> View Logs</button>
+          <button className="d-btn-gold"><MdAdd /> Add Stock</button>
+        </div>
       </div>
 
-      {critical > 0 && (
-        <div style={{
-          background: 'rgba(231,76,60,0.08)', border: '1.5px solid rgba(231,76,60,0.3)',
-          borderRadius: 'var(--d-radius-md)', padding: '12px 18px', marginBottom: 24,
-          display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'Lato,sans-serif',
-          fontSize: '0.85rem', color: 'var(--d-danger)'
-        }}>
-          <MdWarning size={18} />
-          <strong>{critical} items</strong>&nbsp;are critically low — restock immediately.
-        </div>
-      )}
+      <Row className="g-3 mb-4">
+        {[
+          { label: 'Total Items', value: STOCK.length, icon: <MdInventory />, color: 'd-gold' },
+          { label: 'Low Stock', value: lowCount, icon: <MdWarning />, color: 'd-gold' },
+          { label: 'Critical', value: criticalCount, icon: <MdError />, color: 'd-red' },
+          { label: 'In Stock', value: STOCK.length - criticalCount - lowCount, icon: <MdCheckCircle />, color: 'd-green' }
+        ].map((s, i) => (
+          <Col key={i} xs={12} sm={6} xl={3}>
+            <div className="d-stat-card">
+              <div className={`d-stat-icon ${s.color}`} style={{ width: '42px', height: '42px', fontSize: '1.1rem' }}>
+                {s.icon}
+              </div>
+              <div>
+                <div className="d-stat-value" style={{ fontSize: '1.4rem' }}>{s.value}</div>
+                <div className="d-stat-label">{s.label}</div>
+              </div>
+            </div>
+          </Col>
+        ))}
+      </Row>
 
-      <div className="d-card" style={{ padding: 0 }}>
+      <div className="d-card mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div className="d-navbar-search-box m-0" style={{ width: '300px' }}>
+            <MdSearch className="d-search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search inventory..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="d-flex gap-2">
+            <button className="d-btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Filter by Category</button>
+          </div>
+        </div>
+
         <div className="d-table-wrap">
           <table className="d-table">
             <thead>
               <tr>
-                <th>Item</th>
+                <th>Item Name</th>
                 <th>Unit</th>
-                <th>Quantity</th>
-                <th>Min. Required</th>
+                <th>Stock Level</th>
+                <th>Min. Level</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th style={{ width: '120px' }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {STOCK.map((s, i) => (
+              {filtered.map((s, i) => (
                 <tr key={i}>
                   <td><strong>{s.name}</strong></td>
-                  <td style={{ color: 'var(--d-text-muted)' }}>{s.unit}</td>
+                  <td style={{ color: 'var(--d-text-muted)', fontSize: '0.85rem' }}>{s.unit}</td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{
-                        width: 60, height: 6, borderRadius: 3,
-                        background: 'var(--d-border)', overflow: 'hidden'
-                      }}>
-                        <div style={{
-                          width: `${Math.min((s.qty / (s.min * 2)) * 100, 100)}%`,
-                          height: '100%', borderRadius: 3,
-                          background: s.status === 'Good' ? 'var(--d-success)' : s.status === 'Low' ? 'var(--d-warning)' : 'var(--d-danger)'
-                        }} />
-                      </div>
-                      <strong>{s.qty}</strong>
+                    <div className="d-flex align-items-center gap-3" style={{ minWidth: '150px' }}>
+                      <ProgressBar 
+                        now={Math.min((s.qty / (s.min * 2)) * 100, 100)} 
+                        variant={s.status === 'Good' ? 'success' : s.status === 'Low' ? 'warning' : 'danger'}
+                        style={{ height: '6px', flexGrow: 1 }}
+                      />
+                      <strong style={{ minWidth: '30px', textAlign: 'right' }}>{s.qty}</strong>
                     </div>
                   </td>
-                  <td style={{ color: 'var(--d-text-muted)' }}>{s.min}</td>
+                  <td style={{ color: 'var(--d-text-muted)' }}>{s.min} {s.unit}</td>
                   <td><span className={`d-chip ${STATUS_CLASS[s.status]}`}>{s.status}</span></td>
                   <td>
-                    <button className="d-btn-outline" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>Reorder</button>
+                    <div className="d-flex gap-1">
+                      <button className="d-btn-outline" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>Update</button>
+                      <button className="d-navbar-icon-btn" style={{ width: '28px', height: '28px' }}><MdMoreVert /></button>
+                    </div>
                   </td>
                 </tr>
               ))}
