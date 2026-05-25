@@ -6,10 +6,10 @@ import Navbar from '../Navbar/Navbar';
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isMobile = () => window.innerWidth < 992;
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 992);
 
   const handleToggle = () => {
-    if (isMobile()) {
+    if (isMobile) {
       setMobileOpen((prev) => !prev);
     } else {
       setCollapsed((prev) => !prev);
@@ -18,10 +18,12 @@ export default function Layout() {
 
   const handleClose = () => setMobileOpen(false);
 
-  // Close mobile sidebar on resize to desktop
+  // Handle window resize
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 992) setMobileOpen(false);
+      const mobile = window.innerWidth < 992;
+      setIsMobile(mobile);
+      if (!mobile) setMobileOpen(false);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -43,7 +45,7 @@ export default function Layout() {
       <div className={mainClass}>
         <Navbar
           collapsed={collapsed}
-          sidebarOpen={isMobile() ? mobileOpen : !collapsed}
+          sidebarOpen={isMobile ? mobileOpen : !collapsed}
           onToggleSidebar={handleToggle}
         />
 

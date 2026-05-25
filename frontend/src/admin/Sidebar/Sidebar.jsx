@@ -10,31 +10,31 @@ const NAV_GROUPS = [
   {
     label: 'Overview',
     items: [
-      { to: '/',           icon: <MdDashboard />,      label: 'Dashboard' },
+      { to: '/admin',           icon: <MdDashboard />,      label: 'Dashboard' },
     ]
   },
   {
     label: 'Operations',
     items: [
-      { to: '/menu',       icon: <MdRestaurantMenu />, label: 'Menu',        badge: null },
-      { to: '/orders',     icon: <MdReceiptLong />,    label: 'Orders',      badge: '8' },
-      { to: '/reservations',icon: <MdEventSeat />,     label: 'Reservations',badge: '3' },
-      { to: '/bar',        icon: <MdLocalBar />,       label: 'Bar & Drinks', badge: null },
+      { to: '/admin/menu',       icon: <MdRestaurantMenu />, label: 'Menu',        badge: null },
+      { to: '/admin/orders',     icon: <MdReceiptLong />,    label: 'Orders',      badge: '8' },
+      { to: '/admin/reservations',icon: <MdEventSeat />,     label: 'Reservations',badge: '3' },
+      { to: '/admin/bar',        icon: <MdLocalBar />,       label: 'Bar & Drinks', badge: null },
     ]
   },
   {
     label: 'Management',
     items: [
-      { to: '/inventory',  icon: <MdInventory2 />,     label: 'Inventory' },
-      { to: '/staff',      icon: <MdPeople />,         label: 'Staff' },
-      { to: '/reviews',    icon: <MdStar />,           label: 'Reviews' },
+      { to: '/admin/inventory',  icon: <MdInventory2 />,     label: 'Inventory' },
+      { to: '/admin/staff',      icon: <MdPeople />,         label: 'Staff' },
+      { to: '/admin/reviews',    icon: <MdStar />,           label: 'Reviews' },
     ]
   },
   {
     label: 'Analytics',
     items: [
-      { to: '/reports',    icon: <MdBarChart />,       label: 'Reports' },
-      { to: '/settings',   icon: <MdSettings />,       label: 'Settings' },
+      { to: '/admin/reports',    icon: <MdBarChart />,       label: 'Reports' },
+      { to: '/admin/settings',   icon: <MdSettings />,       label: 'Settings' },
     ]
   }
 ];
