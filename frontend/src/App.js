@@ -14,6 +14,9 @@ import Auth from './components/Auth';
 import AboutUs from './pages/AboutUs';
 
 import AppRoutes from './admin/Approutes';
+import Services from './pages/Services';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 
 function App() {
   return (
@@ -31,6 +34,11 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/aboutus" element={<AboutUs />} />
           <Route path="/contactus" element={<ContactUs />} />
+          <Route path='/services' element={<Services />} />
+          <Route path='/privacy-policy' element={<PrivacyPolicy />} />
+          <Route path='/terms' element={<TermsAndConditions />} />
+
+
         </Routes>
 
         {/* Admin Routes */}
@@ -38,7 +46,7 @@ function App() {
 
       </div>
 
-      {/* <Footer /> */}
+      <Footer />
 
     </BrowserRouter>
   );

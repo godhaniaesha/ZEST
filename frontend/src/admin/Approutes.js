@@ -17,7 +17,11 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/admin" element={<Layout />}>
-        <Route index element={<Dashboard />} />
+        
+        {/* Default Route */}
+        {/* <Route index element={<Dashboard />} /> */}
+
+        <Route path="dashboard" element={<Dashboard />} />
         <Route path="menu" element={<Menu />} />
         <Route path="orders" element={<Orders />} />
         <Route path="reservations" element={<Reservations />} />
@@ -28,7 +32,8 @@ export default function AppRoutes() {
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
 
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        {/* 404 Route */}
+        <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
       </Route>
     </Routes>
   );
