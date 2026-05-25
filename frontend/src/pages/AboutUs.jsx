@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChefHat, Clock, Coffee, Flame, Martini, Music, Sparkles, Star, Utensils } from 'lucide-react';
+import { ChefHat, Clock, Coffee, Martini, Music, Sparkles, Star, Utensils } from 'lucide-react';
 
 const z_highlights = [
   {
@@ -44,9 +44,9 @@ const AboutUs = () => {
       <div className="z_about_glow z_about_glow_one" />
       <div className="z_about_glow z_about_glow_two" />
 
-      <section className="z_about_hero container">
-        <div className="row align-items-center g-4 g-lg-5">
-          <div className="z_about_hero_content col-12 col-lg-7">
+      <section className="z_about_hero">
+        <div className="z_about_hero_grid">
+          <div className="z_about_hero_content">
             <span className="z_about_eyebrow">
               <Sparkles size={16} />
               Cafe by day. Bar by night.
@@ -72,7 +72,7 @@ const AboutUs = () => {
             </div>
           </div>
 
-          <div className="z_about_visual col-12 col-lg-5" aria-label="Cafe and bar atmosphere">
+          <div className="z_about_visual" aria-label="Cafe and bar atmosphere">
             <div className="z_about_main_photo">
               <img
                 src="https://i1-e.pinimg.com/736x/af/b6/de/afb6de59cd10b1c7a31653aab893a7f2.jpg"
@@ -99,10 +99,10 @@ const AboutUs = () => {
         </div>
       </section>
 
-      <section className="z_about_stats container" aria-label="Zest quick facts">
-        <div className="row g-0">
+      <section className="z_about_stats" aria-label="Zest quick facts">
+        <div className="z_about_stats_grid">
           {z_stats.map((item) => (
-            <div className="z_about_stat col-12 col-sm-4" key={item.label}>
+            <div className="z_about_stat" key={item.label}>
               <strong>{item.value}</strong>
               <span>{item.label}</span>
             </div>
@@ -110,9 +110,9 @@ const AboutUs = () => {
         </div>
       </section>
 
-      <section className="z_about_story container" id="z_about_story">
-        <div className="row align-items-center g-4 g-lg-5">
-          <div className="z_about_story_media col-12 col-lg-5 order-2 order-lg-1">
+      <section className="z_about_story" id="z_about_story">
+        <div className="z_about_story_grid">
+          <div className="z_about_story_media">
             <img
               src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80"
               alt="Chef preparing food in a warm restaurant kitchen"
@@ -122,7 +122,7 @@ const AboutUs = () => {
               <span>Fresh kitchen</span>
             </div>
           </div>
-          <div className="z_about_story_content col-12 col-lg-7 order-1 order-lg-2">
+          <div className="z_about_story_content">
             <span className="z_about_eyebrow">About Zest</span>
             <h2>A place that changes beautifully with the hour.</h2>
             <p>
@@ -144,16 +144,16 @@ const AboutUs = () => {
       </section>
 
       <section className="z_about_experience" id="z_about_experience">
-        <div className="z_about_section_head container">
+        <div className="z_about_section_head">
           <span className="z_about_eyebrow">The Experience</span>
           <h2>Made for brunch plans, date nights, and everything between.</h2>
         </div>
 
-        <div className="z_about_cards container">
-          <div className="row g-3 g-lg-4">
+        <div className="z_about_cards">
+          <div className="z_about_cards_grid">
             {z_highlights.map((item) => (
-              <div className="col-12 col-md-6 col-lg-4" key={item.title}>
-                <article className="z_about_card h-100">
+              <div className="z_about_card_wrap" key={item.title}>
+                <article className="z_about_card">
                   <div className="z_about_card_icon">{item.icon}</div>
                   <h3>{item.title}</h3>
                   <p>{item.text}</p>
@@ -164,9 +164,9 @@ const AboutUs = () => {
         </div>
       </section>
 
-      <section className="z_about_menu_mood container">
-        <div className="row align-items-center g-4 g-lg-5">
-          <div className="z_about_menu_content col-12 col-lg-6">
+      <section className="z_about_menu_mood">
+        <div className="z_about_menu_grid">
+          <div className="z_about_menu_content">
             {/* <div className="z_about_menu_icon">
               <Utensils size={28} />
               <Flame size={22} />
@@ -182,7 +182,7 @@ const AboutUs = () => {
             </a>
           </div>
 
-          <div className="z_about_menu_showcase col-12 col-lg-6">
+          <div className="z_about_menu_showcase">
             {z_menu_moods.map((item) => (
               <article className="z_about_menu_tile" key={item.label}>
                 <div className="z_about_menu_tile_icon">{item.icon}</div>
