@@ -1,5 +1,4 @@
 import { useState } from "react";
-// import "./auth.css";
 
 /* ── Password strength helper ── */
 const pwStrength = (pw) => {
@@ -12,228 +11,286 @@ const pwStrength = (pw) => {
   return {
     score: s,
     pct: (s / 4) * 100,
-    label: ["Weak", "Fair", "Good", "Strong"][s - 1] || "Weak",
-    cls:   ["s_w",  "s_f",  "s_g",  "s_s"][s - 1]  || "s_w",
-    color: ["#e74c3c", "#f39c12", "#27ae60", "#2ecc71"][s - 1] || "#e74c3c",
+    cls: ["s_w", "s_f", "s_g", "s_s"][s - 1] || "s_w",
   };
 };
 
-/* ── Eye SVG ── */
-const EyeIcon = ({ open }) =>
-  open ? (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-
-/* ── Toast stack ── */
-const Toasts = ({ items, remove }) => (
-  <div className="h_toasts">
-    {items.map((t) => (
-      <div key={t.id} className="h_toast" onClick={() => remove(t.id)}>
-        <span>{t.icon}</span><span>{t.msg}</span>
-      </div>
-    ))}
-  </div>
+/* ── Icons ── */
+const EyeIcon = ({ open }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {open ? (
+      <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>
+    ) : (
+      <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>
+    )}
+  </svg>
 );
 
-/* ── Main Layout ── */
+/* ── Main Auth Component ── */
 export default function Auth() {
-  const [tab,         setTab]         = useState("login");
-  const [showPw,      setShowPw]      = useState(false);
-  const [showCon,     setShowCon]     = useState(false);
-  const [loading,     setLoading]     = useState(false);
-  const [alert,       setAlert]       = useState(null);
-  const [toasts,      setToasts]      = useState([]);
-  const [remember,    setRemember]    = useState(false);
-  const [loginForm,   setLoginForm]   = useState({ email: "", password: "" });
-  const [signupForm,  setSignupForm]  = useState({ firstName: "", lastName: "", email: "", phone: "", password: "", confirm: "" });
+  const [tab, setTab] = useState("login"); // login, signup, forgot, otp, reset
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
+  const [toasts, setToasts] = useState([]);
+  const [remember, setRemember] = useState(false);
+  
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [signupForm, setSignupForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [resetForm, setResetForm] = useState({ password: "", confirm: "" });
 
   const toast = (msg, icon = "✓") => {
     const id = Date.now();
     setToasts(p => [...p, { id, msg, icon }]);
-    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
   };
 
-  const switchTab = (t) => { setTab(t); setAlert(null); setShowPw(false); setShowCon(false); };
+  const switchTab = (t) => {
+    setTab(t);
+    setAlert(null);
+    setShowPw(false);
+  };
 
+  const handleOtp = (val, idx) => {
+    if (isNaN(val)) return;
+    const newOtp = [...otp];
+    newOtp[idx] = val.slice(-1);
+    setOtp(newOtp);
+    
+    // Auto-focus next input
+    if (val && idx < 3) {
+      const next = document.getElementById(`otp-${idx + 1}`);
+      if (next) next.focus();
+    }
+  };
+
+  /* ── Handlers ── */
   const doLogin = (e) => {
-    e.preventDefault(); setAlert(null);
-    if (!loginForm.email || !loginForm.password) { setAlert({ type:"error", msg:"Please fill in all fields." }); return; }
-    if (!/\S+@\S+\.\S+/.test(loginForm.email))   { setAlert({ type:"error", msg:"Enter a valid email address." }); return; }
+    e.preventDefault();
+    setAlert(null);
+    if (!loginForm.email || !loginForm.password) return setAlert({ type: "error", msg: "Required fields missing." });
     setLoading(true);
-    setTimeout(() => { setLoading(false); toast("Welcome back! Heading to your table…", "🍷"); }, 1800);
+    setTimeout(() => { setLoading(false); toast("Welcome back!", "🍷"); }, 1500);
   };
 
   const doSignup = (e) => {
-    e.preventDefault(); setAlert(null);
-    const { firstName, lastName, email, password, confirm } = signupForm;
-    if (!firstName || !lastName || !email || !password || !confirm) { setAlert({ type:"error", msg:"Please fill in all required fields." }); return; }
-    if (!/\S+@\S+\.\S+/.test(email))   { setAlert({ type:"error", msg:"Enter a valid email address." }); return; }
-    if (password !== confirm)           { setAlert({ type:"error", msg:"Passwords do not match." }); return; }
-    const str = pwStrength(password);
-    if (str && str.score < 2)           { setAlert({ type:"error", msg:"Please choose a stronger password." }); return; }
+    e.preventDefault();
+    setAlert(null);
+    if (!signupForm.email || !signupForm.password) return setAlert({ type: "error", msg: "All fields are required." });
     setLoading(true);
-    setTimeout(() => { setLoading(false); setAlert({ type:"success", msg:"Account created! Please verify your email." }); toast("Welcome to Noir & Brew!", "🎉"); }, 2000);
+    setTimeout(() => { setLoading(false); setAlert({ type: "success", msg: "Membership initiated! Check email." }); }, 1800);
   };
 
-  const strength = pwStrength(signupForm.password);
+  const doForgot = (e) => {
+    e.preventDefault();
+    if (!forgotEmail) return setAlert({ type: "error", msg: "Email is required." });
+    setLoading(true);
+    setTimeout(() => { setLoading(false); setTab("otp"); toast("Code sent!", "📧"); }, 1500);
+  };
+
+  const doVerifyOtp = (e) => {
+    e.preventDefault();
+    if (otp.join("").length < 4) return setAlert({ type: "error", msg: "Complete the code." });
+    setLoading(true);
+    setTimeout(() => { setLoading(false); setTab("reset"); }, 1200);
+  };
+
+  const doReset = (e) => {
+    e.preventDefault();
+    if (resetForm.password !== resetForm.confirm) return setAlert({ type: "error", msg: "Passwords don't match." });
+    setLoading(true);
+    setTimeout(() => { setLoading(false); setTab("login"); setAlert({ type: "success", msg: "Password updated." }); }, 1500);
+  };
+
+  const strength = pwStrength(signupForm.password || resetForm.password);
 
   return (
     <div className="h_auth_page">
-      <div className="h_auth_bg">
-        <div className="h_bg_overlay" />
-        <div className="h_bg_mesh" />
+      {/* Background Elements */}
+      <div className="h_bg_noise" />
+      <div className="h_bg_aurora">
+        <div className="h_aurora_blob" />
+        <div className="h_aurora_blob" />
       </div>
 
       <div className="h_auth_container">
+        
         {/* Brand Header */}
-        <div className="h_auth_brand">
-          <div className="h_brand_mark">☕</div>
-          <div className="h_brand_text">
-            <span className="h_brand_name">Noir & Brew</span>
-            <span className="h_brand_sub">Café & Bar</span>
-          </div>
+        <div className="h_brand_float">
+          <div className="h_brand_z">Z</div>
         </div>
 
         <div className="h_auth_card">
-          {/* Tabs */}
-          <div className="h_tabs">
-            <button className={`h_tab${tab === "login"  ? " h_active" : ""}`} onClick={() => switchTab("login")}>Sign In</button>
-            <button className={`h_tab${tab === "signup" ? " h_active" : ""}`} onClick={() => switchTab("signup")}>Create Account</button>
+          <div className="h_card_glow" />
+
+          {["login", "signup"].includes(tab) && (
+            <div className="h_tab_switcher" data-active={tab}>
+              <div className="h_tab_bubble" />
+              <button className={`h_tab_item${tab === "login" ? " h_active" : ""}`} onClick={() => switchTab("login")}>SIGN IN</button>
+              <button className={`h_tab_item${tab === "signup" ? " h_active" : ""}`} onClick={() => switchTab("signup")}>JOIN CLUB</button>
+            </div>
+          )}
+
+          <div className="h_form_header">
+            <h3>
+              {tab === "login" && "Welcome Back"}
+              {tab === "signup" && "New Journey"}
+              {tab === "forgot" && "Reset Password"}
+              {tab === "otp" && "Verify Code"}
+              {tab === "reset" && "Secure Account"}
+            </h3>
+            <p>
+              {tab === "login" && "Enter your credentials to access the club."}
+              {tab === "signup" && "Create your elite ZEST membership."}
+              {tab === "forgot" && "We'll send a verification code to your email."}
+              {tab === "otp" && "Enter the 4-digit code sent to your email."}
+              {tab === "reset" && "Set a strong new password for your account."}
+            </p>
           </div>
 
-          <div className="h_auth_content">
-            <h2 className="h_auth_title">
-              {tab === "login" ? "Welcome Back" : "Join the Club"}
-            </h2>
-            <p className="h_auth_sub">
-              {tab === "login" ? "Access your exclusive member dashboard" : "Register for Ahmedabad's finest craft experience"}
-            </p>
+          {alert && (
+            <div className={`h_alert h_alert_${alert.type}`}>
+              {alert.msg}
+            </div>
+          )}
 
-            {alert && (
-              <div className={`h_alert h_alert_${alert.type}`}>
-                <span>{alert.type === "error" ? "⚠" : "✓"}</span> {alert.msg}
+          {/* ── LOGIN VIEW ── */}
+          {tab === "login" && (
+            <form onSubmit={doLogin}>
+              <div className="h_input_group">
+                <label className="h_input_label">Email</label>
+                <div className="h_field_wrap">
+                  <input className="h_main_input" type="email" placeholder="you@example.com" value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} />
+                </div>
               </div>
-            )}
+              <div className="h_input_group">
+                <label className="h_input_label">Password</label>
+                <div className="h_field_wrap">
+                  <input className="h_main_input" type={showPw ? "text" : "password"} placeholder="••••••••" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} />
+                  <button type="button" className="h_eye_btn" onClick={() => setShowPw(!showPw)}><EyeIcon open={showPw} /></button>
+                </div>
+              </div>
+              <div className="h_form_footer">
+                <label className="h_check_label">
+                  <input type="checkbox" hidden checked={remember} onChange={e => setRemember(e.target.checked)} />
+                  <div className="h_custom_ck">{remember && "✓"}</div>
+                  Remember me
+                </label>
+                <a href="#" className="h_link_simple" onClick={() => switchTab("forgot")}>Forgot?</a>
+              </div>
+              <button type="submit" className="h_submit_btn" disabled={loading}>
+                {loading ? <div className="h_loader" /> : "AUTHENTICATE"}
+              </button>
+            </form>
+          )}
 
-            {/* ══ LOGIN ══ */}
-            {tab === "login" && (
-              <form onSubmit={doLogin} noValidate>
-                <div className="h_fg">
-                  <label className="h_label">Email Address</label>
-                  <div className="h_input_wrap">
-                    <span className="h_ico">✉</span>
-                    <input className="h_input" type="email" placeholder="you@example.com"
-                      value={loginForm.email} onChange={e => setLoginForm({ ...loginForm, email: e.target.value })}
-                      autoComplete="email" />
-                  </div>
+          {/* ── SIGNUP VIEW ── */}
+          {tab === "signup" && (
+            <form onSubmit={doSignup}>
+              <div className="h_input_group">
+                <label className="h_input_label">Full Name</label>
+                <div className="h_field_wrap">
+                  <input className="h_main_input" type="text" placeholder="John Doe" value={`${signupForm.firstName} ${signupForm.lastName}`.trim()} 
+                    onChange={e => {
+                      const [f, ...l] = e.target.value.split(" ");
+                      setSignupForm({...signupForm, firstName: f || "", lastName: l.join(" ") || ""});
+                    }} 
+                  />
                 </div>
-                <div className="h_fg">
-                  <label className="h_label">Password</label>
-                  <div className="h_input_wrap">
-                    <span className="h_ico">🔒</span>
-                    <input className="h_input" type={showPw ? "text" : "password"} placeholder="Enter your password"
-                      value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
-                      autoComplete="current-password" />
-                    <button type="button" className="h_eye_btn" onClick={() => setShowPw(!showPw)}>
-                      <EyeIcon open={showPw} />
-                    </button>
-                  </div>
+              </div>
+              <div className="h_input_group">
+                <label className="h_input_label">Email</label>
+                <div className="h_field_wrap">
+                  <input className="h_main_input" type="email" placeholder="you@example.com" value={signupForm.email} onChange={e => setSignupForm({...signupForm, email: e.target.value})} />
                 </div>
-                <div className="h_meta">
-                  <label className="h_ck_label">
-                    <input type="checkbox" className="h_ck" checked={remember} onChange={e => setRemember(e.target.checked)} />
-                    Remember me
-                  </label>
-                  <a href="#" className="h_fgt">Forgot password?</a>
+              </div>
+              <div className="h_input_group">
+                <label className="h_input_label">Password</label>
+                <div className="h_field_wrap">
+                  <input className="h_main_input" type={showPw ? "text" : "password"} placeholder="••••••••" value={signupForm.password} onChange={e => setSignupForm({...signupForm, password: e.target.value})} />
+                  <button type="button" className="h_eye_btn" onClick={() => setShowPw(!showPw)}><EyeIcon open={showPw} /></button>
                 </div>
-                <button type="submit" className="h_submit" disabled={loading}>
-                  {loading ? <><div className="h_spin" /> Processing…</> : "Sign In"}
-                </button>
+                {signupForm.password && strength && (
+                  <div className="h_strength_container"><div className={`h_strength_fill ${strength.cls}`} style={{ width: `${strength.pct}%` }} /></div>
+                )}
+              </div>
+              <button type="submit" className="h_submit_btn" disabled={loading}>
+                {loading ? <div className="h_loader" /> : "CREATE ACCOUNT"}
+              </button>
+            </form>
+          )}
 
-                <div className="h_divider">
-                  <span className="h_div_line" /><span className="h_div_txt">or continue with</span><span className="h_div_line" />
+          {/* ── FORGOT VIEW ── */}
+          {tab === "forgot" && (
+            <form onSubmit={doForgot}>
+              <div className="h_input_group">
+                <label className="h_input_label">Recovery Email</label>
+                <div className="h_field_wrap">
+                  <input className="h_main_input" type="email" placeholder="Enter your email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
                 </div>
-                <div className="h_socials">
-                  <button type="button" className="h_soc_btn">
-                    <b style={{ color:"#ea4335" }}>G</b> Google
-                  </button>
-                  <button type="button" className="h_soc_btn">
-                    <b style={{ color:"#1877f2" }}>f</b> Facebook
-                  </button>
-                </div>
-              </form>
-            )}
+              </div>
+              <button type="submit" className="h_submit_btn" disabled={loading}>
+                {loading ? <div className="h_loader" /> : "SEND CODE"}
+              </button>
+              <a href="#" className="h_back_link" onClick={() => switchTab("login")}>Back to Sign In</a>
+            </form>
+          )}
 
-            {/* ══ SIGNUP ══ */}
-            {tab === "signup" && (
-              <form onSubmit={doSignup} noValidate>
-                <div className="h_2col">
-                  <div className="h_fg">
-                    <label className="h_label">First Name</label>
-                    <div className="h_input_wrap">
-                      <span className="h_ico">👤</span>
-                      <input className="h_input" type="text" placeholder="Jane"
-                        value={signupForm.firstName} onChange={e => setSignupForm({ ...signupForm, firstName: e.target.value })} autoComplete="given-name" />
-                    </div>
-                  </div>
-                  <div className="h_fg">
-                    <label className="h_label">Last Name</label>
-                    <div className="h_input_wrap">
-                      <span className="h_ico">👤</span>
-                      <input className="h_input" type="text" placeholder="Doe"
-                        value={signupForm.lastName} onChange={e => setSignupForm({ ...signupForm, lastName: e.target.value })} autoComplete="family-name" />
-                    </div>
-                  </div>
+          {/* ── OTP VIEW ── */}
+          {tab === "otp" && (
+            <form onSubmit={doVerifyOtp}>
+              <div className="h_otp_row">
+                {otp.map((digit, i) => (
+                  <input key={i} id={`otp-${i}`} className="h_otp_box" type="text" maxLength="1" value={digit} onChange={e => handleOtp(e.target.value, i)} />
+                ))}
+              </div>
+              <button type="submit" className="h_submit_btn" disabled={loading}>
+                {loading ? <div className="h_loader" /> : "VERIFY CODE"}
+              </button>
+              <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+                <a href="#" className="h_link_simple" onClick={doForgot}>Resend OTP</a>
+              </div>
+              <a href="#" className="h_back_link" onClick={() => switchTab("login")}>Back to Sign In</a>
+            </form>
+          )}
+
+          {/* ── RESET VIEW ── */}
+          {tab === "reset" && (
+            <form onSubmit={doReset}>
+              <div className="h_input_group">
+                <label className="h_input_label">New Password</label>
+                <div className="h_field_wrap">
+                  <input className="h_main_input" type={showPw ? "text" : "password"} placeholder="••••••••" value={resetForm.password} onChange={e => setResetForm({...resetForm, password: e.target.value})} />
+                  <button type="button" className="h_eye_btn" onClick={() => setShowPw(!showPw)}><EyeIcon open={showPw} /></button>
                 </div>
-                <div className="h_fg">
-                  <label className="h_label">Email Address</label>
-                  <div className="h_input_wrap">
-                    <span className="h_ico">✉</span>
-                    <input className="h_input" type="email" placeholder="you@example.com"
-                      value={signupForm.email} onChange={e => setSignupForm({ ...signupForm, email: e.target.value })} autoComplete="email" />
-                  </div>
+                {resetForm.password && strength && (
+                  <div className="h_strength_container"><div className={`h_strength_fill ${strength.cls}`} style={{ width: `${strength.pct}%` }} /></div>
+                )}
+              </div>
+              <div className="h_input_group">
+                <label className="h_input_label">Confirm</label>
+                <div className="h_field_wrap">
+                  <input className="h_main_input" type="password" placeholder="••••••••" value={resetForm.confirm} onChange={e => setResetForm({...resetForm, confirm: e.target.value})} />
                 </div>
-                <div className="h_fg">
-                  <label className="h_label">Password</label>
-                  <div className="h_input_wrap">
-                    <span className="h_ico">🔒</span>
-                    <input className="h_input" type={showPw ? "text" : "password"} placeholder="Create a strong password"
-                      value={signupForm.password} onChange={e => setSignupForm({ ...signupForm, password: e.target.value })} autoComplete="new-password" />
-                    <button type="button" className="h_eye_btn" onClick={() => setShowPw(!showPw)}>
-                      <EyeIcon open={showPw} />
-                    </button>
-                  </div>
-                  {signupForm.password && strength && (
-                    <div className="h_str_bar"><div className={`h_str_fill ${strength.cls}`} style={{ width: `${strength.pct}%` }} /></div>
-                  )}
-                </div>
-                <button type="submit" className="h_submit" disabled={loading}>
-                  {loading ? <><div className="h_spin" /> Processing…</> : "Create Account"}
-                </button>
-              </form>
-            )}
-            
-            <p className="h_auth_footer">
-              {tab === "login" ? (
-                <>New here? <a href="#" onClick={e => { e.preventDefault(); switchTab("signup"); }}>Create an account</a></>
-              ) : (
-                <>Already a member? <a href="#" onClick={e => { e.preventDefault(); switchTab("login"); }}>Sign in here</a></>
-              )}
-            </p>
-          </div>
+              </div>
+              <button type="submit" className="h_submit_btn" disabled={loading}>
+                {loading ? <div className="h_loader" /> : "UPDATE PASSWORD"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
 
-      <Toasts items={toasts} remove={id => setToasts(p => p.filter(t => t.id !== id))} />
+      <div className="h_toast_list">
+        {toasts.map(t => (
+          <div key={t.id} className="h_toast_item">
+            <span>{t.icon}</span>
+            <span>{t.msg}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

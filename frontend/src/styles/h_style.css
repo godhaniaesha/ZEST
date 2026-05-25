@@ -1,7 +1,7 @@
 /* =============================================
-   ROOT COLOR VARIABLES — Focused Auth
+   ROOT COLOR VARIABLES — Luxury Emerald & Gold
    ============================================= */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
 
 :root {
   /* Brand Colors */
@@ -24,12 +24,16 @@
   --d-white:           #ffffff;
   --d-bg:              #0e1f1c;
   --d-border:          rgba(255, 255, 255, 0.1);
-  --d-text-muted:      rgba(224, 224, 224, 0.5);
+  --d-text-muted:      #555555;
 
   /* Shadows */
   --d-shadow-card:     0 20px 50px rgba(0, 0, 0, 0.3);
   --d-radius-lg:       24px;
   --d-transition:      all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Glass Effect */
+  --d-glass:           rgba(22, 48, 43, 0.4);
+  --d-glass-border:    rgba(201, 168, 76, 0.2);
 }
 
 /* =============================================
@@ -38,7 +42,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--d-bg);
   color: var(--d-white);
   min-height: 100vh;
@@ -46,395 +50,437 @@ body {
 }
 
 /* =============================================
-   MAIN AUTH PAGE LAYOUT
+   DYNAMIC BACKGROUND (Aurora Blobs)
    ============================================= */
 .h_auth_page {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 2rem 1.5rem;
+  overflow: hidden;
+  padding: 2rem;
 }
 
-/* Atmospheric Background */
-.h_auth_bg {
-  position: fixed;
+.h_bg_aurora {
+  position: absolute;
   inset: 0;
   z-index: 0;
-  background: var(--d-bg);
-  overflow: hidden;
+  filter: blur(100px);
 }
 
-.h_bg_overlay {
+.h_aurora_blob {
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  border-radius: 50%;
+  background: var(--d-primary-light);
+  opacity: 0.4;
+  animation: aurora_move 20s infinite alternate ease-in-out;
+}
+
+.h_aurora_blob:nth-child(2) {
+  right: -10%;
+  bottom: -10%;
+  background: var(--d-gold-dark);
+  opacity: 0.15;
+  animation-duration: 25s;
+  animation-delay: -5s;
+}
+
+@keyframes aurora_move {
+  0% { transform: translate(-10%, -10%) rotate(0deg); }
+  100% { transform: translate(10%, 10%) rotate(180deg); }
+}
+
+.h_bg_noise {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% -20%, var(--d-primary-light) 0%, transparent 70%),
-              radial-gradient(circle at 0% 100%, var(--d-primary-dark) 0%, transparent 50%);
+  z-index: 1;
+  opacity: 0.05;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
-.h_bg_mesh {
-  position: absolute;
-  inset: 0;
-  background-image: 
-    linear-gradient(rgba(201, 168, 76, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(201, 168, 76, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(circle at center, black, transparent 80%);
-}
-
-/* Container */
+/* =============================================
+   FLOATING ORGANIC CARD
+   ============================================= */
 .h_auth_container {
   position: relative;
-  z-index: 2;
+  z-index: 10;
   width: 100%;
-  max-width: 440px;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  animation: h_fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-width: 480px;
+  animation: card_intro 1.2s var(--d-transition);
 }
 
-@keyframes h_fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes card_intro {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* Brand Branding */
-.h_auth_brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
+.h_brand_float {
+  text-align: center;
+  margin-bottom: 2.5rem;
 }
 
-.h_brand_mark {
-  width: 48px;
-  height: 48px;
-  background: var(--d-gold);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  box-shadow: 0 8px 20px rgba(201, 168, 76, 0.3);
-}
-
-.h_brand_text {
-  display: flex;
-  flex-direction: column;
-}
-
-.h_brand_name {
+.h_brand_z {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 1.6rem;
+  font-size: 4rem;
   font-weight: 700;
-  color: var(--d-white);
+  color: var(--d-gold);
   line-height: 1;
-  letter-spacing: 0.02em;
+  position: relative;
+  display: inline-block;
 }
 
-.h_brand_sub {
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--d-gold-light);
-  margin-top: 2px;
+.h_brand_z::after {
+  content: 'ZEST';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.2rem;
+  letter-spacing: 0.8rem;
+  color: var(--d-white);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 300;
+  opacity: 0.6;
 }
 
-/* Auth Card */
+/* The Glass Card */
 .h_auth_card {
-  background: rgba(22, 48, 43, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--d-border);
+  background: var(--d-glass);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid var(--d-glass-border);
   border-radius: var(--d-radius-lg);
+  padding: 3rem 2.5rem;
   box-shadow: var(--d-shadow-card);
+  position: relative;
   overflow: hidden;
 }
 
-.h_auth_content {
-  padding: 2.5rem 2.5rem;
+/* Card Accent Light */
+.h_card_glow {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: var(--d-gold);
+  filter: blur(80px);
+  opacity: 0.2;
+  pointer-events: none;
 }
 
-/* Tabs */
-.h_tabs {
+/* Tab Switcher */
+.h_tab_switcher {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
   padding: 0.4rem;
+  border-radius: 16px;
+  margin-bottom: 2.5rem;
+  position: relative;
 }
 
-.h_tab {
+.h_tab_item {
   flex: 1;
-  padding: 0.8rem;
+  padding: 0.7rem;
   border: none;
   background: transparent;
   color: var(--d-text-muted);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  border-radius: 12px;
+  z-index: 2;
   transition: var(--d-transition);
 }
 
-.h_tab.h_active {
-  background: var(--d-gold);
+.h_tab_item.h_active {
   color: var(--d-primary-dark);
 }
 
-/* Header */
-.h_auth_title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+.h_tab_bubble {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  width: calc(50% - 0.4rem);
+  height: calc(100% - 0.8rem);
+  background: var(--d-gold);
+  border-radius: 12px;
+  z-index: 1;
+  transition: transform 0.5s var(--d-transition);
+}
+
+.h_tab_switcher[data-active="signup"] .h_tab_bubble {
+  transform: translateX(100%);
+}
+
+/* Form Styling */
+.h_form_header {
+  margin-bottom: 2rem;
   text-align: center;
 }
 
-.h_auth_sub {
+.h_form_header h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.2rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.h_form_header p {
   font-size: 0.85rem;
   color: var(--d-text-muted);
-  text-align: center;
-  margin-bottom: 2rem;
-  line-height: 1.5;
 }
 
-/* Form Elements */
-.h_fg {
-  margin-bottom: 1.2rem;
+.h_input_group {
+  margin-bottom: 1.5rem;
 }
 
-.h_label {
+.h_input_label {
   display: block;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--d-text-muted);
-  margin-bottom: 0.5rem;
+  letter-spacing: 1.5px;
+  color: var(--d-gold);
+  margin-bottom: 0.6rem;
+  margin-left: 0.4rem;
 }
 
-.h_input_wrap {
+.h_field_wrap {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.h_ico {
-  position: absolute;
-  left: 1rem;
-  color: var(--d-text-muted);
-  font-size: 0.9rem;
-}
-
-.h_input {
+.h_main_input {
   width: 100%;
-  padding: 0.9rem 1rem 0.9rem 2.8rem;
+  padding: 1.1rem 1.2rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--d-border);
-  border-radius: 12px;
+  border-radius: 16px;
   color: var(--d-white);
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   outline: none;
   transition: var(--d-transition);
 }
 
-.h_input:focus {
-  border-color: var(--d-gold);
+.h_main_input:focus {
   background: rgba(255, 255, 255, 0.08);
+  border-color: var(--d-gold);
+  box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.1);
 }
 
 .h_eye_btn {
   position: absolute;
-  right: 1rem;
+  right: 1.2rem;
   background: none;
   border: none;
   color: var(--d-text-muted);
   cursor: pointer;
-}
-
-/* 2 Column Grid */
-.h_2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-/* Meta & Submit */
-.h_meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.h_ck_label {
+  padding: 5px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--d-text-muted);
-  cursor: pointer;
 }
 
-.h_fgt {
-  font-size: 0.8rem;
-  color: var(--d-gold-light);
-  text-decoration: none;
-}
+.h_eye_btn:hover { color: var(--d-gold); }
 
-.h_submit {
+/* Submit Button */
+.h_submit_btn {
   width: 100%;
-  padding: 1rem;
+  padding: 1.1rem;
   background: var(--d-gold);
   border: none;
-  border-radius: 12px;
+  border-radius: 16px;
   color: var(--d-primary-dark);
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 1px;
   cursor: pointer;
   transition: var(--d-transition);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 10px;
+  margin-top: 1rem;
 }
 
-.h_submit:hover {
+.h_submit_btn:hover {
   background: var(--d-gold-light);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(201, 168, 76, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(201, 168, 76, 0.25);
 }
 
-.h_submit:disabled {
+.h_submit_btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* Socials */
-.h_divider {
+/* OTP Boxes */
+.h_otp_row {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
 }
 
-.h_div_line { flex: 1; height: 1px; background: var(--d-border); }
-.h_div_txt { font-size: 0.7rem; color: var(--d-text-muted); text-transform: uppercase; }
-
-.h_socials {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.h_soc_btn {
-  padding: 0.8rem;
+.h_otp_box {
+  width: 100%;
+  height: 65px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--d-border);
-  border-radius: 12px;
-  color: var(--d-white);
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  border-radius: 14px;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--d-gold);
+  outline: none;
   transition: var(--d-transition);
 }
 
-.h_soc_btn:hover { background: rgba(255, 255, 255, 0.1); }
-
-/* Footer */
-.h_auth_footer {
-  margin-top: 2rem;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--d-text-muted);
+.h_otp_box:focus {
+  border-color: var(--d-gold);
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
 }
 
-.h_auth_footer a {
-  color: var(--d-gold-light);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-/* Alerts */
+/* Status Messages */
 .h_alert {
-  padding: 0.8rem 1rem;
+  padding: 1rem;
   border-radius: 12px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 10px;
 }
 
-.h_alert_error { background: rgba(231, 76, 60, 0.15); border: 1px solid rgba(231, 76, 60, 0.3); color: #ff8a7a; }
-.h_alert_success { background: rgba(46, 204, 113, 0.15); border: 1px solid rgba(46, 204, 113, 0.3); color: #6ee09e; }
+.h_alert_error { background: rgba(231, 76, 60, 0.15); color: #ff8a7a; border: 1px solid rgba(231, 76, 60, 0.2); }
+.h_alert_success { background: rgba(46, 204, 113, 0.15); color: #6ee09e; border: 1px solid rgba(46, 204, 113, 0.2); }
 
 /* Password Strength */
-.h_str_bar {
-  height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+.h_strength_container {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 2px;
-  margin-top: 0.6rem;
+  margin-top: 0.8rem;
   overflow: hidden;
 }
 
-.h_str_fill { height: 100%; transition: width 0.3s ease; }
+.h_strength_fill { height: 100%; transition: width 0.5s ease; }
 .s_w { background: var(--d-danger); }
 .s_f { background: var(--d-warning); }
-.s_g { background: #27ae60; }
-.s_s { background: var(--d-success); }
+.s_g { background: var(--d-success); }
+.s_s { background: #00ff88; }
 
-/* Spinner */
-.h_spin {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(0, 0, 0, 0.2);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: h_spin 0.6s linear infinite;
-}
-
-@keyframes h_spin { to { transform: rotate(360deg); } }
-
-/* Toasts */
-.h_toasts {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+/* Secondary Actions */
+.h_form_footer {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  z-index: 1000;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0;
 }
 
-.h_toast {
-  background: var(--d-primary-lighter);
-  padding: 0.8rem 1.2rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+.h_check_label {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  animation: h_toastIn 0.3s ease;
+  font-size: 0.85rem;
+  color: var(--d-text-muted);
+  cursor: pointer;
 }
 
-@keyframes h_toastIn {
+.h_custom_ck {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--d-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--d-transition);
+}
+
+.h_check_label input:checked + .h_custom_ck {
+  background: var(--d-gold);
+  border-color: var(--d-gold);
+  color: var(--d-primary-dark);
+}
+
+.h_link_simple {
+  font-size: 0.85rem;
+  color: var(--d-gold);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--d-transition);
+}
+
+.h_link_simple:hover { color: var(--d-gold-light); }
+
+.h_back_link {
+  display: block;
+  text-align: center;
+  margin-top: 2rem;
+  color: var(--d-text-muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.h_back_link:hover { color: var(--d-white); }
+
+/* Toasts */
+.h_toast_list {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.h_toast_item {
+  background: var(--d-primary-light);
+  color: var(--d-white);
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--d-gold-dark);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: toast_pop 0.4s var(--d-transition);
+}
+
+@keyframes toast_pop {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Mobile Adjustments */
-@media (max-width: 480px) {
-  .h_auth_content { padding: 2rem 1.5rem; }
-  .h_2col { grid-template-columns: 1fr; }
-  .h_auth_brand { gap: 0.8rem; }
-  .h_brand_name { font-size: 1.4rem; }
+/* Spinner */
+.h_loader {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0,0,0,0.1);
+  border-top-color: var(--d-primary-dark);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 500px) {
+  .h_auth_page { padding: 1rem; }
+  .h_auth_card { padding: 2.5rem 1.5rem; border-radius: 20px; }
+  .h_brand_z { font-size: 3rem; }
+  .h_brand_z::after { font-size: 0.9rem; letter-spacing: 0.6rem; }
+  .h_otp_box { height: 55px; font-size: 1.5rem; }
 }
