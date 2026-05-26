@@ -1,4 +1,4 @@
-import "./App.css";
+import './App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import '../src/styles/d_style.css';
@@ -16,41 +16,57 @@ import AboutUs from './pages/AboutUs';
 import Menu from './pages/Menu';
 import MenuDetail from './pages/MenuDetail';
 
-import AppRoutes from "./admin/Approutes";
-import Services from "./pages/Services";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsAndConditions from "./pages/TermsAndConditions";
-import Reservation from "./components/Reservation";
+import AppRoutes from './admin/Approutes';
+import Services from './pages/Services';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
+
+function UserLayout({ children }) {
+  return (
+    <>
+      <Navbar />
+
+      <div style={{ marginTop: '70px' }}>
+        {children}
+      </div>
+
+      <Footer />
+    </>
+  );
+}
 
 function App() {
   return (
     <BrowserRouter>
-      {/* <Navbar /> */}
+
       <Routes>
-        <Route path="/auth" element={<Auth />} />
+
+        {/* USER ROUTES */}
+        <Route path="/" element={<UserLayout>  <Home /> </UserLayout>} />
+
+        <Route path="/home" element={<UserLayout>  <Home /> </UserLayout>} />
+
+        <Route path="/aboutus" element={<UserLayout>  <AboutUs /> </UserLayout>} />
+
+        <Route path="/contactus" element={<UserLayout>  <ContactUs /> </UserLayout>} />
+
+        <Route path="/services" element={<UserLayout>  <Services /> </UserLayout>} />
+
+        <Route path="/privacy-policy" element={<UserLayout>  <PrivacyPolicy /> </UserLayout>} />
+
+        <Route path="/terms" element={<UserLayout>  <TermsAndConditions /> </UserLayout>} />
+
+        <Route path="/menu" element={<UserLayout>  <Menu /> </UserLayout>} />
+
+        <Route path="/menu/:id" element={<UserLayout>  <MenuDetail /> </UserLayout>} />
+
+        <Route path="/auth" element={<UserLayout>  <Auth /> </UserLayout>} />
+
+        {/* ADMIN ROUTES */}
+        <Route path="/admin/*" element={<AppRoutes />} />
+
       </Routes>
 
-      <div style={{ marginTop: "70px" }}>
-        {/* User Routes */}
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/navbar" element={<Navbar />} />
-          {/* <Route path="/auth" element={<Auth />} /> */}
-          <Route path="/home" element={<Home />} />
-          <Route path="/aboutus" element={<AboutUs />} />
-          <Route path="/contactus" element={<ContactUs />} />
-          <Route path='/services' element={<Services />} />
-          <Route path='/privacy-policy' element={<PrivacyPolicy />} />
-          <Route path='/terms' element={<TermsAndConditions />} />
-          <Route path='/menu' element={<Menu />} />
-          <Route path='/menu/:id' element={<MenuDetail />} />
-          <Route path="/reservation" element={<Reservation />} />
-        </Routes>
-
-        {/* Admin Routes */}
-        <AppRoutes />
-      </div>
-      {/* <Footer /> */}
     </BrowserRouter>
   );
 }
