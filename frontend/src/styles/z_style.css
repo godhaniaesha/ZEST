@@ -111,11 +111,11 @@ body{
   padding: 72px 0 44px;
 }
 
-.z_about_hero_grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.88fr);
+.z_about_hero_row {
+  --bs-gutter-x: 58px;
+  row-gap: 42px;
+  column-gap: 0;
   align-items: center;
-  gap: 58px;
 }
 
 .z_about_hero_content,
@@ -360,9 +360,9 @@ body{
   overflow: hidden;
 }
 
-.z_about_stats_grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.z_about_stats_row {
+  --bs-gutter-x: 0;
+  margin: 0;
 }
 
 .z_about_stat {
@@ -406,11 +406,15 @@ body{
   padding: 0 0 82px;
 }
 
-.z_about_story_grid {
-  display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1fr);
+.z_about_story_row {
+  --bs-gutter-x: 46px;
+  row-gap: 42px;
+  column-gap: 0;
   align-items: center;
-  gap: 46px;
+}
+
+.z_about_story_media_col {
+  min-width: 0;
 }
 
 .z_about_story_media {
@@ -515,10 +519,9 @@ body{
   margin: 0 auto;
 }
 
-.z_about_cards_grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+.z_about_cards_row {
+  --bs-gutter-x: 18px;
+  row-gap: 18px;
 }
 
 .z_about_card_wrap {
@@ -621,13 +624,13 @@ body{
   pointer-events: none;
 }
 
-.z_about_menu_grid {
+.z_about_menu_row {
+  --bs-gutter-x: 36px;
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1fr);
+  row-gap: 30px;
+  column-gap: 0;
   align-items: center;
-  gap: 36px;
 }
 
 .z_about_menu_mood:hover {
@@ -682,13 +685,13 @@ body{
 .z_about_menu_showcase {
   position: relative;
   z-index: 1;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
 .z_about_menu_tile {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  display: flex;
   gap: 14px;
   align-items: flex-start;
   padding: 18px;
@@ -729,10 +732,10 @@ body{
 }
 
 @media (max-width: 992px) {
-  .z_about_hero_grid,
-  .z_about_story_grid,
-  .z_about_menu_grid {
-    grid-template-columns: 1fr;
+  .z_about_hero_row,
+  .z_about_story_row,
+  .z_about_menu_row {
+    row-gap: 34px;
   }
 
   .z_about_hero {
@@ -749,15 +752,14 @@ body{
 
   .z_about_story_media {
     aspect-ratio: 16 / 10;
+  }
+
+  .z_about_story_media_col {
     order: 2;
   }
 
   .z_about_story_content {
     order: 1;
-  }
-
-  .z_about_cards_grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .z_about_card {
@@ -788,9 +790,9 @@ body{
     padding: 34px 0 28px;
   }
 
-  .z_about_hero_grid,
-  .z_about_story_grid {
-    gap: 28px;
+  .z_about_hero_row,
+  .z_about_story_row {
+    row-gap: 28px;
   }
 
   .z_about_hero p {
@@ -798,8 +800,7 @@ body{
   }
 
   .z_about_hero_actions {
-    display: grid;
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .z_about_btn {
@@ -841,13 +842,7 @@ body{
   }
 
   .z_about_stats {
-    grid-template-columns: 1fr;
     margin-bottom: 54px;
-  }
-
-  .z_about_stats_grid,
-  .z_about_cards_grid {
-    grid-template-columns: 1fr;
   }
 
   .z_about_stat {
@@ -881,12 +876,11 @@ body{
     inset: 10px;
   }
 
-  .z_about_menu_grid {
-    gap: 24px;
+  .z_about_menu_row {
+    row-gap: 24px;
   }
 
   .z_about_menu_tile {
-    grid-template-columns: 46px minmax(0, 1fr);
     padding: 15px;
   }
 
@@ -952,7 +946,7 @@ body{
   }
 
   .z_about_menu_tile {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 }
 

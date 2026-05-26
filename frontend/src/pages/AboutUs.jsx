@@ -45,8 +45,8 @@ const AboutUs = () => {
       <div className="z_about_glow z_about_glow_two" />
 
       <section className="z_about_hero">
-        <div className="z_about_hero_grid">
-          <div className="z_about_hero_content">
+        <div className="z_about_hero_row row align-items-center">
+          <div className="z_about_hero_content col-lg-7">
             <span className="z_about_eyebrow">
               <Sparkles size={16} />
               Cafe by day. Bar by night.
@@ -72,7 +72,7 @@ const AboutUs = () => {
             </div>
           </div>
 
-          <div className="z_about_visual" aria-label="Cafe and bar atmosphere">
+          <div className="z_about_visual col-lg-5" aria-label="Cafe and bar atmosphere">
             <div className="z_about_main_photo">
               <img
                 src="https://i1-e.pinimg.com/736x/af/b6/de/afb6de59cd10b1c7a31653aab893a7f2.jpg"
@@ -100,9 +100,9 @@ const AboutUs = () => {
       </section>
 
       <section className="z_about_stats" aria-label="Zest quick facts">
-        <div className="z_about_stats_grid">
+        <div className="z_about_stats_row row">
           {z_stats.map((item) => (
-            <div className="z_about_stat" key={item.label}>
+            <div className="z_about_stat col-md-4" key={item.label}>
               <strong>{item.value}</strong>
               <span>{item.label}</span>
             </div>
@@ -111,18 +111,20 @@ const AboutUs = () => {
       </section>
 
       <section className="z_about_story" id="z_about_story">
-        <div className="z_about_story_grid">
-          <div className="z_about_story_media">
-            <img
-              src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80"
-              alt="Chef preparing food in a warm restaurant kitchen"
-            />
-            <div className="z_about_story_tag">
-              <ChefHat size={18} />
-              <span>Fresh kitchen</span>
+        <div className="z_about_story_row row align-items-center">
+          <div className="z_about_story_media_col col-lg-5">
+            <div className="z_about_story_media">
+              <img
+                src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80"
+                alt="Chef preparing food in a warm restaurant kitchen"
+              />
+              <div className="z_about_story_tag">
+                <ChefHat size={18} />
+                <span>Fresh kitchen</span>
+              </div>
             </div>
           </div>
-          <div className="z_about_story_content">
+          <div className="z_about_story_content col-lg-7">
             <span className="z_about_eyebrow">About Zest</span>
             <h2>A place that changes beautifully with the hour.</h2>
             <p>
@@ -150,9 +152,9 @@ const AboutUs = () => {
         </div>
 
         <div className="z_about_cards">
-          <div className="z_about_cards_grid">
+          <div className="z_about_cards_row row">
             {z_highlights.map((item) => (
-              <div className="z_about_card_wrap" key={item.title}>
+              <div className="z_about_card_wrap col-md-6 col-lg-4" key={item.title}>
                 <article className="z_about_card">
                   <div className="z_about_card_icon">{item.icon}</div>
                   <h3>{item.title}</h3>
@@ -165,8 +167,8 @@ const AboutUs = () => {
       </section>
 
       <section className="z_about_menu_mood">
-        <div className="z_about_menu_grid">
-          <div className="z_about_menu_content">
+        <div className="z_about_menu_row row align-items-center">
+          <div className="z_about_menu_content col-lg-5">
             {/* <div className="z_about_menu_icon">
               <Utensils size={28} />
               <Flame size={22} />
@@ -182,7 +184,7 @@ const AboutUs = () => {
             </a>
           </div>
 
-          <div className="z_about_menu_showcase">
+          <div className="z_about_menu_showcase col-lg-7">
             {z_menu_moods.map((item) => (
               <article className="z_about_menu_tile" key={item.label}>
                 <div className="z_about_menu_tile_icon">{item.icon}</div>
