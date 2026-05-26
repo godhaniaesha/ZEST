@@ -19,6 +19,10 @@ const RECENT_ORDERS = [
   { id: '#T-1020', table: 'Table 7', items: 'Old Fashioned, Nachos', type: 'Bar',  amount: '₹1,250', status: 'Preparing',statusClass: 'd-chip-gold' },
   { id: '#T-1019', table: 'Bar',     items: 'Draft Beer x2',         type: 'Bar',  amount: '₹800',  status: 'Served',  statusClass: 'd-chip-green' },
   { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
+  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
+  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
+  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
+  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
 ];
 
 const TOP_ITEMS = [
