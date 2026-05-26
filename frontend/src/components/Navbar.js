@@ -33,29 +33,28 @@ export default function Navbar() {
                 Home
               </Link>
             </li>
+
             <li className="x_navbar-item">
               <Link to="/about" className="x_navbar-link">
                 About
               </Link>
             </li>
+
             <li className="x_navbar-item">
               <Link to="/menu" className="x_navbar-link">
                 Menu
               </Link>
             </li>
+
             <li className="x_navbar-item">
               <Link to="/gallery" className="x_navbar-link">
                 Gallery
               </Link>
             </li>
+
             <li className="x_navbar-item">
-              <Link to="/blog" className="x_navbar-link">
-                Blog
-              </Link>
-            </li>
-            <li className="x_navbar-item">
-              <Link to="/shop" className="x_navbar-link">
-                Shop
+              <Link to="/contact" className="x_navbar-link">
+                Contact
               </Link>
             </li>
           </ul>

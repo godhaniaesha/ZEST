@@ -5,6 +5,7 @@ import '../src/styles/d_style.css';
 import '../src/styles/h_style.css';
 import '../src/styles/x_style.css';
 import '../src/styles/z_style.css';
+import '../src/styles/menu_style.css';
 
 import Home from './pages/Home';
 import ContactUs from './pages/ContactUs';
@@ -12,6 +13,8 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Auth from './components/Auth';
 import AboutUs from './pages/AboutUs';
+import Menu from './pages/Menu';
+import MenuDetail from './pages/MenuDetail';
 
 import AppRoutes from './admin/Approutes';
 import Services from './pages/Services';
@@ -37,8 +40,8 @@ function App() {
           <Route path='/services' element={<Services />} />
           <Route path='/privacy-policy' element={<PrivacyPolicy />} />
           <Route path='/terms' element={<TermsAndConditions />} />
-
-
+          <Route path='/menu' element={<Menu />} />
+          <Route path='/menu/:id' element={<MenuDetail />} />
         </Routes>
 
         {/* Admin Routes */}

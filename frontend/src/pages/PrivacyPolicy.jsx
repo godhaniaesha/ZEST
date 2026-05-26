@@ -150,10 +150,10 @@ const PrivacyPolicy = () => {
 
       {/* Detailed Policy */}
       <section className="x_privacy_details container">
-        <div className="x_privacy_details_header">
+        {/* <div className="x_privacy_details_header">
           <h2>Complete Privacy Policy</h2>
           <p>Full terms and conditions regarding your data</p>
-        </div>
+        </div> */}
 
         <div className="x_privacy_content">
           {sections.map((section, idx) => (
@@ -224,40 +224,40 @@ const PrivacyPolicy = () => {
       </section>
 
       {/* Contact & Support */}
-      <section className="x_privacy_contact container">
-        <div className="x_privacy_contact_box">
-          <h2>Questions About Your Privacy?</h2>
-          <p>
-            We're here to help. Reach out to our privacy team for any concerns, requests, or
-            feedback about our privacy practices.
-          </p>
+   <section className="x_privacy_contact container">
+  <div className="x_privacy_contact_box">
+    <h2>Need Help or Have Questions?</h2>
 
-          <div className="x_privacy_contact_options">
-            <div className="x_privacy_contact_option">
-              <Mail size={24} />
-              <div>
-                <strong>Email</strong>
-                <p>privacy@zestcafe.com</p>
-              </div>
-            </div>
+    <p>
+      If you have any questions, feedback, or need assistance regarding our services,
+      our support team is always ready to help you.
+    </p>
 
-            <div className="x_privacy_contact_option">
-              <Lock size={24} />
-              <div>
-                <strong>Mail</strong>
-                <p>Privacy Team, 123 Cafe Street, City Center</p>
-              </div>
-            </div>
-          </div>
-
-          <a href="/contactus" className="x_privacy_contact_btn">
-            Contact Us
-          </a>
+    <div className="x_privacy_contact_options">
+      <div className="x_privacy_contact_option">
+        <Mail size={24} />
+        <div>
+          <strong>Customer Support</strong>
+          <p>Get quick assistance for your queries and concerns.</p>
         </div>
-      </section>
+      </div>
 
+      <div className="x_privacy_contact_option">
+        <Lock size={24} />
+        <div>
+          <strong>Secure Assistance</strong>
+          <p>Your information and communication are always kept protected.</p>
+        </div>
+      </div>
+    </div>
+
+    <a href="/contactus" className="x_privacy_contact_btn">
+      Contact Us
+    </a>
+  </div>
+</section>
       {/* Policy Changes */}
-      <section className="x_privacy_changes container">
+      {/* <section className="x_privacy_changes container">
         <h3>Policy Updates</h3>
         <p>
           We may update this Privacy Policy from time to time to reflect changes in our practices,
@@ -266,7 +266,7 @@ const PrivacyPolicy = () => {
           use of our website or services after changes constitutes your acceptance of the updated
           Privacy Policy.
         </p>
-      </section>
+      </section> */}
     </main>
   );
 };
