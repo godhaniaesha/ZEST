@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from 'lucide-react';
+import {
+  CalendarDays,
+  Car,
+  CheckCircle,
+  Clock,
+  Coffee,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Navigation,
+  Phone,
+  Send,
+  Users,
+  Wifi,
+} from 'lucide-react';
 import '../styles/x_pages.css';
 
 const ContactUs = () => {
@@ -39,6 +53,30 @@ const ContactUs = () => {
     },
   ];
 
+  const quickNotes = [
+    { icon: <CalendarDays size={18} />, text: 'Reservations for groups of 4+' },
+    { icon: <Coffee size={18} />, text: 'Walk-ins welcome all day' },
+    { icon: <MessageCircle size={18} />, text: 'Event replies within 24 hours' },
+  ];
+
+  const faqs = [
+    {
+      icon: <Users size={20} />,
+      question: 'Do you host private events?',
+      answer: 'Yes. We can shape the space for celebrations, team dinners, tastings, and compact launch nights.',
+    },
+    {
+      icon: <Wifi size={20} />,
+      question: 'Can I work from the cafe?',
+      answer: 'Absolutely. Daytime seating is laptop friendly, with fast WiFi and enough coffee to keep ideas moving.',
+    },
+    {
+      icon: <Car size={20} />,
+      question: 'Is parking available?',
+      answer: 'Street parking is available nearby, and our team can point you toward the easiest lots when you arrive.',
+    },
+  ];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -56,45 +94,72 @@ const ContactUs = () => {
 
   return (
     <main className="x_contact_page">
-      <div className="x_contact_glow x_contact_glow_one" />
-      <div className="x_contact_glow x_contact_glow_two" />
+      {/* <div className="x_contact_glow x_contact_glow_one" />
+      <div className="x_contact_glow x_contact_glow_two" /> */}
 
-      {/* Hero Section */}
       <section className="x_contact_hero container">
-        <div className="x_contact_hero_content">
-          <span className="x_contact_eyebrow">
-            <Mail size={16} />
-            Get in Touch
-          </span>
-          <h1 className="x_contact_headline">Let's connect. We'd love to hear from you.</h1>
-          <p>
-            Whether you have a question about reservations, events, or just want to say hello,
-            reach out. We're here to make your experience exceptional.
-          </p>
+        <div className="x_contact_hero_shell">
+          <div className="x_contact_hero_content">
+            <span className="x_contact_eyebrow">
+              <Mail size={16} />
+              Talk to Zest
+            </span>
+            <h1 className="x_contact_headline">Coffee questions, dinner plans, late-night ideas.</h1>
+            <p>
+              Send us the details and we will help with reservations, private events, catering,
+              and anything else your table needs.
+            </p>
+            <div className="x_contact_hero_actions">
+              <a href="tel:+15551234567" className="x_contact_action x_contact_action_primary">
+                <Phone size={18} />
+                Call now
+              </a>
+              <a href="mailto:hello@zestcafe.com" className="x_contact_action">
+                <Mail size={18} />
+                Email us
+              </a>
+            </div>
+          </div>
+
+          <aside className="x_contact_visit_card" aria-label="Visit Zest">
+            <div className="x_contact_visit_photo" />
+            <div className="x_contact_open_badge">
+              <Clock size={16} />
+              Open daily
+            </div>
+            <h2>Drop by from first pour to final toast.</h2>
+            <div className="x_contact_visit_rows">
+              <span>8:00 AM</span>
+              <strong>Cafe opens</strong>
+              <span>12:00 AM</span>
+              <strong>Bar closes</strong>
+            </div>
+          </aside>
         </div>
       </section>
 
-      {/* Contact Info Cards */}
-      <section className="x_contact_info x_header_container">
-        <div className="x_contact_info_grid">
+      <section className="x_contact_info container">
+        <div className="x_contact_info_strip">
           {contactInfo.map((info, idx) => (
             <div className="x_contact_info_card" key={idx}>
               <div className="x_contact_info_icon">{info.icon}</div>
-              <h3>{info.label}</h3>
-              <p className="x_contact_info_value">{info.value}</p>
-              <p className="x_contact_info_subtext">{info.subtext}</p>
+              <div>
+                <h3>{info.label}</h3>
+                <p className="x_contact_info_value">{info.value}</p>
+                <p className="x_contact_info_subtext">{info.subtext}</p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Main Contact Section */}
       <section className="x_contact_main">
-        <div className="x_contact_container x_header_container">
+        <div className="x_contact_container container">
           <div className="x_contact_form_section">
             <div className="x_contact_form_header">
-              <h2>Send us a message</h2>
-              <p>Fill out the form below and we'll get back to you soon.</p>
+              <span>Message board</span>
+              <h2>Tell us what you are planning.</h2>
+              <p>Share the essentials and our team will respond with the right next step.</p>
             </div>
 
             {submitted && (
@@ -193,8 +258,15 @@ const ContactUs = () => {
             </form>
           </div>
 
-          {/* Map Section */}
-          <div className="x_contact_map_section">
+          <aside className="x_contact_side_panel">
+            <div className="x_contact_quick_notes">
+              {quickNotes.map((note) => (
+                <div className="x_contact_quick_note" key={note.text}>
+                  {note.icon}
+                  <span>{note.text}</span>
+                </div>
+              ))}
+            </div>
             <div className="x_contact_map">
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.1234567890!2d-74.0060!3d40.7128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDQyJzQ2LjEiTiA3NMKwMDAnMjEuNiJX!5e0!3m2!1sen!2sus!4v1234567890"
@@ -205,63 +277,28 @@ const ContactUs = () => {
                 title="Zest Cafe Location"
               />
             </div>
-          </div>
+            <a className="x_contact_direction" href="https://maps.google.com" target="_blank" rel="noreferrer">
+              <Navigation size={18} />
+              Open directions
+            </a>
+          </aside>
         </div>
       </section>
 
-      {/* FAQ Section */}
       <section className="x_contact_faq container">
         <div className="x_contact_faq_header">
-          <h2>Frequently Asked Questions</h2>
-          <p>Quick answers to common questions</p>
+          <span className="x_contact_eyebrow">Good to know</span>
+          <h2>Before you stop by</h2>
         </div>
 
         <div className="x_contact_faq_grid">
-          <div className="x_contact_faq_item">
-            <h4>Do you take reservations?</h4>
-            <p>
-              Yes! We accept reservations for groups of 4 or more. Call us or use our reservation
-              system online.
-            </p>
-          </div>
-
-          <div className="x_contact_faq_item">
-            <h4>What's your WiFi password?</h4>
-            <p>
-              Free high-speed WiFi is available to all guests. Ask our staff for the password
-              when you arrive.
-            </p>
-          </div>
-
-          <div className="x_contact_faq_item">
-            <h4>Do you host private events?</h4>
-            <p>
-              Absolutely! We offer private event spaces for celebrations, meetings, and more.
-              Contact us for details.
-            </p>
-          </div>
-
-          <div className="x_contact_faq_item">
-            <h4>Are you pet friendly?</h4>
-            <p>
-              Our outdoor patio welcomes well-behaved pets. We even have water bowls available!
-            </p>
-          </div>
-
-          <div className="x_contact_faq_item">
-            <h4>Do you have parking?</h4>
-            <p>
-              Street parking is available nearby. Validated parking at select lots for parties of
-              6+.
-            </p>
-          </div>
-
-          <div className="x_contact_faq_item">
-            <h4>Can I order catering?</h4>
-            <p>
-              Yes! We offer catering for events. Contact us 48 hours in advance for custom quotes.
-            </p>
-          </div>
+          {faqs.map((item) => (
+            <article className="x_contact_faq_item" key={item.question}>
+              <div className="x_contact_faq_icon">{item.icon}</div>
+              <h4>{item.question}</h4>
+              <p>{item.answer}</p>
+            </article>
+          ))}
         </div>
       </section>
     </main>
