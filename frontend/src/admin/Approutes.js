@@ -1,17 +1,24 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import Layout from './Layout/Layout';
-import Dashboard from './pages/Dashboard/Dashboard';
-import Menu from './pages/Menu/Menu';
-import Orders from './pages/Orders/Orders';
-import Reservations from './pages/Reservations/Reservations';
-import Bar from './pages/Bar/Bar';
-import Inventory from './pages/Inventory/Inventory';
-import Staff from './pages/Staff/Staff';
-import Reviews from './pages/Review/Reviews';
-import Reports from './pages/Reports/Reports';
-import Settings from './pages/Settings/Settings';
+import Layout from "./Layout/Layout";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import Menu from "./pages/Menu/Menu";
+import Orders from "./pages/Orders/Orders";
+import Reservations from "./pages/Reservations/Reservations";
+import Bar from "./pages/Bar/Bar";
+import Inventory from "./pages/Inventory/Inventory";
+import Staff from "./pages/Staff/Staff";
+import Reviews from "./pages/Review/Reviews";
+import Reports from "./pages/Reports/Reports";
+import Settings from "./pages/Settings/Settings";
+import Users from "./pages/Users/Users";
+import SystemLogs from "./pages/SystemLogs/SystemLogs";
+import POS from "./pages/POS/POS";
+import KitchenDisplay from "./pages/KitchenDisplay/KitchenDisplay";
+import Tables from "./pages/Tables/Tables";
+import TakeOrder from "./pages/TakeOrder/TakeOrder";
+import ServiceRequests from "./pages/ServiceRequests/ServiceRequests";
 
 export default function AppRoutes() {
   return (
@@ -27,6 +34,13 @@ export default function AppRoutes() {
         <Route path="reviews" element={<Reviews />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="users" element={<Users />} />
+        <Route path="system-logs" element={<SystemLogs />} />
+        <Route path="pos" element={<POS />} />
+        <Route path="kitchen-display" element={<KitchenDisplay />} />
+        <Route path="tables" element={<Tables />} />
+        <Route path="take-order" element={<TakeOrder />} />
+        <Route path="service-requests" element={<ServiceRequests />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
     </Routes>

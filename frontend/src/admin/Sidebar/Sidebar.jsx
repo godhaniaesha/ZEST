@@ -3,43 +3,70 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import {
   MdDashboard, MdRestaurantMenu, MdReceiptLong, MdEventSeat,
   MdInventory2, MdPeople, MdBarChart, MdSettings, MdLogout,
-  MdLocalBar, MdStar
+  MdLocalBar, MdStar, MdKitchen, MdCountertops, MdTableRestaurant,
+  MdLocalAtm, MdAdminPanelSettings, MdHistory, MdNotificationsActive
 } from 'react-icons/md';
+
+// Available Roles in your system:
+// 'superadmin', 'manager', 'chef', 'waiter'
 
 const NAV_GROUPS = [
   {
     label: 'Overview',
     items: [
-      { to: '/admin',           icon: <MdDashboard />,      label: 'Dashboard' },
+      { 
+        to: '/admin/dashboard', 
+        icon: <MdDashboard />, 
+        label: 'Dashboard',
+        roles: ['superadmin', 'manager', 'chef', 'waiter'] // Accessible by everyone
+      }
     ]
   },
   {
-    label: 'Operations',
+    label: 'Super Admin',
     items: [
-      { to: '/admin/menu',       icon: <MdRestaurantMenu />, label: 'Menu',        badge: null },
-      { to: '/admin/orders',     icon: <MdReceiptLong />,    label: 'Orders',      badge: '8' },
-      { to: '/admin/reservations',icon: <MdEventSeat />,     label: 'Reservations',badge: '3' },
-      { to: '/admin/bar',        icon: <MdLocalBar />,       label: 'Bar & Drinks', badge: null },
+      { to: '/admin/users', icon: <MdAdminPanelSettings />, label: 'User Management', roles: ['superadmin'] },
+      { to: '/admin/system-logs', icon: <MdHistory />, label: 'System Logs', roles: ['superadmin'] },
+      { to: '/admin/settings', icon: <MdSettings />, label: 'Global Settings', roles: ['superadmin'] }
     ]
   },
   {
-    label: 'Management',
+    label: 'Management (Manager)',
     items: [
-      { to: '/admin/inventory',  icon: <MdInventory2 />,     label: 'Inventory' },
-      { to: '/admin/staff',      icon: <MdPeople />,         label: 'Staff' },
-      { to: '/admin/reviews',    icon: <MdStar />,           label: 'Reviews' },
+      { to: '/admin/pos', icon: <MdLocalAtm />, label: 'POS & Billing', roles: ['manager', 'superadmin'] },
+      { to: '/admin/orders', icon: <MdReceiptLong />, label: 'Orders', badge: '8', roles: ['manager', 'superadmin'] },
+      { to: '/admin/reservations', icon: <MdEventSeat />, label: 'Reservations', badge: '3', roles: ['manager', 'superadmin'] },
+      { to: '/admin/staff', icon: <MdPeople />, label: 'Staff Attendance', roles: ['manager', 'superadmin'] },
+      { to: '/admin/reports', icon: <MdBarChart />, label: 'Reports & Analytics', roles: ['manager', 'superadmin'] }
     ]
   },
   {
-    label: 'Analytics',
+    label: 'Kitchen (Chef)',
     items: [
-      { to: '/admin/reports',    icon: <MdBarChart />,       label: 'Reports' },
-      { to: '/admin/settings',   icon: <MdSettings />,       label: 'Settings' },
+      { to: '/admin/kitchen-display', icon: <MdKitchen />, label: 'Live Orders (KOT)', badge: '5', roles: ['chef', 'manager', 'superadmin'] },
+      { to: '/admin/menu', icon: <MdRestaurantMenu />, label: 'Menu Items', badge: null, roles: ['chef', 'manager', 'superadmin'] },
+      { to: '/admin/bar', icon: <MdLocalBar />, label: 'Bar & Drinks', badge: null, roles: ['chef', 'manager', 'superadmin'] }, // Bartender/Chef roles
+      { to: '/admin/inventory', icon: <MdInventory2 />, label: 'Kitchen Stock', roles: ['chef', 'manager', 'superadmin'] }
+    ]
+  },
+  {
+    label: 'Service (Waiter)',
+    items: [
+      { to: '/admin/tables', icon: <MdTableRestaurant />, label: 'Table Status', roles: ['waiter', 'manager', 'superadmin'] },
+      { to: '/admin/take-order', icon: <MdCountertops />, label: 'Take New Order', roles: ['waiter', 'manager', 'superadmin'] },
+      { to: '/admin/service-requests', icon: <MdNotificationsActive />, label: 'Customer Requests', badge: '2', roles: ['waiter', 'manager', 'superadmin'] }
+    ]
+  },
+  {
+    label: 'Feedbacks',
+    items: [
+      { to: '/admin/reviews', icon: <MdStar />, label: 'Reviews & Ratings', roles: ['manager', 'superadmin'] }
     ]
   }
 ];
 
-export default function Sidebar({ collapsed, mobileOpen, onClose }) {
+// Added `currentUserRole` prop (Defaulted to 'superadmin' so you can see everything right now)
+export default function Sidebar({ collapsed, mobileOpen, onClose, currentUserRole = 'superadmin' }) {
   const location = useLocation();
 
   const sidebarClass = [
@@ -68,33 +95,43 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
 
         {/* Nav */}
         <div className="d-sidebar-scroll">
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label}>
-              <div className="d-nav-group-label">{group.label}</div>
-              {group.items.map((item) => {
-                const isActive = item.to === '/'
-                  ? location.pathname === '/'
-                  : location.pathname.startsWith(item.to);
+          {NAV_GROUPS.map((group) => {
+            // 1. Filter out items that the current user shouldn't see
+            const allowedItems = group.items.filter(item => 
+              item.roles ? item.roles.includes(currentUserRole) : true
+            );
 
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={`d-nav-item ${isActive ? 'd-active' : ''}`}
-                    onClick={onClose}
-                    end={item.to === '/'}
-                  >
-                    <span className="d-nav-icon">{item.icon}</span>
-                    <span className="d-nav-label">{item.label}</span>
-                    {item.badge && (
-                      <span className="d-nav-badge">{item.badge}</span>
-                    )}
-                    <span className="d-tooltip">{item.label}</span>
-                  </NavLink>
-                );
-              })}
-            </div>
-          ))}
+            // 2. If no items are allowed in this group, ignore/skip rendering the entire group header
+            if (allowedItems.length === 0) return null;
+
+            return (
+              <div key={group.label} className="d-nav-group-wrapper">
+                <div className="d-nav-group-label">{group.label}</div>
+                {allowedItems.map((item) => {
+                  const isActive = item.to === '/'
+                    ? location.pathname === '/'
+                    : location.pathname.startsWith(item.to);
+
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={`d-nav-item ${isActive ? 'd-active' : ''}`}
+                      onClick={onClose}
+                      end={item.to === '/'}
+                    >
+                      <span className="d-nav-icon">{item.icon}</span>
+                      <span className="d-nav-label">{item.label}</span>
+                      {item.badge && (
+                        <span className="d-nav-badge">{item.badge}</span>
+                      )}
+                      <span className="d-tooltip">{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
 
         {/* Footer */}
