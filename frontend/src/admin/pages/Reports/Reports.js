@@ -193,7 +193,7 @@ export default function Reports() {
 
                         {/* Bar */}
                         <div className="d_chart_bar_container">
-                          <div-
+                          <div
                             className={`d_chart_bar ${
                               w.day === "Fri" || w.day === "Sat"
                                 ? "d_chart_bar_gold"
@@ -206,7 +206,7 @@ export default function Reports() {
                             <div className="d_chart_bar_shine"></div>
                             <div className="d_chart_bar_overlay"></div>
                             <div className="d_chart_bar_dot"></div>
-                          </div->
+                          </div>
                         </div>
 
                         {/* Day */}

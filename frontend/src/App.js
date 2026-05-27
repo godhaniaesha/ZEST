@@ -44,23 +44,14 @@ function App() {
 
         {/* USER ROUTES */}
         <Route path="/" element={<UserLayout>  <Home /> </UserLayout>} />
-
         <Route path="/home" element={<UserLayout>  <Home /> </UserLayout>} />
-
         <Route path="/aboutus" element={<UserLayout>  <AboutUs /> </UserLayout>} />
-
         <Route path="/contactus" element={<UserLayout>  <ContactUs /> </UserLayout>} />
-
         <Route path="/services" element={<UserLayout>  <Services /> </UserLayout>} />
-
         <Route path="/privacy-policy" element={<UserLayout>  <PrivacyPolicy /> </UserLayout>} />
-
         <Route path="/terms" element={<UserLayout>  <TermsAndConditions /> </UserLayout>} />
-
         <Route path="/menu" element={<UserLayout>  <Menu /> </UserLayout>} />
-
         <Route path="/menu/:id" element={<UserLayout>  <MenuDetail /> </UserLayout>} />
-
         <Route path="/auth" element={<UserLayout>  <Auth /> </UserLayout>} />
 
         <Route path="/reservations" element={ <Reservation /> } />
