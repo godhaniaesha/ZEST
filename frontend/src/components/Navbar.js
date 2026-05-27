@@ -53,7 +53,7 @@ export default function Navbar() {
             </li>
 
             <li className="x_navbar-item">
-              <Link to="/contact" className="x_navbar-link">
+              <Link to="/contactus" className="x_navbar-link">
                 Contact
               </Link>
             </li>
