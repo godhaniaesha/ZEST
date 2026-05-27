@@ -35,7 +35,7 @@ export default function Navbar() {
             </li>
 
             <li className="x_navbar-item">
-              <Link to="/about" className="x_navbar-link">
+              <Link to="/aboutus" className="x_navbar-link">
                 About
               </Link>
             </li>

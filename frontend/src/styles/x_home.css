@@ -1,0 +1,68 @@
+/* Home Page Custom Styles */
+
+/* Smooth page transitions */
+.x_home_page {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Hero slide animation improvements */
+.x_hero_content {
+  animation: slideInUp 0.8s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth transitions for all interactive elements */
+.x_featured_card,
+.x_testimonial_card,
+.x_cta_btn,
+.x_slider_btn,
+.x_dot {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Section padding consistency */
+section {
+  scroll-behavior: smooth;
+}
+
+/* Smooth scroll for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hero image zoom effect */
+.x_hero_slide {
+  animation: zoomInSlow 20s ease-in-out infinite alternate;
+}
+
+@keyframes zoomInSlow {
+  from {
+    background-size: 110%;
+  }
+  to {
+    background-size: 100%;
+  }
+}
+
+.x_hero_slide.x_active {
+  animation: zoomInSlow 20s ease-in-out infinite alternate;
+}
