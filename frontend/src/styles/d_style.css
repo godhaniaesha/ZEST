@@ -87,7 +87,7 @@ body {
 .d-page-body {
   padding: 28px 32px;
   flex: 1;
-  /* margin-top: var(--d-navbar-height); */
+  margin-top: var(--d-navbar-height);
   min-width: 0;
 }
 

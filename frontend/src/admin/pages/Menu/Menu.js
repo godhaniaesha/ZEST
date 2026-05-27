@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Row, Col, InputGroup, Form } from 'react-bootstrap';
+import { Row, Col, Form } from 'react-bootstrap';
 import { 
   MdAdd, MdEdit, MdDelete, MdSearch, MdFilterList, 
   MdLocalCafe, MdRestaurant, MdLocalBar, MdIcecream 
 } from 'react-icons/md';
+import DeleteModal from '../../components/DeleteModal';
+import FormModal from '../../components/FormModal';
 
 const MENU_ITEMS = [
-  { id: 1, name: 'Truffle Risotto',  category: 'Mains',    price: '₹680', status: 'Available', img: <MdRestaurant />, color: '#2ecc71' },
-  { id: 2, name: 'Mojito Classic',   category: 'Cocktails',price: '₹320', status: 'Available', img: <MdLocalBar />,  color: '#3498db' },
-  { id: 3, name: 'Beef Tenderloin',  category: 'Mains',    price: '₹1,200', status: 'Available', img: <MdRestaurant />, color: '#2ecc71' },
-  { id: 4, name: 'Tiramisu',         category: 'Desserts', price: '₹280', status: 'Sold Out', img: <MdIcecream />,   color: '#e74c3c' },
-  { id: 5, name: 'Espresso Martini', category: 'Cocktails',price: '₹380', status: 'Available', img: <MdLocalBar />,  color: '#3498db' },
-  { id: 6, name: 'Caesar Salad',     category: 'Starters', price: '₹320', status: 'Available', img: <MdRestaurant />, color: '#f39c12' },
+  { id: 1, name: 'Truffle Risotto',  category: 'Mains',    price: '680', status: 'Available', img: <MdRestaurant />, color: '#2ecc71' },
+  { id: 2, name: 'Mojito Classic',   category: 'Cocktails',price: '320', status: 'Available', img: <MdLocalBar />,  color: '#3498db' },
+  { id: 3, name: 'Beef Tenderloin',  category: 'Mains',    price: '1200', status: 'Available', img: <MdRestaurant />, color: '#2ecc71' },
+  { id: 4, name: 'Tiramisu',         category: 'Desserts', price: '280', status: 'Sold Out', img: <MdIcecream />,   color: '#e74c3c' },
+  { id: 5, name: 'Espresso Martini', category: 'Cocktails',price: '380', status: 'Available', img: <MdLocalBar />,  color: '#3498db' },
+  { id: 6, name: 'Caesar Salad',     category: 'Starters', price: '320', status: 'Available', img: <MdRestaurant />, color: '#f39c12' },
 ];
 
 const CATEGORIES = [
@@ -23,14 +25,55 @@ const CATEGORIES = [
 ];
 
 export default function Menu() {
+  const [items, setItems] = useState(MENU_ITEMS);
   const [active, setActive] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modal States
+  const [showForm, setShowForm] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
+  const [formData, setFormData] = useState({ name: '', category: 'Mains', price: '', status: 'Available' });
 
-  const filtered = MENU_ITEMS.filter(item => {
+  const filtered = items.filter(item => {
     const matchesCategory = active === 'All' || item.category === active;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const handleAdd = () => {
+    setCurrentItem(null);
+    setFormData({ name: '', category: 'Mains', price: '', status: 'Available' });
+    setShowForm(true);
+  };
+
+  const handleEdit = (item) => {
+    setCurrentItem(item);
+    setFormData({ name: item.name, category: item.category, price: item.price.replace('₹', '').replace(',', ''), status: item.status });
+    setShowForm(true);
+  };
+
+  const handleDeleteClick = (item) => {
+    setCurrentItem(item);
+    setShowDelete(true);
+  };
+
+  const handleSave = () => {
+    if (currentItem) {
+      // Edit
+      setItems(items.map(i => i.id === currentItem.id ? { ...i, ...formData, price: formData.price } : i));
+    } else {
+      // Add
+      const newId = items.length + 1;
+      setItems([...items, { id: newId, ...formData, price: formData.price, img: <MdRestaurant />, color: '#2ecc71' }]);
+    }
+    setShowForm(false);
+  };
+
+  const confirmDelete = () => {
+    setItems(items.filter(i => i.id !== currentItem.id));
+    setShowDelete(false);
+  };
 
   return (
     <>
@@ -41,7 +84,7 @@ export default function Menu() {
         </div>
         <div className="d-flex gap-2">
           <button className="d-btn-outline d-hide-mobile">Import Menu</button>
-          <button className="d-btn-gold"><MdAdd /> Add New Item</button>
+          <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> Add New Item</button>
         </div>
       </div>
 
@@ -94,28 +137,28 @@ export default function Menu() {
                   width: '60px',
                   height: '60px',
                   borderRadius: 'var(--d-radius-md)',
-                  background: `${item.color}15`,
-                  color: item.color,
+                  background: `${item.color || '#2ecc71'}15`,
+                  color: item.color || '#2ecc71',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '1.5rem',
                   flexShrink: 0
                 }}>
-                  {item.img}
+                  {item.img || <MdRestaurant />}
                 </div>
                 <div className="flex-grow-1">
                   <div className="d-flex justify-content-between align-items-start">
                     <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{item.name}</h5>
                     <div className="d-flex gap-1">
-                      <button className="d-navbar-icon-btn" style={{ width: '28px', height: '28px', fontSize: '1rem' }}><MdEdit /></button>
-                      <button className="d-navbar-icon-btn text-danger" style={{ width: '28px', height: '28px', fontSize: '1rem' }}><MdDelete /></button>
+                      <button className="d-navbar-icon-btn" onClick={() => handleEdit(item)} style={{ width: '28px', height: '28px', fontSize: '1rem' }}><MdEdit /></button>
+                      <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(item)} style={{ width: '28px', height: '28px', fontSize: '1rem' }}><MdDelete /></button>
                     </div>
                   </div>
                   <div className="d-page-sub mb-2">{item.category}</div>
                   <div className="d-flex justify-content-between align-items-center mt-3">
                     <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
-                      {item.price}
+                      ₹{item.price}
                     </span>
                     <span className={`d-chip ${item.status === 'Available' ? 'd-chip-green' : 'd-chip-red'}`}>
                       {item.status}
@@ -127,6 +170,82 @@ export default function Menu() {
           </Col>
         ))}
       </Row>
+
+      {/* Modals */}
+      <FormModal 
+        show={showForm} 
+        onHide={() => setShowForm(false)} 
+        title={currentItem ? "Edit Menu Item" : "Add New Menu Item"}
+        onSubmit={handleSave}
+      >
+        <Row className="g-3">
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Item Name</Form.Label>
+              <Form.Control 
+                type="text" 
+                placeholder="e.g. Truffle Risotto"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Category</Form.Label>
+              <Form.Select 
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+              >
+                {CATEGORIES.filter(c => c.name !== 'All').map(c => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Price (₹)</Form.Label>
+              <Form.Control 
+                type="number" 
+                placeholder="0.00"
+                value={formData.price}
+                onChange={(e) => setFormData({...formData, price: e.target.value})}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Status</Form.Label>
+              <div className="d-flex gap-3">
+                <Form.Check 
+                  type="radio" 
+                  label="Available" 
+                  name="status" 
+                  checked={formData.status === 'Available'}
+                  onChange={() => setFormData({...formData, status: 'Available'})}
+                />
+                <Form.Check 
+                  type="radio" 
+                  label="Sold Out" 
+                  name="status" 
+                  checked={formData.status === 'Sold Out'}
+                  onChange={() => setFormData({...formData, status: 'Sold Out'})}
+                />
+              </div>
+            </Form.Group>
+          </Col>
+        </Row>
+      </FormModal>
+
+      <DeleteModal 
+        show={showDelete} 
+        onHide={() => setShowDelete(false)} 
+        onConfirm={confirmDelete}
+        itemName={currentItem?.name}
+      />
     </>
   );
 }
