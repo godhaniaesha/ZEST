@@ -18,6 +18,7 @@ import MenuDetail from './pages/MenuDetail';
 
 import AppRoutes from './admin/Approutes';
 import Services from './pages/Services';
+import Reservation from './components/Reservation';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 
@@ -61,6 +62,9 @@ function App() {
         <Route path="/menu/:id" element={<UserLayout>  <MenuDetail /> </UserLayout>} />
 
         <Route path="/auth" element={<UserLayout>  <Auth /> </UserLayout>} />
+
+        <Route path="/reservations" element={ <Reservation /> } />
+
 
         {/* ADMIN ROUTES */}
         <Route path="/admin/*" element={<AppRoutes />} />
