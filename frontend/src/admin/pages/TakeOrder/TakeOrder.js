@@ -4,23 +4,24 @@ import {
   MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant, 
   MdAdd, MdRemove, MdDeleteOutline, MdSend, MdHistory
 } from 'react-icons/md';
+import { useNavigate } from 'react-router-dom';
 
 const CAFE_MENU = [
-  { id: 1, name: 'Cappuccino', price: 180, category: 'Coffee', icon: '☕' },
-  { id: 2, name: 'Iced Latte', price: 220, category: 'Coffee', icon: '🥤' },
-  { id: 3, name: 'Butter Croissant', price: 150, category: 'Snacks', icon: '🥐' },
-  { id: 4, name: 'Avocado Toast', price: 350, category: 'Snacks', icon: '🥑' },
-  { id: 5, name: 'Blueberry Muffin', price: 120, category: 'Snacks', icon: '🧁' },
-  { id: 6, name: 'Cold Brew', price: 200, category: 'Coffee', icon: '🧊' },
+  { id: 1, name: 'Cappuccino', price: 180, category: 'Coffee', image: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&q=80' },
+  { id: 2, name: 'Iced Latte', price: 220, category: 'Coffee', image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&q=80' },
+  { id: 3, name: 'Butter Croissant', price: 150, category: 'Snacks', image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&q=80' },
+  { id: 4, name: 'Avocado Toast', price: 350, category: 'Snacks', image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80' },
+  { id: 5, name: 'Blueberry Muffin', price: 120, category: 'Snacks', image: 'https://images.unsplash.com/photo-1558401391-7899b4bd5bbf?w=400&q=80' },
+  { id: 6, name: 'Cold Brew', price: 200, category: 'Coffee', image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80' },
 ];
 
 const BAR_MENU = [
-  { id: 101, name: 'Old Fashioned', price: 550, category: 'Cocktails', icon: '🥃' },
-  { id: 102, name: 'Classic Mojito', price: 450, category: 'Cocktails', icon: '🍸' },
-  { id: 103, name: 'Draft Beer (Pint)', price: 350, category: 'Beer', icon: '🍺' },
-  { id: 104, name: 'Red Wine (Glass)', price: 650, category: 'Wine', icon: '🍷' },
-  { id: 105, name: 'Signature Gin Tonic', price: 500, category: 'Cocktails', icon: '🍹' },
-  { id: 106, name: 'Whiskey Sour', price: 520, category: 'Cocktails', icon: '🍋' },
+  { id: 101, name: 'Old Fashioned', price: 550, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&q=80' },
+  { id: 102, name: 'Classic Mojito', price: 450, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1513558161293-cdaf7658991f?w=400&q=80' },
+  { id: 103, name: 'Draft Beer (Pint)', price: 350, category: 'Beer', image: 'https://images.unsplash.com/photo-1538944744996-504c68882381?w=400&q=80' },
+  { id: 104, name: 'Red Wine (Glass)', price: 650, category: 'Wine', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&q=80' },
+  { id: 105, name: 'Signature Gin Tonic', price: 500, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?w=400&q=80' },
+  { id: 106, name: 'Whiskey Sour', price: 520, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=400&q=80' },
 ];
 
 export default function TakeOrder() {
@@ -28,6 +29,7 @@ export default function TakeOrder() {
   const [selectedTable, setSelectedTable] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
+  const navigate = useNavigate();
 
   const menuItems = activeTab === 'cafe' ? CAFE_MENU : BAR_MENU;
   const filteredItems = menuItems.filter(item => 
@@ -61,107 +63,115 @@ export default function TakeOrder() {
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
   return (
-    <div className="d-take-order-page">
+    <div className="d-pos-container">
       <Row className="g-4">
         {/* Left Side: Menu Selection */}
         <Col xs={12} lg={8}>
-          <div className="d-page-header flex-column align-items-start gap-3 mb-4">
-            <div className="d-flex justify-content-between w-100 align-items-center">
-              <div>
-                <div className="d-page-heading">New Order 📝</div>
-                <div className="d-page-sub">Select items for the customer</div>
-              </div>
-              <div className="d-flex gap-2">
-                <button 
-                  className={`d-tab-btn ${activeTab === 'cafe' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('cafe')}
-                >
-                  <MdLocalCafe /> Café
-                </button>
-                <button 
-                  className={`d-tab-btn ${activeTab === 'bar' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('bar')}
-                >
-                  <MdLocalBar /> Bar
-                </button>
-              </div>
+          <div className="d-page-header">
+            <div>
+              <div className="d-page-heading">New Order 📝</div>
+              <div className="d-page-sub">Select items for the customer</div>
             </div>
+            <div className="d-flex gap-2">
+              <button className="d-btn-outline" onClick={() => navigate('/admin/orders')}>
+                <MdHistory className="me-2" /> Recent Orders
+              </button>
+            </div>
+          </div>
 
-            <div className="d-flex w-100 gap-3 flex-wrap">
-              <div className="d-search-bar flex-grow-1">
-                <MdSearch />
+          <div className="d-pos-category-bar">
+            {[
+              { id: 'cafe', icon: <MdLocalCafe />, label: 'Café Menu' },
+              { id: 'bar', icon: <MdLocalBar />, label: 'Bar Menu' }
+            ].map(tab => (
+              <button 
+                key={tab.id}
+                className={`d-pos-cat-btn ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="row g-3 mb-4">
+            <div className="col-md-8">
+              <div className="d-pos-search-wrapper">
+                <MdSearch className="text-muted" fontSize="1.2rem" />
                 <input 
                   type="text" 
-                  placeholder={`Search ${activeTab} menu...`} 
+                  placeholder={`Search in ${activeTab} menu...`} 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="d-table-select">
-                <MdTableRestaurant />
+            </div>
+            <div className="col-md-4">
+              <div className="d-pos-table-select">
+                <MdTableRestaurant className="text-gold" fontSize="1.2rem" />
                 <select 
                   value={selectedTable} 
                   onChange={(e) => setSelectedTable(e.target.value)}
-                  className="d-select-input"
                 >
                   <option value="">Select Table</option>
                   {[1,2,3,4,5,6,7,8,9,10, 'Bar Counter'].map(t => (
-                    <option key={t} value={t}>Table {t}</option>
+                    <option key={t} value={t}>{typeof t === 'number' ? `Table ${t}` : t}</option>
                   ))}
                 </select>
               </div>
             </div>
           </div>
 
-          <Row className="g-3">
+          <div className="d-pos-menu-grid">
             {filteredItems.map((item) => (
-              <Col key={item.id} xs={6} sm={4} xl={3}>
-                <div className="d-menu-card" onClick={() => addToCart(item)}>
-                  <div className="d-menu-icon">{item.icon}</div>
-                  <div className="d-menu-info">
-                    <div className="d-menu-name">{item.name}</div>
-                    <div className="d-menu-price">₹{item.price}</div>
-                  </div>
-                  <button className="d-add-btn"><MdAdd /></button>
+              <div key={item.id} className="d-pos-card" onClick={() => addToCart(item)}>
+                <div className="d-pos-card-img-wrapper">
+                  <img src={item.image} alt={item.name} className="d-pos-card-img" />
                 </div>
-              </Col>
+                <div className="d-pos-card-name">{item.name}</div>
+                <div className="d-pos-card-price">₹{item.price}</div>
+                <button className="d-pos-add-btn"><MdAdd /></button>
+              </div>
             ))}
-          </Row>
+          </div>
         </Col>
 
         {/* Right Side: Order Summary / Cart */}
         <Col xs={12} lg={4}>
-          <div className="d-card d-order-summary h-100 d-flex flex-column">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <div className="d-section-title mb-0">Order Summary</div>
-              {selectedTable && (
-                <Badge bg="warning" text="dark" style={{ fontSize: '0.75rem' }}>
-                  Table {selectedTable}
-                </Badge>
-              )}
+          <div className="d-pos-cart">
+            <div className="d-pos-cart-header">
+              <div className="d-section-title d-flex justify-content-between align-items-center mb-0">
+                Order Summary
+                {selectedTable && (
+                  <span className="d-chip d-chip-gold" style={{ fontSize: '0.7rem' }}>
+                    {typeof selectedTable === 'number' ? `TABLE ${selectedTable}` : selectedTable.toUpperCase()}
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="d-cart-items flex-grow-1">
+            <div className="d-pos-cart-items">
               {cart.length === 0 ? (
-                <div className="text-center mt-5" style={{ color: 'var(--d-text-muted)' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🛒</div>
-                  <p>Your cart is empty</p>
+                <div className="text-center mt-5" style={{ color: 'var(--d-text-muted)', opacity: 0.5 }}>
+                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛒</div>
+                  <p style={{ fontWeight: 600 }}>Your cart is empty</p>
+                  <small>Select items from the menu</small>
                 </div>
               ) : (
                 cart.map((item) => (
-                  <div key={item.id} className="d-cart-item">
-                    <div className="d-item-details">
-                      <div className="d-item-name">{item.name}</div>
-                      <div className="d-item-price">₹{item.price}</div>
+                  <div key={item.id} className="d-pos-cart-item">
+                    <div className="d-pos-item-info">
+                      <div className="d-pos-item-name">{item.name}</div>
+                      <div className="d-pos-item-price">₹{item.price}</div>
                     </div>
-                    <div className="d-item-actions">
-                      <div className="d-qty-controls">
-                        <button onClick={() => updateQty(item.id, -1)}><MdRemove /></button>
-                        <span>{item.qty}</span>
-                        <button onClick={() => updateQty(item.id, 1)}><MdAdd /></button>
+                    <div className="d-flex align-items-center gap-3">
+                      <div className="d-pos-qty-controls">
+                        <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1); }}><MdRemove /></button>
+                        <span className="d-pos-qty-val">{item.qty}</span>
+                        <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1); }}><MdAdd /></button>
                       </div>
-                      <button className="d-delete-btn" onClick={() => removeFromCart(item.id)}>
-                        <MdDeleteOutline />
+                      <button className="d-icon-btn text-danger" style={{ background: 'none' }} onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }}>
+                        <MdDeleteOutline fontSize="1.3rem" />
                       </button>
                     </div>
                   </div>
@@ -169,175 +179,37 @@ export default function TakeOrder() {
               )}
             </div>
 
-            <div className="d-order-footer mt-auto pt-4 border-top">
-              <div className="d-flex justify-content-between mb-2">
-                <span style={{ color: 'var(--d-text-muted)' }}>Subtotal</span>
-                <span>₹{cartTotal}</span>
+            <div className="d-pos-cart-footer">
+              <div className="d-pos-total-row">
+                <span className="d-pos-total-label">Subtotal</span>
+                <span className="fw-bold">₹{cartTotal}</span>
               </div>
-              <div className="d-flex justify-content-between mb-4">
-                <strong style={{ fontSize: '1.2rem' }}>Total</strong>
-                <strong style={{ fontSize: '1.2rem', color: 'var(--d-gold)' }}>₹{cartTotal}</strong>
+              <div className="d-pos-total-row mb-4">
+                <span className="d-pos-total-label" style={{ fontSize: '1.1rem', color: 'var(--d-primary)' }}>Total Amount</span>
+                <span className="d-pos-total-val">₹{cartTotal}</span>
               </div>
               
               <div className="d-flex gap-2">
-                <button className="d-btn-outline flex-grow-1" style={{ justifyContent: 'center' }}>
-                  <MdHistory className="me-1" /> Hold
+                <button className="d-btn-outline flex-grow-1" style={{ height: '52px', borderRadius: '12px' }}>
+                  Hold
                 </button>
                 <button 
-                  className="d-btn-gold flex-grow-2 w-100" 
-                  style={{ justifyContent: 'center' }}
+                  className="d-btn-gold flex-grow-1" 
+                  style={{ height: '52px', borderRadius: '12px', fontWeight: 800 }}
                   disabled={cart.length === 0 || !selectedTable}
                 >
-                  <MdSend className="me-2" /> Send to Kitchen
+                  <MdSend className="me-2" fontSize="1.2rem" /> SEND TO KITCHEN
                 </button>
               </div>
               {!selectedTable && cart.length > 0 && (
-                <div className="text-danger mt-2 text-center" style={{ fontSize: '0.75rem' }}>
-                  Please select a table to proceed
+                <div className="text-danger mt-3 text-center fw-bold" style={{ fontSize: '0.8rem' }}>
+                  <MdTableRestaurant className="me-1" /> Please select a table to proceed
                 </div>
               )}
             </div>
           </div>
         </Col>
       </Row>
-
-      <style jsx>{`
-        .d-take-order-page {
-          padding-bottom: 2rem;
-        }
-        .d-tab-btn {
-          background: var(--d-bg);
-          border: 1px solid var(--d-border);
-          color: var(--d-text-muted);
-          padding: 8px 16px;
-          border-radius: var(--d-radius-md);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-weight: 600;
-          transition: all 0.3s ease;
-        }
-        .d-tab-btn.active {
-          background: var(--d-gold);
-          color: white;
-          border-color: var(--d-gold);
-        }
-        .d-table-select {
-          background: var(--d-bg);
-          border: 1px solid var(--d-border);
-          padding: 0 12px;
-          border-radius: var(--d-radius-md);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: var(--d-text-muted);
-        }
-        .d-select-input {
-          background: none;
-          border: none;
-          padding: 10px 0;
-          outline: none;
-          color: var(--d-text);
-          font-weight: 500;
-          font-size: 0.9rem;
-        }
-        .d-menu-card {
-          background: white;
-          border: 1px solid var(--d-border);
-          border-radius: var(--d-radius-lg);
-          padding: 20px 15px;
-          text-align: center;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          position: relative;
-        }
-        .d-menu-card:hover {
-          border-color: var(--d-gold);
-          transform: translateY(-3px);
-          box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-        .d-menu-icon {
-          font-size: 2.5rem;
-          margin-bottom: 12px;
-        }
-        .d-menu-name {
-          font-weight: 700;
-          font-size: 0.9rem;
-          margin-bottom: 4px;
-        }
-        .d-menu-price {
-          color: var(--d-gold);
-          font-weight: 800;
-        }
-        .d-add-btn {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          background: var(--d-bg);
-          border: none;
-          border-radius: 50%;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--d-gold);
-          font-weight: bold;
-        }
-        .d-cart-items {
-          overflow-y: auto;
-          max-height: calc(100vh - 450px);
-          padding-right: 5px;
-        }
-        .d-cart-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 12px 0;
-          border-bottom: 1px solid var(--d-border);
-        }
-        .d-item-name {
-          font-weight: 600;
-          font-size: 0.9rem;
-        }
-        .d-item-price {
-          font-size: 0.8rem;
-          color: var(--d-text-muted);
-        }
-        .d-item-actions {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .d-qty-controls {
-          display: flex;
-          align-items: center;
-          background: var(--d-bg);
-          border-radius: 20px;
-          padding: 2px 8px;
-          gap: 10px;
-        }
-        .d-qty-controls button {
-          background: none;
-          border: none;
-          color: var(--d-gold);
-          display: flex;
-          align-items: center;
-        }
-        .d-qty-controls span {
-          font-weight: 700;
-          min-width: 20px;
-          text-align: center;
-        }
-        .d-delete-btn {
-          background: none;
-          border: none;
-          color: #e74c3c;
-          font-size: 1.2rem;
-          display: flex;
-          align-items: center;
-        }
-      `}</style>
     </div>
   );
 }

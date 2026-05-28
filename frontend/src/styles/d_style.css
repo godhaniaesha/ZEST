@@ -1,4 +1,4 @@
-﻿/* =============================================
+/* =============================================
    ROOT COLOR VARIABLES â€” CafÃ© & Bar Admin
    ============================================= */
 :root {
@@ -904,6 +904,451 @@ body {
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
+/* =============================================
+   KITCHEN DISPLAY SYSTEM (KDS) - REDESIGN
+   ============================================= */
+.d-kds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  padding: 10px 0;
+}
+
+.d-kot-card {
+  background: var(--d-white);
+  border-radius: 15px;
+  border: 1.5px solid var(--d-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: var(--d-transition);
+  height: 100%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.d-kot-card.delayed {
+  border: 2px solid var(--d-danger);
+  box-shadow: 0 8px 25px rgba(231, 76, 60, 0.15);
+}
+
+.d-kot-priority-bar {
+  height: 8px;
+  width: 100%;
+}
+
+.d-kot-priority-urgent { background: var(--d-danger); }
+.d-kot-priority-high   { background: #f39c12; }
+.d-kot-priority-medium { background: var(--d-gold); }
+.d-kot-priority-low    { background: var(--d-info); }
+
+.d-kot-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--d-border);
+}
+
+.d-kot-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.d-kot-table-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--d-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.d-kot-order-id {
+  font-size: 0.8rem;
+  color: var(--d-text-muted);
+  font-weight: 700;
+  margin-left: 28px;
+}
+
+.d-kot-body {
+  padding: 20px;
+  flex-grow: 1;
+  background: #fff;
+}
+
+.d-kot-item-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  transition: var(--d-transition);
+  border: 1px solid transparent;
+}
+
+.d-kot-item-box:hover {
+  background: #f1f3f5;
+}
+
+.d-kot-item-box.completed {
+  background: #e9ecef;
+  opacity: 0.6;
+}
+
+.d-kot-item-box.completed span {
+  text-decoration: line-through;
+  color: var(--d-text-muted);
+}
+
+.d-kot-footer {
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid var(--d-border);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.d-timer-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--d-accent-soft);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--d-primary);
+}
+
+.d-timer-badge.warning {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--d-danger);
+  animation: d-pulse-red 2s infinite;
+}
+
+@keyframes d-pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+.d-urgent-badge {
+  background: var(--d-danger);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.d-btn-bump {
+  background: #fff;
+  border: 1.5px solid var(--d-danger);
+  color: var(--d-danger);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  transition: var(--d-transition);
+}
+
+.d-btn-bump:hover {
+  background: var(--d-danger);
+  color: white;
+}
+
+.d-chip {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.d-chip-green { background: rgba(46, 204, 113, 0.15); color: #27ae60; }
+.d-chip-blue  { background: rgba(52, 152, 219, 0.15); color: #2980b9; }
+.d-chip-gold  { background: rgba(201, 168, 76, 0.15); color: var(--d-gold-dark); }
+
+/* =============================================
+   POS & ORDERING SYSTEM
+   ============================================= */
+.d-pos-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.d-pos-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.d-pos-card {
+  background: var(--d-white);
+  border: 1.5px solid var(--d-border);
+  border-radius: var(--d-radius-lg);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--d-transition);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.d-pos-card:hover {
+  border-color: var(--d-gold);
+  transform: translateY(-4px);
+  box-shadow: var(--d-shadow-md);
+}
+
+.d-pos-card-img-wrapper {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--d-radius-md);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.d-pos-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--d-transition);
+}
+
+.d-pos-card:hover .d-pos-card-img {
+  transform: scale(1.1);
+}
+
+.d-pos-card-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--d-primary);
+  line-height: 1.2;
+}
+
+.d-pos-card-price {
+  color: var(--d-gold-dark);
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.d-pos-add-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--d-bg);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--d-gold);
+  font-size: 1.2rem;
+  transition: var(--d-transition);
+}
+
+.d-pos-card:hover .d-pos-add-btn {
+  background: var(--d-gold);
+  color: white;
+}
+
+/* Cart Section */
+.d-pos-cart {
+  background: var(--d-white);
+  border-radius: var(--d-radius-lg);
+  border: 1.5px solid var(--d-border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: var(--d-shadow-sm);
+}
+
+.d-pos-cart-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--d-border);
+}
+
+.d-pos-cart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 20px;
+  max-height: calc(100vh - 480px);
+}
+
+.d-pos-cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--d-accent-soft);
+}
+
+.d-pos-cart-item:last-child {
+  border-bottom: none;
+}
+
+.d-pos-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.d-pos-item-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--d-primary);
+}
+
+.d-pos-item-price {
+  font-size: 0.8rem;
+  color: var(--d-text-muted);
+  font-weight: 600;
+}
+
+.d-pos-qty-controls {
+  display: flex;
+  align-items: center;
+  background: var(--d-bg);
+  padding: 4px 10px;
+  border-radius: 30px;
+  gap: 12px;
+}
+
+.d-pos-qty-btn {
+  background: none;
+  border: none;
+  color: var(--d-gold-dark);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.d-pos-qty-val {
+  font-weight: 800;
+  font-size: 0.9rem;
+  min-width: 18px;
+  text-align: center;
+}
+
+.d-pos-cart-footer {
+  padding: 20px;
+  background: #fcfcfc;
+  border-top: 1.5px solid var(--d-border);
+}
+
+.d-pos-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.d-pos-total-label {
+  color: var(--d-text-muted);
+  font-weight: 600;
+}
+
+.d-pos-total-val {
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: var(--d-primary);
+}
+
+/* Category & Controls */
+.d-pos-search-wrapper {
+  background: var(--d-white);
+  border: 1.5px solid var(--d-border);
+  border-radius: var(--d-radius-md);
+  padding: 0 15px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: var(--d-transition);
+}
+
+.d-pos-search-wrapper:focus-within {
+  border-color: var(--d-gold);
+  box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.1);
+}
+
+.d-pos-search-wrapper input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.d-pos-table-select {
+  height: 48px;
+  background: var(--d-white);
+  border: 1.5px solid var(--d-border);
+  border-radius: var(--d-radius-md);
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--d-primary);
+  font-weight: 700;
+}
+
+.d-pos-table-select select {
+  border: none;
+  outline: none;
+  background: none;
+  width: 100%;
+  cursor: pointer;
+}
+
+.d-pos-category-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.d-pos-cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1.5px solid var(--d-border);
+  background: var(--d-white);
+  color: var(--d-text-muted);
+  font-weight: 700;
+  transition: var(--d-transition);
+  cursor: pointer;
+}
+
+.d-pos-cat-btn:hover {
+  border-color: var(--d-gold);
+  color: var(--d-gold-dark);
+}
+
+.d-pos-cat-btn.active {
+  background: var(--d-primary);
+  border-color: var(--d-primary);
+  color: white;
+}
+
+/* =============================================
+   REPORTS & CHARTS
+   ============================================= */
+
 /* =========================
    MAIN CARD
 ========================= */
