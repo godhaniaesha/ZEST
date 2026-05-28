@@ -54,7 +54,7 @@ function App() {
         <Route path="/menu/:id" element={<UserLayout>  <MenuDetail /> </UserLayout>} />
         <Route path="/auth" element={<UserLayout>  <Auth /> </UserLayout>} />
 
-        <Route path="/reservations" element={ <Reservation /> } />
+        <Route path="/reservations" element={<UserLayout> <Reservation /> </UserLayout> } />
 
 
         {/* ADMIN ROUTES */}

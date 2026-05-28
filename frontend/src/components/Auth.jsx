@@ -248,7 +248,7 @@ export default function Auth() {
                 <div className="h_auth_input_wrap">
                   <input className="h_auth_input" type="password" placeholder="••••••••" value={signupForm.confirm} onChange={e => setSignupForm({...signupForm, confirm: e.target.value})} />
                 </div>
-              </div> 
+              </div>
               <button type="submit" className="h_auth_submit_btn" disabled={loading}>
                 {loading ? "CREATING..." : "INITIATE MEMBERSHIP"}
               </button>

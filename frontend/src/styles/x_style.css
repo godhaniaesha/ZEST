@@ -213,7 +213,8 @@ body {
 
 /* Reservation Button */
 .x_reservation-btn {
-  background-color: transparent;
+  text-decoration: none;
+  background: #0e1f1c;
   color: var(--d-gold);
   border: 2px solid var(--d-gold);
   padding: 8px 20px;
