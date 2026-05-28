@@ -1,11 +1,25 @@
-/* Home Page Custom Styles */
+/* Refreshed Home Page */
 
-/* Smooth page transitions */
 .x_home_page {
-  animation: fadeIn 0.5s ease-in;
+  --x-ink: #102521;
+  --x-leaf: #173c34;
+  --x-mint: #eef6f0;
+  --x-paper: #ffffff;
+  --x-smoke: #f6f3ee;
+  --x-gold: #c9a84c;
+  --x-coral: #b85b45;
+  --x-muted: #68736f;
+  --x-line: rgba(16, 37, 33, 0.12);
+  --x-shadow: 0 18px 50px rgba(16, 37, 33, 0.14);
+  background:
+    radial-gradient(circle at top left, rgba(184, 91, 69, 0.09), transparent 34rem),
+    linear-gradient(180deg, #ffffff 0%, var(--x-smoke) 100%);
+  color: var(--x-ink);
+  overflow-x: hidden;
+  animation: xHomeFade 0.55s ease;
 }
 
-@keyframes fadeIn {
+@keyframes xHomeFade {
   from {
     opacity: 0;
   }
@@ -14,15 +28,43 @@
   }
 }
 
-/* Hero slide animation improvements */
-.x_hero_content {
-  animation: slideInUp 0.8s ease-out;
+.x_home_page .x_hero_slider {
+  height: min(92vh, 820px);
+  min-height: 640px;
+  background: var(--x-ink);
+  isolation: isolate;
 }
 
-@keyframes slideInUp {
+.x_home_page .x_hero_slide {
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.03);
+  transition: opacity 0.9s ease, transform 5s ease;
+}
+
+.x_home_page .x_hero_slide.x_active {
+  transform: scale(1);
+}
+
+.x_home_page .x_hero_overlay {
+  background:
+    linear-gradient(90deg, rgba(10, 25, 22, 0.88) 0%, rgba(10, 25, 22, 0.66) 44%, rgba(10, 25, 22, 0.24) 100%),
+    linear-gradient(0deg, rgba(10, 25, 22, 0.46), transparent 45%);
+}
+
+.x_home_page .x_hero_content {
+  width: min(1180px, calc(100% - 48px));
+  max-width: none;
+  margin: 0 auto;
+  padding: 0;
+  text-align: left;
+  animation: xHeroRise 0.8s ease both;
+}
+
+@keyframes xHeroRise {
   from {
     opacity: 0;
-    transform: translateY(60px);
+    transform: translateY(34px);
   }
   to {
     opacity: 1;
@@ -30,39 +72,462 @@
   }
 }
 
-/* Smooth transitions for all interactive elements */
-.x_featured_card,
-.x_testimonial_card,
-.x_cta_btn,
-.x_slider_btn,
-.x_dot {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.x_home_page .x_hero_subtitle,
+.x_home_page .x_partners_eyebrow,
+.x_home_page .x_aboutus_eyebrow,
+.x_home_page .x_chef_eyebrow,
+.x_home_page .x_cocktail_eyebrow,
+.x_home_page .x_whiskey_eyebrow {
+  color: var(--x-gold);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 3px;
 }
 
-/* Section padding consistency */
-section {
-  scroll-behavior: smooth;
+.x_home_page .x_hero_title {
+  max-width: 760px;
+  margin: 16px 0;
+  color: #fffaf0;
+  font-size: clamp(42px, 7vw, 86px);
+  line-height: 1.02;
+  letter-spacing: 0;
 }
 
-/* Smooth scroll for anchor links */
-html {
-  scroll-behavior: smooth;
+.x_home_page .x_hero_description {
+  max-width: 560px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 18px;
+  line-height: 1.8;
 }
 
-/* Hero image zoom effect */
-.x_hero_slide {
-  animation: zoomInSlow 20s ease-in-out infinite alternate;
+.x_home_page .x_hero_btn,
+.x_home_page .x_cta_btn {
+  border-radius: 8px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 1px;
 }
 
-@keyframes zoomInSlow {
-  from {
-    background-size: 110%;
+.x_home_page .x_hero_btn {
+  background: var(--x-gold);
+  border-color: var(--x-gold);
+  color: var(--x-ink);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
+}
+
+.x_home_page .x_hero_btn:hover,
+.x_home_page .x_cta_primary:hover {
+  background: #fffaf0;
+  border-color: #fffaf0;
+  color: var(--x-ink);
+}
+
+.x_home_page .x_slider_btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.x_home_page .x_slider_btn:hover {
+  background: var(--x-gold);
+  border-color: var(--x-gold);
+  color: var(--x-ink);
+}
+
+.x_home_page .x_slider_dots {
+  display: flex;
+  bottom: 34px;
+}
+
+.x_home_page .x_dot {
+  width: 28px;
+  height: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.x_home_page .x_dot.x_active {
+  background: var(--x-gold);
+  transform: none;
+}
+
+.x_home_page .x_stats_section {
+  background: var(--x-paper);
+  padding: 0 24px;
+}
+
+.x_home_page .x_stats_container {
+  width: min(1180px, 100%);
+  transform: translateY(-50%);
+  position: relative;
+  z-index: 5;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--x-shadow);
+}
+
+.x_home_page .x_stat_item {
+  background: var(--x-paper);
+  border-right: 1px solid var(--x-line);
+  padding: 20px 20px;
+}
+
+.x_home_page .x_stat_item:last-child {
+  border-right: 0;
+}
+
+.x_home_page .x_stat_number {
+  color: var(--x-leaf);
+  font-size: clamp(34px, 4vw, 52px);
+}
+
+.x_home_page .x_stat_label {
+  color: var(--x-muted);
+  font-weight: 700;
+}
+
+.x_home_page .x_featured_section,
+.x_home_page .x_testimonials_section,
+.x_home_page .x_ambiance_section,
+.x_home_page .x_aboutus_section,
+.x_home_page .x_chef_section,
+.x_home_page .x_cocktail_section,
+.x_home_page .x_whiskey_section,
+.x_home_page .x_partners_section {
+  padding: 92px 24px;
+}
+
+.x_home_page .x_featured_section,
+.x_home_page .x_testimonials_section,
+.x_home_page .x_chef_section,
+.x_home_page .x_whiskey_section {
+  background: var(--x-smoke);
+}
+
+.x_home_page .x_ambiance_section,
+.x_home_page .x_aboutus_section,
+.x_home_page .x_cocktail_section,
+.x_home_page .x_partners_section {
+  background: var(--x-paper);
+}
+
+.x_home_page .x_featured_header,
+.x_home_page .x_testimonials_header,
+.x_home_page .x_chef_header,
+.x_home_page .x_partners_header {
+  margin-bottom: 44px;
+}
+
+.x_home_page .x_featured_header h2,
+.x_home_page .x_testimonials_header h2,
+.x_home_page .x_ambiance_content h2,
+.x_home_page .x_cta_section h2,
+.x_home_page .x_aboutus_section h2,
+.x_home_page .x_chef_header h2,
+.x_home_page .x_cocktail_section h2,
+.x_home_page .x_whiskey_header h2,
+.x_home_page .x_partners_header h2 {
+  color: var(--x-leaf);
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.x_home_page .x_featured_grid,
+.x_home_page .x_testimonials_grid,
+.x_home_page .x_chef_grid,
+.x_home_page .x_partners_grid,
+.x_home_page .x_ambiance_row,
+.x_home_page .x_aboutus_container,
+.x_home_page .x_cocktail_container,
+.x_home_page .x_whiskey_content {
+  width: min(1180px, 100%);
+  max-width: 1180px;
+}
+
+.x_home_page .x_featured_grid,
+.x_home_page .x_testimonials_grid,
+.x_home_page .x_chef_grid {
+  gap: 24px;
+}
+
+.x_home_page .x_featured_card,
+.x_home_page .x_testimonial_card,
+.x_home_page .x_partner_logo {
+  border-radius: 8px;
+  border: 1px solid var(--x-line);
+  box-shadow: none;
+}
+
+.x_home_page .x_featured_card {
+  text-align: left;
+  padding: 34px;
+  min-height: 280px;
+}
+
+.x_home_page .x_featured_card:hover,
+.x_home_page .x_testimonial_card:hover {
+  border-color: rgba(201, 168, 76, 0.7);
+  box-shadow: 0 18px 36px rgba(16, 37, 33, 0.12);
+}
+
+.x_home_page .x_featured_icon {
+  margin: 0 0 22px;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  background: var(--x-mint);
+  color: var(--x-leaf);
+}
+
+.x_home_page .x_featured_badge {
+  border-radius: 999px;
+  background: rgba(184, 91, 69, 0.1);
+  color: var(--x-coral);
+}
+
+.x_home_page .x_cta_section {
+  background:
+    linear-gradient(90deg, rgba(16, 37, 33, 0.92), rgba(16, 37, 33, 0.76)),
+    url("https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1600&q=80") center/cover;
+  padding: 92px 24px;
+}
+
+.x_home_page .x_cta_content {
+  max-width: 760px;
+}
+
+.x_home_page .x_cta_section h2 {
+  color: #fffaf0;
+}
+
+.x_home_page .x_cta_primary {
+  background: var(--x-gold);
+  border-color: var(--x-gold);
+  color: var(--x-ink);
+}
+
+.x_home_page .x_cta_secondary {
+  color: #fffaf0;
+  border-color: rgba(255, 255, 255, 0.72);
+}
+
+.x_home_page .x_cta_secondary:hover {
+  background: #fffaf0;
+  border-color: #fffaf0;
+  color: var(--x-ink);
+}
+
+.x_home_page .x_testimonial_card {
+  background: var(--x-paper);
+  padding: 32px;
+}
+
+.x_home_page .x_testimonial_quote {
+  color: var(--x-ink);
+}
+
+.x_home_page .x_ambiance_row,
+.x_home_page .x_aboutus_container,
+.x_home_page .x_cocktail_container {
+  gap: 56px;
+}
+
+.x_home_page .x_ambiance_images,
+.x_home_page .x_aboutus_img,
+.x_home_page .x_chef_card,
+.x_home_page .x_chef_card_image,
+.x_home_page .x_cocktail_img,
+.x_home_page .x_whiskey_gallery_item {
+  border-radius: 8px;
+}
+
+.x_home_page .x_ambiance_images {
+  min-height: 460px;
+  box-shadow: var(--x-shadow);
+}
+
+.x_home_page .x_ambiance_list li {
+  background: var(--x-mint);
+  border: 1px solid rgba(23, 60, 52, 0.08);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+}
+
+.x_home_page .x_aboutus_contact {
+  border-top-color: var(--x-line);
+}
+
+.x_home_page .x_aboutus_label {
+  color: var(--x-coral);
+  font-weight: 800;
+}
+
+.x_home_page .x_chef_card {
+  box-shadow: var(--x-shadow);
+}
+
+.x_home_page .x_chef_badge {
+  border-radius: 999px;
+}
+
+.x_home_page .x_cocktail_feature {
+  align-items: flex-start;
+  border-left: 3px solid var(--x-gold);
+  padding: 4px 0 4px 18px;
+}
+
+.x_home_page .x_feature_icon {
+  color: var(--x-coral);
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.x_home_page .x_whiskey_content {
+  margin: 0 auto 32px;
+}
+
+.x_home_page .x_whiskey_read_more {
+  color: var(--x-coral);
+  border-color: var(--x-coral);
+}
+
+.x_home_page .x_whiskey_gallery {
+  width: min(1180px, 100%);
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.x_home_page .x_partner_logo {
+  background: #fffaf0;
+  min-height: 128px;
+}
+
+.x_home_page .x_partner_img {
+  max-height: 72px;
+  opacity: 0.72;
+  filter: grayscale(1);
+  transition: opacity 0.25s ease, filter 0.25s ease, transform 0.25s ease;
+}
+
+.x_home_page .x_partner_logo:hover .x_partner_img {
+  opacity: 1;
+  filter: grayscale(0);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 1024px) {
+  .x_home_page .x_hero_slider {
+    min-height: 560px;
   }
-  to {
-    background-size: 100%;
+
+  .x_home_page .x_featured_grid,
+  .x_home_page .x_testimonials_grid,
+  .x_home_page .x_chef_grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .x_home_page .x_stats_container {
+    transform: translateY(-34%);
   }
 }
 
-.x_hero_slide.x_active {
-  animation: zoomInSlow 20s ease-in-out infinite alternate;
+@media (max-width: 768px) {
+  .x_home_page .x_hero_slider {
+    height: 78vh;
+    min-height: 560px;
+  }
+
+  .x_home_page .x_hero_content {
+    width: min(100% - 36px, 680px);
+  }
+
+  .x_home_page .x_slider_btn {
+    display: none;
+  }
+
+  .x_home_page .x_stats_container,
+  .x_home_page .x_featured_grid,
+  .x_home_page .x_testimonials_grid,
+  .x_home_page .x_chef_grid,
+  .x_home_page .x_ambiance_row,
+  .x_home_page .x_aboutus_container,
+  .x_home_page .x_cocktail_container,
+  .x_home_page .x_whiskey_content {
+    grid-template-columns: 1fr;
+  }
+
+  .x_home_page .x_stats_container {
+    transform: none;
+    margin: 24px auto 0;
+  }
+
+  .x_home_page .x_stat_item {
+    border-right: 0;
+    border-bottom: 1px solid var(--x-line);
+  }
+
+  .x_home_page .x_stat_item:last-child {
+    border-bottom: 0;
+  }
+
+  .x_home_page .x_featured_section,
+  .x_home_page .x_testimonials_section,
+  .x_home_page .x_ambiance_section,
+  .x_home_page .x_aboutus_section,
+  .x_home_page .x_chef_section,
+  .x_home_page .x_cocktail_section,
+  .x_home_page .x_whiskey_section,
+  .x_home_page .x_partners_section,
+  .x_home_page .x_cta_section {
+    padding: 64px 18px;
+  }
+
+  .x_home_page .x_ambiance_images {
+    min-height: 340px;
+  }
+
+  .x_home_page .x_cocktail_img_stack {
+    height: 360px;
+  }
+}
+
+@media (max-width: 480px) {
+  .x_home_page .x_hero_slider {
+    min-height: 520px;
+  }
+
+  .x_home_page .x_hero_description {
+    font-size: 15px;
+  }
+
+  .x_home_page .x_hero_btn,
+  .x_home_page .x_cta_btn {
+    width: 100%;
+  }
+
+  .x_home_page .x_cta_buttons {
+    gap: 12px;
+  }
+
+  .x_home_page .x_featured_card,
+  .x_home_page .x_testimonial_card {
+    padding: 26px;
+  }
+
+  .x_home_page .x_aboutus_images {
+    height: 280px;
+  }
+
+  .x_home_page .x_whiskey_gallery {
+    gap: 12px;
+  }
 }

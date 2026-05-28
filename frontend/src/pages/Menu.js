@@ -1,25 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, Heart } from 'lucide-react';
+import { Search, Star } from 'lucide-react';
+import { FaArrowLeftLong, FaArrowRightLong } from 'react-icons/fa6';
 import '../styles/menu_style.css';
-import { FaArrowLeftLong, FaArrowRightLong } from "react-icons/fa6";
 
 const Menu = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('featured');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
-
-  const menu_filters = [
-    "All Items",
-    "Coffee & Tea",
-    "Cocktails",
-    "Mocktails",
-    "Breakfast",
-    "Fast Food",
-    "Main Course",
-    "Desserts",
-  ];
 
   const menuItems = [
     {
@@ -55,7 +46,7 @@ const Menu = () => {
       rating: 4.7,
       reviews: 32,
       description: 'Bold espresso blended with vodka, coffee liqueur, and a touch of cream.',
-      image: 'https://images.unsplash.com/photo-1555939594-58d7cb561404?auto=format&fit=crop&w=500&q=60',
+      image: 'https://i.pinimg.com/236x/f0/32/fd/f032fd4462fc1b22415b3878f2ec1009.jpg',
       features: ['Fresh espresso', 'Premium vodka', 'Silky texture', 'Coffee liqueur'],
     },
     {
@@ -179,24 +170,51 @@ const Menu = () => {
     { id: 'salads', label: 'Salads' },
   ];
 
-  // Filter items
-  const filteredItems =
-    activeCategory === 'all'
-      ? menuItems
-      : menuItems.filter((item) => item.category === activeCategory);
+  const categoryLabelMap = categories.reduce((labels, category) => {
+    labels[category.id] = category.label;
+    return labels;
+  }, {});
 
-  // Pagination
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const featuredItem = menuItems.find((item) => item.id === 8) || menuItems[0];
+
+  const filteredItems = menuItems
+    .filter((item) => activeCategory === 'all' || item.category === activeCategory)
+    .filter((item) => {
+      const query = searchQuery.trim().toLowerCase();
+      if (!query) return true;
+
+      return (
+        item.name.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        (categoryLabelMap[item.category] || item.category).toLowerCase().includes(query)
+      );
+    })
+    .sort((firstItem, secondItem) => {
+      if (sortBy === 'price-low') return firstItem.price - secondItem.price;
+      if (sortBy === 'price-high') return secondItem.price - firstItem.price;
+      if (sortBy === 'rating') return secondItem.rating - firstItem.rating;
+      return firstItem.id - secondItem.id;
+    });
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-  // Handle category change
   const handleCategoryChange = (categoryId) => {
     setActiveCategory(categoryId);
     setCurrentPage(1);
   };
 
-  // Handle page change
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (event) => {
+    setSortBy(event.target.value);
+    setCurrentPage(1);
+  };
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -204,97 +222,201 @@ const Menu = () => {
     }
   };
 
-  // Handle card click
   const handleCardClick = (itemId) => {
     navigate(`/menu/${itemId}`);
+  };
+
+  const handleCardKeyDown = (event, itemId) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleCardClick(itemId);
+    }
+  };
+
+  const resetFilters = () => {
+    setActiveCategory('all');
+    setSearchQuery('');
+    setSortBy('featured');
+    setCurrentPage(1);
   };
 
   return (
     <main className="menu_page">
       <div className="menu_container">
-        {/* Header */}
         <section className="menu_header">
-          <h1>Our Menu</h1>
-          <p>Discover our carefully curated selection of cafe favorites, gourmet dishes, and signature cocktails.</p>
+          <div className="menu_header_copy">
+            <span className="menu_eyebrow">Zest kitchen selection</span>
+            <h1>Explore flavors made for the table.</h1>
+            <p>
+              Browse chef-loved plates, cafe classics, chilled drinks, and desserts with quick filters for every mood.
+            </p>
+            <div className="menu_header_stats" aria-label="Menu highlights">
+              <span>{menuItems.length} dishes</span>
+              <span>{categories.length - 1} categories</span>
+              <span>From {'\u20B9'}65</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="menu_spotlight"
+            onClick={() => handleCardClick(featuredItem.id)}
+            aria-label={`View featured dish ${featuredItem.name}`}
+          >
+            <img src={featuredItem.image} alt={featuredItem.name} />
+            <span className="menu_spotlight_badge">Chef pick</span>
+            <span className="menu_spotlight_content">
+              <span>{categoryLabelMap[featuredItem.category]}</span>
+              <strong>{featuredItem.name}</strong>
+              <small>
+                {'\u20B9'}{featuredItem.price} · {featuredItem.rating} rating
+              </small>
+            </span>
+          </button>
         </section>
 
-        {/* Filters */}
-        <section className="menu_filters">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              className={`menu_filter_btn ${activeCategory === category.id ? 'active' : ''}`}
-              onClick={() => handleCategoryChange(category.id)}
-            >
-              {category.label}
-            </button>
-          ))}
+        <section className="menu_control_panel">
+          <div className="menu_tools" aria-label="Menu search and sorting">
+            <label className="menu_search">
+              <Search size={18} />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Search dishes, drinks, desserts..."
+                aria-label="Search menu items"
+              />
+            </label>
+
+            <label className="menu_sort">
+              <span>Sort</span>
+              <select value={sortBy} onChange={handleSortChange} aria-label="Sort menu items">
+                <option value="featured">Featured</option>
+                <option value="rating">Top rated</option>
+                <option value="price-low">Price low to high</option>
+                <option value="price-high">Price high to low</option>
+              </select>
+            </label>
+          </div>
+
+          <section className="menu_filters" aria-label="Menu categories">
+            {categories.map((category) => (
+              <button
+                type="button"
+                key={category.id}
+                className={`menu_filter_btn ${activeCategory === category.id ? 'active' : ''}`}
+                onClick={() => handleCategoryChange(category.id)}
+                aria-pressed={activeCategory === category.id}
+              >
+                {category.label}
+              </button>
+            ))}
+          </section>
         </section>
 
-        {/* Menu Grid */}
-        <section className="menu_grid">
-          {paginatedItems.map((item) => (
-            <div
-              key={item.id}
-              className="menu_card"
-              onClick={() => handleCardClick(item.id)}
-            >
-              <div className="menu_card_image">
-                <img src={item.image} alt={item.name} />
-                <div className="menu_card_badge">New</div>
-              </div>
-              <div className="menu_card_content">
-                <span className="menu_card_category">{item.category}</span>
-                <h3 className="menu_card_title">{item.name}</h3>
-                <p className="menu_card_description">{item.description}</p>
-                <div className="menu_card_footer">
-                  <div className="menu_card_price">₹{item.price}</div>
-                  <div className="menu_card_rating">
-                    <Star size={16} fill="currentColor" />
-                    <span>
-                      {item.rating} ({item.reviews})
-                    </span>
+        <div className="menu_results_bar">
+          <span>
+            Showing {paginatedItems.length} of {filteredItems.length} items
+          </span>
+          <strong>{categoryLabelMap[activeCategory]}</strong>
+        </div>
+
+        {paginatedItems.length > 0 ? (
+          <section className="menu_grid">
+            {paginatedItems.map((item) => (
+              <div
+                key={item.id}
+                className="menu_card"
+                onClick={() => handleCardClick(item.id)}
+                onKeyDown={(event) => handleCardKeyDown(event, item.id)}
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${item.name}`}
+              >
+                <div className="menu_card_image">
+                  <img src={item.image} alt={item.name} />
+                  <div className="menu_card_badge">
+                    {categoryLabelMap[item.category] || item.category}
+                  </div>
+                </div>
+                <div className="menu_card_content">
+                  <span className="menu_card_category">
+                    {categoryLabelMap[item.category] || item.category}
+                  </span>
+                  <h3 className="menu_card_title">{item.name}</h3>
+                  <p className="menu_card_description">{item.description}</p>
+                  <div className="menu_card_footer">
+                    <div className="menu_card_prices">
+                      <span className="menu_card_price">{'\u20B9'}{item.price}</span>
+                      {item.originalPrice && (
+                        <span className="menu_card_original_price">
+                          {'\u20B9'}{item.originalPrice}
+                        </span>
+                      )}
+                    </div>
+                    <div className="menu_card_rating">
+                      <Star size={16} fill="currentColor" />
+                      <span>
+                        {item.rating} ({item.reviews})
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </section>
+            ))}
+          </section>
+        ) : (
+          <section className="menu_empty">
+            <h2>No menu items found</h2>
+            <p>Try another category or search term.</p>
+            <button type="button" onClick={resetFilters}>
+              Reset filters
+            </button>
+          </section>
+        )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
+        {filteredItems.length > 0 && totalPages > 1 && (
           <div className="menu_pagination">
             <button
+              type="button"
               className="pagination_btn"
               onClick={() => handlePageChange(1)}
               disabled={currentPage === 1}
+              aria-label="Go to first page"
             >
               <FaArrowLeftLong />
             </button>
 
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
+                type="button"
                 key={page}
                 className={`pagination_btn ${currentPage === page ? 'active' : ''}`}
                 onClick={() => handlePageChange(page)}
+                aria-label={`Go to page ${page}`}
+                aria-current={currentPage === page ? 'page' : undefined}
               >
                 {page}
               </button>
             ))}
 
             <button
+              type="button"
               className="pagination_btn"
               onClick={() => handlePageChange(totalPages)}
               disabled={currentPage === totalPages}
+              aria-label="Go to last page"
             >
               <FaArrowRightLong />
             </button>
-
           </div>
         )}
-        <span className="pagination_info">
-          Page {currentPage} of {totalPages}
-        </span>
+
+        {filteredItems.length > 0 && (
+          <span className="pagination_info">
+            Page {currentPage} of {totalPages}
+          </span>
+        )}
       </div>
     </main>
   );
