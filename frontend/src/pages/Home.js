@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Coffee, Martini, Flame, Clock, Users, Star } from 'lucide-react';
-import '../styles/x_home.css';
+import { ChevronLeft, ChevronRight, Coffee, Martini, Flame, Clock, Users, Star, Utensils, Wine } from 'lucide-react';
 import '../styles/x_style.css';
-import s1 from '../img/slide-1.jpg';
-import s2 from '../img/slide-2.jpg';
-// import s3 from '../assets/hero3.jpg';
+import '../styles/x_home.css';
 
 const heroSlides = [
   {
@@ -12,7 +9,7 @@ const heroSlides = [
     image: 'https://madebydesignesia.com/themes/baresto/03_images/slider/slide-1.jpg',
     title: 'Experience Flavorful Creations',
     subtitle: 'Savor Perfection',
-    description: 'Where artistry meets expertise to create a symphony of flavor.',
+    description: 'Fresh plates, crafted coffee, and polished service from morning to night.',
     cta: 'Explore Menu',
   },
   {
@@ -20,15 +17,15 @@ const heroSlides = [
     image: 'https://madebydesignesia.com/themes/baresto/03_images/slider/slide-2.jpg',
     title: 'Where Flavor Meets Elegance',
     subtitle: 'Flavors to Satisfy',
-    description: 'Prepare your palate for an unforgettable dining experience.',
+    description: 'A warm cafe by day, a confident dining room by evening.',
     cta: 'View Brunch',
   },
   {
     id: 3,
     image: 'https://cuisina.themerex.net/wp-content/uploads/2025/10/custom-img-73-copyright.jpg',
-    title: 'Night Elegance',
+    title: 'Evenings Made Smooth',
     subtitle: 'Cocktails That Tell Stories',
-    description: 'Experience our expertly crafted cocktails in a vibrant atmosphere.',
+    description: 'Signature cocktails, slow conversations, and the perfect table waiting.',
     cta: 'Reserve Table',
   },
 ];
@@ -78,7 +75,7 @@ const x_testimonials = [
 const x_stats = [
   { number: '8+', label: 'Years Perfecting Taste' },
   { number: '40+', label: 'Signature Items' },
-  { number: '4.8★', label: 'Guest Rating' },
+  { number: '4.8', label: 'Guest Rating' },
 ];
 
 const x_partners = [
@@ -117,8 +114,16 @@ const x_chef_recommends = [
 ];
 
 const x_cocktail_features = [
-  { icon: '📋', title: 'Extensive Menu', desc: 'A carefully curated selection of classic and signature cocktails.' },
-  { icon: '🍹', title: 'Special Cocktails', desc: 'Seasonal specials and mixologist creations.' },
+  {
+    icon: <Utensils size={28} />,
+    title: 'Curated Pairings',
+    desc: 'A thoughtful selection of plates, classic serves, and signature cocktails.',
+  },
+  {
+    icon: <Wine size={28} />,
+    title: 'Special Cocktails',
+    desc: 'Seasonal specials and mixologist creations.',
+  },
 ];
 
 const x_whiskey_gallery = [
@@ -273,7 +278,7 @@ export default function Home() {
             <h2>Experience the Atmosphere</h2>
             <p>
               From morning's serene coffee ritual to night's vibrant cocktail energy, Zest transforms throughout
-              the day. Every detail—lighting, music, ambiance—is curated to make you feel at home.
+              the day. Every detail, lighting, music, and ambiance, is curated to make you feel at home.
             </p>
             <ul className="x_ambiance_list">
               <li>
@@ -301,7 +306,7 @@ export default function Home() {
       </section>
 
       {/* PARTNERS */}
-      <section className="x_partners_section">
+      {/* <section className="x_partners_section">
         <div className="x_partners_header">
           <span className="x_partners_eyebrow">WE COOPERATE</span>
           <h2>Check Our <br></br>Best Clients & Partners</h2>
@@ -320,7 +325,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* ABOUT US */}
       <section className="x_aboutus_section">
@@ -428,7 +433,7 @@ export default function Home() {
           </div>
           <div className="x_whiskey_text">
             <p>
-              Zest is more than just a cafe and bar—it's a sanctuary for those who appreciate the finer things
+              Zest is more than just a cafe and bar. It is a sanctuary for those who appreciate the finer things
               in life. Whether you're seeking a quiet moment with a perfect cup of coffee or a vibrant evening
               with friends, we create the perfect ambiance.
             </p>
