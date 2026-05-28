@@ -26,6 +26,9 @@
   --h-border:          rgba(255, 255, 255, 0.1);
   --h-text-muted:      rgba(224, 224, 224, 0.5);
 
+  /* Navbar Height for consistency */
+  --d-navbar-height:   64px;
+
   /* Shadows & Transitions */
   --d-shadow-card:     0 20px 50px rgba(0, 0, 0, 0.3);
   --d-radius-lg:       24px;

@@ -277,10 +277,10 @@ const ContactUs = () => {
                 title="Zest Cafe Location"
               />
             </div>
-            <a className="x_contact_direction" href="https://maps.google.com" target="_blank" rel="noreferrer">
+            {/* <a className="x_contact_direction" href="https://maps.google.com" target="_blank" rel="noreferrer">
               <Navigation size={18} />
               Open directions
-            </a>
+            </a> */}
           </aside>
         </div>
       </section>
@@ -288,7 +288,7 @@ const ContactUs = () => {
       <section className="x_contact_faq container">
         <div className="x_contact_faq_header">
           <span className="x_contact_eyebrow">Good to know</span>
-          <h2>Before you stop by</h2>
+          <h4>Before you stop by</h4>
         </div>
 
         <div className="x_contact_faq_grid">

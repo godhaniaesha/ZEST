@@ -21,13 +21,16 @@ import Services from './pages/Services';
 import Reservation from './components/Reservation';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
+import Blog from './pages/Blog';
+import Gallery from './pages/Gallery';
+import BlogDetail from './pages/BlogDetail';
 
 function UserLayout({ children }) {
   return (
     <>
       <Navbar />
 
-      <div style={{ marginTop: '70px' }}>
+      <div>
         {children}
       </div>
 
@@ -53,6 +56,10 @@ function App() {
         <Route path="/menu" element={<UserLayout>  <Menu /> </UserLayout>} />
         <Route path="/menu/:id" element={<UserLayout>  <MenuDetail /> </UserLayout>} />
         <Route path="/auth" element={<UserLayout>  <Auth /> </UserLayout>} />
+        <Route path="/blog" element={<UserLayout>  <Blog /> </UserLayout>} />
+        <Route path="/gallery" element={<UserLayout>  <Gallery/> </UserLayout>} />
+        <Route path="/blog/:id" element={<UserLayout>  <BlogDetail /> </UserLayout>} />
+
 
         <Route path="/reservations" element={ <Reservation /> } />
 

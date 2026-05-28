@@ -69,6 +69,26 @@ body{
   background: var(--d-bg);
   color: var(--d-text);
   overflow: hidden;
+  padding-top: var(--d-navbar-height);
+}
+
+/* Responsive padding for different screen sizes */
+@media (max-width: 768px) {
+  .z_about_page {
+    padding-top: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .z_about_page {
+    padding-top: 52px;
+  }
+}
+
+@media (min-width: 1921px) {
+  .z_about_page {
+    padding-top: 72px;
+  }
 }
 
 .z_about_headline{

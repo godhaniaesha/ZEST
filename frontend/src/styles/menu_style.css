@@ -58,7 +58,27 @@
   background: var(--d-bg);
   color: var(--d-text);
   overflow: hidden;
-  padding: 60px 0;
+  padding-top: var(--d-navbar-height);
+  padding-bottom: 60px;
+}
+
+/* Responsive padding for different screen sizes */
+@media (max-width: 768px) {
+  .menu_page {
+    padding-top: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu_page {
+    padding-top: 52px;
+  }
+}
+
+@media (min-width: 1921px) {
+  .menu_page {
+    padding-top: 72px;
+  }
 }
 
 /* ===== HEADER SECTION ===== */
