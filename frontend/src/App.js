@@ -61,7 +61,7 @@ function App() {
         <Route path="/blog/:id" element={<UserLayout>  <BlogDetail /> </UserLayout>} />
 
 
-        <Route path="/reservations" element={ <Reservation /> } />
+        <Route path="/reservations" element={<UserLayout> <Reservation /> </UserLayout> } />
 
 
         {/* ADMIN ROUTES */}

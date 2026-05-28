@@ -61,7 +61,11 @@ export default function Navbar() {
 
           {/* Reservation Button and Hamburger */}
           <div className="x_navbar-right">
-            <button className="x_reservation-btn">Reservation</button>
+            <button >
+              <Link to="/reservations" className="x_reservation-btn" >
+                Reservation
+              </Link>
+              </button>
             <button
               className={`x_hamburger ${isOpen ? 'x_active' : ''}`}
               onClick={toggleOffcanvas}
