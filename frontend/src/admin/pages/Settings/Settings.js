@@ -64,7 +64,7 @@ export default function Settings() {
                   ['Email Address', 'hello@breva.in'],
                   ['Phone Number', '+91 98765 00000'],
                   ['GST Number', '24AAAAA0000A1Z5'],
-                  ['Address', 'MG Road, Ahmedabad, Gujarat'],
+                  ['Address', 'MG Road, Gujarat'],
                 ].map(([label, val]) => (
                   <Col key={label} xs={12} md={6}>
                     <div className="mb-3">

@@ -171,7 +171,7 @@ body {
   font-family: 'Cinzel', serif;
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: 6px;
+  letter-spacing: 7px;
   color: var(--d-gold);
   line-height: 1;
   transition: var(--d-transition);
@@ -187,7 +187,7 @@ body {
 .x_logo-tagline {
   font-family: 'Jost', sans-serif;
   font-size: 8px;
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: 4px;
   color: rgba(201, 168, 76, 0.6);
   text-transform: uppercase;
@@ -777,7 +777,7 @@ body {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr 1fr;
   gap: 0;
-  padding: 50px 40px 60px;
+  padding: 50px 40px 50px;
 }
 
 /* Column separator */
@@ -847,8 +847,8 @@ body {
 
 .x_footer_section p {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 15px;
-  line-height: 1.9;
+  font-size: 16px;
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.5);
   margin-bottom: 0;
   font-style: italic;
@@ -865,7 +865,7 @@ body {
   transition: var(--d-transition);
   font-family: 'Jost', sans-serif;
   font-size: 13px;
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: 0.5px;
   position: relative;
 }
@@ -979,8 +979,9 @@ body {
   font-family: 'Cinzel', serif;
   font-size: 8px;
   letter-spacing: 2px;
-  color: rgba(201, 168, 76, 0.5);
+  color: rgb(201 168 76 / 78%);
   text-transform: uppercase;
+  font-weight: 400;
 }
 
 .x_footer_contact_value {
@@ -1012,6 +1013,7 @@ body {
   opacity: 0.8;
   margin-bottom: 3px;
   display: block;
+  font-weight: 400;
 }
 
 .x_footer_hours_time {
@@ -1088,7 +1090,7 @@ body {
 
 .x_footer_bottom_link {
   font-family: 'Jost', sans-serif;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.55);
   text-decoration: none;
   font-size: 11px;
   font-weight: 300;
@@ -1239,7 +1241,7 @@ body {
   }
 
   .x_offcanvas {
-    max-width: 100%;
+    max-width: 84%;
   }
 }
 

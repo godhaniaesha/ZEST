@@ -31,7 +31,6 @@ import "../styles/x_style.css";
   const legalLinks = [
     { label: "Privacy Policy", to: "/privacy-policy" },
     { label: "Terms & Conditions", to: "/terms" },
-    { label: "Sitemap", to: "/sitemap" },
   ];
 
   return (
@@ -55,7 +54,7 @@ import "../styles/x_style.css";
         <div className="x_footer_section">
           <div className="x_footer_logo">
             <span className="x_footer_logo_text">ZÉST</span>
-            <span className="x_footer_logo_sub">Cafe &amp; Bar · Ahmedabad</span>
+            <span className="x_footer_logo_sub">Cafe &amp; Bar </span>
           </div>
           <p>
             Where every cup tells a story and every evening becomes a memory.

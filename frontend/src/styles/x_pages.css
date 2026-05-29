@@ -255,6 +255,7 @@ body {
 
 .x_contact_hero {
   text-align: left;
+  padding: 80px 0px;
 }
 
 .x_contact_hero_shell {
@@ -507,7 +508,7 @@ body {
   content: '';
   position: absolute;
   inset: 0 auto 0 0;
-  width: 7px;
+  width: 5px;
   background: linear-gradient(180deg, var(--d-gold), var(--d-primary));
 }
 
@@ -3007,7 +3008,7 @@ body {
   .x_services_page,
   .x_privacy_page,
   .x_terms_page {
-    padding-top: 64px;
+    padding-top: 80px;
   }
 }
 

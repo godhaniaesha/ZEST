@@ -34,7 +34,7 @@ const Menu = () => {
       rating: 4.9,
       reviews: 45,
       description: 'Decadent chocolate cake with a molten center, served with vanilla ice cream.',
-      image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=60',
+      image: 'https://i.pinimg.com/736x/57/e5/4d/57e54d7e755532472a4b6e043f7e1063.jpg',
       features: ['Molten center', 'Vanilla ice cream', 'Fresh berries', 'Warm serving'],
     },
     {
@@ -58,7 +58,7 @@ const Menu = () => {
       rating: 4.6,
       reviews: 28,
       description: 'Creamy avocado spread on sourdough toast, topped with poached egg and microgreens.',
-      image: 'https://images.unsplash.com/photo-1557804506-669714126472?auto=format&fit=crop&w=500&q=60',
+      image: 'https://i.pinimg.com/1200x/82/5b/5f/825b5fbe4b2ee16c331b85faa4e4e96d.jpg',
       features: ['Fresh avocado', 'Poached egg', 'Sourdough', 'Microgreens'],
     },
     {
@@ -70,7 +70,7 @@ const Menu = () => {
       rating: 4.8,
       reviews: 38,
       description: 'Fresh Atlantic salmon grilled to perfection, served with seasonal vegetables.',
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=60',
+      image: 'https://i.pinimg.com/736x/98/ac/33/98ac33e3d8a4abc19ccc51fee76815dd.jpg',
       features: ['Wild-caught salmon', 'Seasonal veggies', 'Lemon butter sauce', 'Farm-fresh'],
     },
     {
@@ -94,7 +94,7 @@ const Menu = () => {
       rating: 4.7,
       reviews: 30,
       description: 'Toasted baguette topped with fresh tomatoes, garlic, and basil.',
-      image: 'https://images.unsplash.com/photo-1599599810694-b5ac4dd87282?auto=format&fit=crop&w=500&q=60',
+      image: 'https://i.pinimg.com/1200x/a6/b9/48/a6b94869d38aaa95c6b3e06f0067f294.jpg',
       features: ['Crispy bread', 'Fresh basil', 'Ripe tomatoes', 'Extra virgin oil'],
     },
     {
@@ -118,7 +118,7 @@ const Menu = () => {
       rating: 4.8,
       reviews: 35,
       description: 'Silky smooth Italian custard dessert topped with fresh berries.',
-      image: 'https://images.unsplash.com/photo-1488477181946-6e3cc3a63e0c?auto=format&fit=crop&w=500&q=60',
+      image: 'https://i.pinimg.com/1200x/65/90/55/659055b6f165eae21bc7d7ae94679079.jpg',
       features: ['Madagascar vanilla', 'Fresh berries', 'Silky texture', 'Handmade'],
     },
     {
@@ -142,7 +142,7 @@ const Menu = () => {
       rating: 4.8,
       reviews: 28,
       description: 'Classic whiskey cocktail with bitters, sugar, and a twist of orange.',
-      image: 'https://images.unsplash.com/photo-1556821552-5f96b9c9d312?auto=format&fit=crop&w=500&q=60',
+      image: 'https://i.pinimg.com/736x/8b/85/e1/8b85e197acf19d09663503ad760ce36a.jpg',
       features: ['Premium whiskey', 'Aromatic bitters', 'Fresh citrus', 'Large ice'],
     },
     {
@@ -154,7 +154,7 @@ const Menu = () => {
       rating: 4.7,
       reviews: 39,
       description: 'Fluffy buttermilk pancakes stacked high, served with maple syrup and butter.',
-      image: 'https://images.unsplash.com/photo-1589985643662-4b07111c3b64?auto=format&fit=crop&w=500&q=60',
+      image: 'https://i.pinimg.com/736x/bd/71/aa/bd71aac12befc1d2e1280f3a37dba04b.jpg',
       features: ['Buttermilk', 'Maple syrup', 'Fresh berries', 'Whipped cream'],
     },
   ];

@@ -1,12 +1,30 @@
 import { useState, useEffect, useRef } from "react";
 import {
   FaCoffee,
-  FaMusic,
   FaGlassCheers,
   FaClock,
   FaMapMarkerAlt,
   FaStar,
+  FaArrowRight,
+  FaPenNib,
 } from "react-icons/fa";
+import {
+  FaCocktail,
+  FaLeaf,
+  FaMusic,
+  FaMobileAlt,
+  FaBirthdayCake,
+} from "react-icons/fa";
+import {
+  FaBolt,
+  FaCreditCard,
+} from "react-icons/fa";
+import { FaArrowRightLong } from "react-icons/fa6";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
 
 /* ─────────────────────────────────────────────
    ROOT TOKENS  (mirrors your :root exactly)
@@ -184,6 +202,13 @@ body {
   background: linear-gradient(90deg, rgba(201,168,76,0.25), rgba(201,168,76,0.8));
 }
 
+.d_hero_title_topline::after {
+  content: '';
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(201,168,76,0.8), rgba(201,168,76,0.25));
+}
+
 .d_hero_eyebrow {
   display: inline-flex;
   align-items: center;
@@ -207,7 +232,7 @@ body {
 
 .d_hero_title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(56px, 7vw, 94px);
+  font-size: clamp(56px, 7vw, 84px);
   font-weight: 300;
   line-height: 0.98;
   color: rgba(255,255,255,0.96);
@@ -451,7 +476,7 @@ body {
 }
 
 .d_section_wide {
-  padding: 100px 0;
+  padding: 70px 0;
 }
 
 .d_section_tag {
@@ -459,11 +484,12 @@ body {
   align-items: center;
   gap: 8px;
   font-family: 'Cinzel', serif;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.3em;
-  color: var(--d-gold);
+  color: var(--d-gold-dark);
   text-transform: uppercase;
   margin-bottom: 16px;
+  font-weight: 600;
 }
 
 .d_section_tag::before {
@@ -1148,7 +1174,17 @@ body {
 .d_event_body {
   padding: 24px;
 }
+  .d_event_body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  
+}
 
+.d_event_footer {
+    position: relative;
+    bottom: 6%;
+}
 .d_event_type {
   font-size: 11px;
   font-weight: 600;
@@ -1172,7 +1208,7 @@ body {
   gap: 16px;
   font-size: 13px;
   color: var(--d-text-muted);
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .d_event_meta span {
@@ -1584,7 +1620,7 @@ body {
 const MENU_ITEMS = {
   food: [
     { name: "Saffron Risotto", desc: "Aged parmesan, wild mushrooms, truffle oil drizzle", price: "₹680", tag: "Chef's Pick", img: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600&q=80" },
-    { name: "Charred Lamb Chops", desc: "Herb-crusted rack, pomegranate jus, roasted root veg", price: "₹1,180", tag: "Signature", img: "https://images.unsplash.com/photo-1514516872058-11661745c1e9?w=600&q=80" },
+    { name: "Grilled Paneer Steak", desc: "Smoked paneer, herb butter, roasted vegetables, mint yogurt", price: "₹980", tag: "Signature", img: "https://i.pinimg.com/736x/c2/2d/e6/c22de692e1d328790389d5e179a35168.jpg" },
     { name: "Mezze Platter", desc: "House hummus, baba ganoush, pita, olives & pickles", price: "₹420", tag: "Sharing", img: "https://images.unsplash.com/photo-1541014741259-de529411b96a?w=600&q=80" },
   ],
   drinks: [
@@ -1599,14 +1635,14 @@ const MENU_ITEMS = {
   ],
 };
 
-const EVENTS = [
-  { day: "14", month: "Jun", type: "Live Music", name: "Jazz & Bourbon Night", time: "8:00 PM", seats: "18 seats left", img: "https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=600&q=80" },
-  { day: "21", month: "Jun", type: "Masterclass", name: "Art of Cocktail Making", time: "6:30 PM", seats: "12 seats left", img: "https://images.unsplash.com/photo-1609951651556-5334e2706168?w=600&q=80" },
-  { day: "28", month: "Jun", type: "Dining Event", name: "Farm-to-Table Dinner", time: "7:00 PM", seats: "24 seats left", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80" },
+const BLOGS = [
+  { day: "14", month: "Jun", category: "Coffee Culture", title: "Top 5 Signature Coffees You Must Try", author: "Admin", readTime: "4 min read", img: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80", },
+  { day: "21", month: "Jun", category: "Mixology", title: "The Art of Craft Cocktail Making", author: "Sophia", readTime: "6 min read", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80", },
+  { day: "28", month: "Jun", category: "Healthy Dining", title: "Why Farm-Fresh Ingredients Matter", author: "Chef Marco", readTime: "5 min read", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80", },
 ];
 
 const TESTIMONIALS = [
-  { text: "The ambiance alone is worth the visit — warm, intimate, and incredibly refined. The cocktails are crafted with such thoughtfulness, each sip tells a story.", name: "Priya Menon", role: "Food Blogger", initials: "PM" },
+  { text: "The ambiance alone is worth the visit — warm, intimate, and refined. The cocktails are crafted with thoughtfulness, each sip tells a story.", name: "Priya Menon", role: "Food Blogger", initials: "PM" },
   { text: "An evening that felt like a European escape without leaving the city. The lamb chops were transcendent and the service was genuinely attentive.", name: "Arjun Shah", role: "Regular Guest", initials: "AS" },
   { text: "I've dined at many upscale venues, but the combination of coffee culture and bar here is truly unique. The Jazz Nights are unmissable events.", name: "Kavya Nair", role: "Food Critic", initials: "KN" },
 ];
@@ -1646,7 +1682,6 @@ export default function Home() {
           <div className="d_hero_content_wrap">
             <div className="d_hero_content">
               <div className="d_hero_title_topline">Luxury Cafe Experience</div>
-              <div className="d_hero_eyebrow">Since 2014 · Ahmedabad</div>
               <h1 className="d_hero_title">
                 Where <span className="d_hero_title_highlight">Coffee</span><br />Meets Crafted<br /><em>Evenings</em>
               </h1>
@@ -1657,7 +1692,7 @@ export default function Home() {
               </p>
               <div className="d_hero_actions">
                 <a href="#reservation" className="d_btn_primary">
-                  Reserve a Table →
+                  Reserve a Table <FaArrowRightLong />
                 </a>
                 <a href="#menu" className="d_btn_outline">
                   Explore Menu
@@ -1738,12 +1773,12 @@ export default function Home() {
               </p>
               <div className="d_about_features">
                 {[
-                  { icon: "☕", label: "Specialty Coffee" },
-                  { icon: "🍸", label: "Craft Cocktails" },
-                  { icon: "🌿", label: "Farm-Fresh Cuisine" },
-                  { icon: "🎶", label: "Live Entertainment" },
-                  { icon: "📱", label: "Online Ordering" },
-                  { icon: "🎂", label: "Private Events" },
+                  { icon: <FaCoffee />, label: "Specialty Coffee" },
+                  { icon: <FaCocktail />, label: "Craft Cocktails" },
+                  { icon: <FaLeaf />, label: "Farm-Fresh Cuisine" },
+                  { icon: <FaMusic />, label: "Live Entertainment" },
+                  { icon: <FaMobileAlt />, label: "Online Ordering" },
+                  { icon: <FaBirthdayCake />, label: "Private Events" },
                 ].map((f) => (
                   <div className="d_feature_pill" key={f.label}>
                     <div className="d_feature_icon">{f.icon}</div>
@@ -1821,21 +1856,34 @@ export default function Home() {
               Order <em>Ahead</em>,<br />Skip the Wait
             </h3>
             <p className="d_order_cta_desc">
-              Pre-order your favourites for dine-in or takeaway. 
+              Pre-order your favourites for dine-in or takeaway.
               Freshly prepared at your preferred time — because your time is precious.
             </p>
             <button className="d_btn_primary" onClick={() => showToast("🛒 Online ordering coming soon!")}>
-              Order Now →
+              Reserve Table →
             </button>
           </div>
           <div className="d_order_cta_right">
             {[
-              { icon: "⚡", title: "Ready in 20 Minutes", desc: "Most orders prepared within 20 mins of confirmation" },
-              { icon: "📍", title: "Dine-In or Takeaway", desc: "Choose your preference at checkout — we do both" },
-              { icon: "💳", title: "Secure UPI & Card Payment", desc: "Pay via UPI, cards, or wallets — fully encrypted" },
+              {
+                icon: <FaBolt />,
+                title: "Ready in 20 Minutes",
+                desc: "Most orders prepared within 20 mins of confirmation",
+              },
+              {
+                icon: <FaMapMarkerAlt />,
+                title: "Dine-In or Takeaway",
+                desc: "Choose your preference at checkout — we do both",
+              },
+              {
+                icon: <FaCreditCard />,
+                title: "Secure UPI & Card Payment",
+                desc: "Pay via UPI, cards, or wallets — fully encrypted",
+              },
             ].map((f) => (
               <div className="d_order_feature" key={f.title}>
                 <div className="d_order_feature_icon">{f.icon}</div>
+
                 <div>
                   <div className="d_order_feature_title">{f.title}</div>
                   <div className="d_order_feature_desc">{f.desc}</div>
@@ -1910,14 +1958,14 @@ export default function Home() {
       </section>
 
       {/* ── 7. RESERVATION ── */}
-      <section id="reservation" className="d_reservation_section">
+      {/* <section id="reservation" className="d_reservation_section">
         <div className="d_res_inner">
           <div className="d_section_tag" style={{ color: "var(--d-gold)", justifyContent: "center", display: "flex" }}>Reservations</div>
           <h2 className="d_section_title" style={{ color: "var(--d-white)" }}>
             Reserve Your <em style={{ color: "var(--d-gold-light)" }}>Perfect</em> Evening
           </h2>
           <p className="d_section_lead">
-            Secure your table for an unforgettable experience. 
+            Secure your table for an unforgettable experience.
             Reservation confirmed within minutes — we'll keep a seat warm for you.
           </p>
           <div className="d_res_form">
@@ -1949,7 +1997,7 @@ export default function Home() {
                   onChange={(e) => setResForm({ ...resForm, time: e.target.value })}
                 >
                   <option value="">Select time</option>
-                  {["8:00 AM","9:00 AM","10:00 AM","12:00 PM","1:00 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","10:00 PM"].map(t => (
+                  {["8:00 AM", "9:00 AM", "10:00 AM", "12:00 PM", "1:00 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "10:00 PM"].map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
@@ -1962,7 +2010,7 @@ export default function Home() {
                   onChange={(e) => setResForm({ ...resForm, guests: e.target.value })}
                 >
                   <option value="">Select guests</option>
-                  {["1","2","3","4","5","6","7","8+"].map(n => (
+                  {["1", "2", "3", "4", "5", "6", "7", "8+"].map(n => (
                     <option key={n} value={n}>{n} {n === "1" ? "Guest" : "Guests"}</option>
                   ))}
                 </select>
@@ -1976,7 +2024,7 @@ export default function Home() {
                 onChange={(e) => setResForm({ ...resForm, occasion: e.target.value })}
               >
                 <option value="">No special occasion</option>
-                {["Birthday","Anniversary","Business Dinner","Date Night","Family Gathering","Proposal","Other"].map(o => (
+                {["Birthday", "Anniversary", "Business Dinner", "Date Night", "Family Gathering", "Proposal", "Other"].map(o => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
@@ -1986,44 +2034,97 @@ export default function Home() {
             </button>
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* ── 8a. EVENTS ── */}
+      {/* ── 8a. BLOGS ── */}
       <section style={{ background: "var(--d-bg)" }}>
         <div className="d_section">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 20, marginBottom: 48 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+              gap: 20,
+              marginBottom: 48,
+            }}
+          >
             <div>
-              <div className="d_section_tag">Events & Experiences</div>
-              <h2 className="d_section_title" style={{ marginBottom: 0 }}>
-                What's On <em>This Month</em>
+              <div className="d_section_tag">Latest Articles</div>
+
+              <h2
+                className="d_section_title"
+                style={{ marginBottom: 0 }}
+              >
+                From Our <em>Blog</em>
               </h2>
             </div>
-            <button className="d_btn_outline" style={{ color: "var(--d-primary)", borderColor: "var(--d-border)" }}
-              onClick={() => showToast("📅 Full events calendar coming soon!")}>
-              All Events →
+
+            <button
+              className="d_btn_outline"
+              style={{
+                color: "var(--d-primary)",
+                borderColor: "var(--d-border)",
+              }}
+              onClick={() =>
+                showToast("📰 Full blog page coming soon!")
+              }
+            >
+              View All Blogs →
             </button>
           </div>
+
           <div className="d_events_grid">
-            {EVENTS.map((ev) => (
-              <div className="d_event_card" key={ev.name}>
+            {BLOGS.map((blog) => (
+              <div className="d_event_card" key={blog.title}>
                 <div className="d_event_img_wrap">
-                  <img className="d_event_img" src={ev.img} alt={ev.name} />
+                  <img
+                    className="d_event_img"
+                    src={blog.img}
+                    alt={blog.title}
+                  />
+
                   <div className="d_event_date_badge">
-                    <span className="d_event_day">{ev.day}</span>
-                    <span className="d_event_month">{ev.month}</span>
+                    <span className="d_event_day">{blog.day}</span>
+                    <span className="d_event_month">{blog.month}</span>
                   </div>
                 </div>
+
                 <div className="d_event_body">
-                  <div className="d_event_type">{ev.type}</div>
-                  <div className="d_event_name">{ev.name}</div>
-                  <div className="d_event_meta">
-                    <span>🕐 {ev.time}</span>
-                    <span>💺 {ev.seats}</span>
+                  {/* Top Content */}
+                  <div>
+                    <div className="d_event_type">
+                      {blog.category}
+                    </div>
+
+                    <div className="d_event_name">
+                      {blog.title}
+                    </div>
                   </div>
-                  <button className="d_event_register"
-                    onClick={() => showToast(`🎟 Registered for "${ev.name}"!`)}>
-                    Register Now →
-                  </button>
+
+                  {/* Footer */}
+                  <div className="d_event_footer">
+                    <div className="d_event_meta">
+                      <span>
+                        <FaPenNib style={{ marginRight: 6 }} />
+                        {blog.author}
+                      </span>
+
+                      <span>
+                        <FaClock style={{ marginRight: 6 }} />
+                        {blog.readTime}
+                      </span>
+                    </div>
+
+                    <button
+                      className="d_event_register"
+                      onClick={() =>
+                        showToast(`📖 Opening "${blog.title}"`)
+                      }
+                    >
+                      Read More <FaArrowRight style={{ marginLeft: 8 }} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -2042,7 +2143,7 @@ export default function Home() {
               </h2>
             </div>
             <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-              {[1,2,3,4,5].map(i => (
+              {[1, 2, 3, 4, 5].map(i => (
                 <span key={i} style={{ color: "var(--d-gold)", fontSize: 20 }}>★</span>
               ))}
               <span style={{ color: "rgba(224,224,224,0.5)", fontSize: 14, marginLeft: 8, alignSelf: "center" }}>4.9 / 5 · 2,400+ reviews</span>

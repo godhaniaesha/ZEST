@@ -136,7 +136,7 @@ export default function Auth() {
             Vibe with <em>ZEST.</em>
           </h2>
           <p>
-            Experience Ahmedabad's most exclusive social club. Where luxury meets 
+            Experience India's most exclusive social club. Where luxury meets 
             the art of the perfect brew and handcrafted cocktails.
           </p>
         </div>
