@@ -1,168 +1,169 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   FaFacebookF,
   FaInstagram,
   FaTwitter,
   FaLinkedinIn,
 } from "react-icons/fa";
-
 import { Phone, Mail, MapPin } from "lucide-react";
 import "../styles/x_style.css";
-import s1 from "../img/shape1.png";
-import s2 from "../img/shape2.png";
 
-export default function Footer() {
+   export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const quickLinks = [
-    { label: "Home", href: "/home" },
-    { label: "Menu", href: "/menu" },
-    { label: "About Us", href: "/aboutus" },
-    { label: "Services", href: "/services" },
-    { label: "Contact", href: "/contactus" },
-    { label: "Reservations", href: "/reservations" },
-    { label: "Profile", href: "/profile" },
+    { label: "Home", to: "/" },
+    { label: "Menu", to: "/menu" },
+    { label: "About Us", to: "/aboutus" },
+    { label: "Gallery", to: "/gallery" },
+    { label: "Contact", to: "/contactus" },
+    { label: "Reservations", to: "/reservations" },
+  ];
+
+  const hours = [
+    { label: "Morning Cafe", time: "7:00 AM – 12:00 PM" },
+    { label: "Lunch & Brunch", time: "12:00 PM – 3:00 PM" },
+    { label: "Dinner Service", time: "5:00 PM – 10:00 PM" },
+    { label: "Evening Bar", time: "9:00 PM – Midnight" },
   ];
 
   const legalLinks = [
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms & Conditions", href: "/terms" },
+    { label: "Privacy Policy", to: "/privacy-policy" },
+    { label: "Terms & Conditions", to: "/terms" },
+    { label: "Sitemap", to: "/sitemap" },
   ];
 
   return (
     <footer className="x_footer">
-      {/* Background Shapes */}
-      {/* <div className="x_footer_shape x_footer_shape1">
-        <img src={s1} alt="Decorative Shape" />
-      </div>
-      <div className="x_footer_shape x_footer_shape2">
-        <img src={s2} alt="Decorative Shape" />
-      </div> */}
 
+      {/* Ornamental top strip */}
+      <div className="x_footer_ornament">
+        <div className="x_footer_ornament_line" />
+        <div className="x_footer_ornament_icon">
+          <span className="x_footer_ornament_diamond">◆</span>
+          <span>Est. 2024</span>
+          <span className="x_footer_ornament_diamond">◆</span>
+        </div>
+        <div className="x_footer_ornament_line right" />
+      </div>
+
+      {/* Main Grid */}
       <div className="x_footer_container">
-        {/* Brand Section */}
+
+        {/* Column 1 — Brand */}
         <div className="x_footer_section">
           <div className="x_footer_logo">
             <span className="x_footer_logo_text">ZÉST</span>
+            <span className="x_footer_logo_sub">Cafe &amp; Bar · Ahmedabad</span>
           </div>
-
           <p>
-            Zest Cafe & Bar — Your perfect place for premium coffee,
-            handcrafted cocktails, delicious meals, and unforgettable moments.
+            Where every cup tells a story and every evening becomes a memory.
+            Premium coffee, handcrafted cocktails, and a dining experience beyond the ordinary.
           </p>
-
           <div className="x_footer_socials">
-            <a
-              href="#"
-              className="x_footer_social_link"
-              aria-label="Facebook"
-            >
-              <FaFacebookF size={16} />
+            <a href="#" className="x_footer_social_link" aria-label="Facebook">
+              <FaFacebookF size={14} />
             </a>
-
-            <a
-              href="#"
-              className="x_footer_social_link"
-              aria-label="Instagram"
-            >
-              <FaInstagram size={16} />
+            <a href="#" className="x_footer_social_link" aria-label="Instagram">
+              <FaInstagram size={14} />
             </a>
-
-            <a
-              href="#"
-              className="x_footer_social_link"
-              aria-label="Twitter"
-            >
-              <FaTwitter size={16} />
+            <a href="#" className="x_footer_social_link" aria-label="Twitter">
+              <FaTwitter size={14} />
             </a>
-
-            <a
-              href="#"
-              className="x_footer_social_link"
-              aria-label="LinkedIn"
-            >
-              <FaLinkedinIn size={16} />
+            <a href="#" className="x_footer_social_link" aria-label="LinkedIn">
+              <FaLinkedinIn size={14} />
             </a>
           </div>
         </div>
 
-        {/* Quick Links */}
+        {/* Column 2 — Quick Links */}
         <div className="x_footer_section">
-          <h3>Quick Links</h3>
-
+          <div className="x_footer_section_heading">
+            <h3>Navigate</h3>
+            <span className="x_footer_heading_accent" />
+          </div>
           {quickLinks.map((link, idx) => (
-            <a key={idx} href={link.href}>
+            <Link key={idx} to={link.to} className="x_footer_link">
+              <span className="x_footer_link_dot" />
               {link.label}
-            </a>
+            </Link>
           ))}
         </div>
 
-        {/* Contact Info */}
+        {/* Column 3 — Contact */}
         <div className="x_footer_section">
-          <h3>Contact Us</h3>
+          <div className="x_footer_section_heading">
+            <h3>Find Us</h3>
+            <span className="x_footer_heading_accent" />
+          </div>
 
-          <a href="tel:+911234567890">
-            <Phone size={16} />
-            +91 12345 67890
+          <a href="tel:+911234567890" className="x_footer_contact_item">
+            <div className="x_footer_contact_icon">
+              <Phone size={13} />
+            </div>
+            <div className="x_footer_contact_text">
+              <span className="x_footer_contact_label">Phone</span>
+              <span className="x_footer_contact_value">+91 12345 67890</span>
+            </div>
           </a>
 
-          <a href="mailto:support@zestcafe.com">
-            <Mail size={16} />
-            support@zestcafe.com
+          <a href="mailto:support@zestcafe.com" className="x_footer_contact_item">
+            <div className="x_footer_contact_icon">
+              <Mail size={13} />
+            </div>
+            <div className="x_footer_contact_text">
+              <span className="x_footer_contact_label">Email</span>
+              <span className="x_footer_contact_value">support@zestcafe.com</span>
+            </div>
           </a>
 
-          <a href="#location">
-            <MapPin size={16} />
-            Ahmedabad, Gujarat, India
+          <a href="#location" className="x_footer_contact_item">
+            <div className="x_footer_contact_icon">
+              <MapPin size={13} />
+            </div>
+            <div className="x_footer_contact_text">
+              <span className="x_footer_contact_label">Location</span>
+              <span className="x_footer_contact_value">Ahmedabad, Gujarat, India</span>
+            </div>
           </a>
-
-          <p className="x_footer_timing">
-            Open Daily : 8:00 AM - 12:00 AM
-          </p>
         </div>
 
-        {/* Hours */}
+        {/* Column 4 — Hours */}
         <div className="x_footer_section">
-          <h3>Hours of Operation</h3>
+          <div className="x_footer_section_heading">
+            <h3>Hours</h3>
+            <span className="x_footer_heading_accent" />
+          </div>
+          {hours.map((item, idx) => (
+            <div key={idx} className="x_footer_hours_item">
+              <span className="x_footer_hours_label">{item.label}</span>
+              <span className="x_footer_hours_time">{item.time}</span>
+            </div>
+          ))}
+        </div>
 
-          <p>
-            <strong>Morning Cafe</strong>
-            <br />
-            7:00 AM - 12:00 PM
-          </p>
+      </div>
 
-          <p>
-            <strong>Lunch & Brunch</strong>
-            <br />
-            12:00 PM - 3:00 PM
-          </p>
-
-          <p>
-            <strong>Dinner Service</strong>
-            <br />
-            5:00 PM - 10:00 PM
-          </p>
-
-          <p>
-            <strong>Evening Bar</strong>
-            <br />
-            9:00 PM - Midnight
-          </p>
+      {/* Ornamental divider */}
+      <div className="x_footer_divider">
+        <div className="x_footer_divider_inner">
+          <div className="x_footer_divider_diamond" />
         </div>
       </div>
 
-      {/* Footer Bottom */}
+      {/* Bottom bar */}
       <div className="x_footer_bottom">
-        <p>© {currentYear} Zest Cafe & Bar. All rights reserved.</p>
-
-        <nav className="x_footer_bottom_links">
+        <p>© {currentYear} <span>Zest Cafe &amp; Bar</span>. All rights reserved.</p>
+        <nav className="x_footer_bottom_links" aria-label="Legal links">
           {legalLinks.map((link, idx) => (
-            <a key={idx} href={link.href}>
+            <Link key={idx} to={link.to} className="x_footer_bottom_link">
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </div>
+
     </footer>
   );
 }
