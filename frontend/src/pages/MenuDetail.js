@@ -244,9 +244,9 @@ const MenuDetail = () => {
                 <span className="menu_detail_category">
                   {categoryLabels[item.category] || item.category}
                 </span>
-                {saving > 0 && (
+                {/* {saving > 0 && (
                   <span className="menu_detail_save">Save {'\u20B9'}{saving}</span>
-                )}
+                )} */}
               </div>
 
               <h1>{item.name}</h1>
@@ -284,7 +284,7 @@ const MenuDetail = () => {
                 )}
               </div>
 
-              <div className="menu_detail_order_card">
+              {/* <div className="menu_detail_order_card">
                 <div className="menu_detail_quantity">
                   <button
                     type="button"
@@ -322,7 +322,7 @@ const MenuDetail = () => {
                   <Heart size={18} fill={isWishlisted ? 'currentColor' : 'none'} />
                   {isWishlisted ? 'Wishlisted' : 'Wishlist'}
                 </button>
-              </div>
+              </div> */}
 
               <div className="menu_detail_panels">
                 <section className="menu_detail_story">
