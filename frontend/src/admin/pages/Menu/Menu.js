@@ -10,7 +10,7 @@ import FormModal from '../../components/FormModal';
 const MENU_ITEMS = [
   { id: 1, name: 'Truffle Risotto',  category: 'Mains',    price: '680', status: 'Available', img: <MdRestaurant />, color: '#2ecc71' },
   { id: 2, name: 'Mojito Classic',   category: 'Cocktails',price: '320', status: 'Available', img: <MdLocalBar />,  color: '#3498db' },
-  { id: 3, name: 'Beef Tenderloin',  category: 'Mains',    price: '1200', status: 'Available', img: <MdRestaurant />, color: '#2ecc71' },
+  { id: 3, name: 'Be ef Tenderloin',  category: 'Mains',    price: '1200', status: 'Available', img: <MdRestaurant />, color: '#2ecc71' },
   { id: 4, name: 'Tiramisu',         category: 'Desserts', price: '280', status: 'Sold Out', img: <MdIcecream />,   color: '#e74c3c' },
   { id: 5, name: 'Espresso Martini', category: 'Cocktails',price: '380', status: 'Available', img: <MdLocalBar />,  color: '#3498db' },
   { id: 6, name: 'Caesar Salad',     category: 'Starters', price: '320', status: 'Available', img: <MdRestaurant />, color: '#f39c12' },
