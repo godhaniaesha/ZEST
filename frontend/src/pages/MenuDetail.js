@@ -321,11 +321,6 @@ const MenuDetail = () => {
               <span className="menu_detail_category">
                 {categoryLabelMap[item.category]}
               </span>
-              {savePercent > 0 && (
-                <span className="menu_detail_save_badge">
-                  Save {savePercent}%
-                </span>
-              )}
             </div>
 
             <h1>{item.name}</h1>
@@ -362,12 +357,7 @@ const MenuDetail = () => {
             {/* Price */}
             <div className="menu_detail_price">
               <span className="menu_detail_price_main">₹{item.price}</span>
-              {item.originalPrice && (
-                <span className="menu_detail_price_original">₹{item.originalPrice}</span>
-              )}
-              {savePercent > 0 && (
-                <span className="menu_detail_price_save">Save {savePercent}%</span>
-              )}
+
             </div>
 
             {/* Panels */}

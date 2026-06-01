@@ -24,6 +24,7 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import Blog from './pages/Blog';
 import Gallery from './pages/Gallery';
 import BlogDetail from './pages/BlogDetail';
+import Profile from './pages/Profile';
 
 function UserLayout({ children }) {
   return (
@@ -62,6 +63,7 @@ function App() {
 
 
         <Route path="/reservations" element={<UserLayout> <Reservation /> </UserLayout> } />
+        <Route path="/profile" element={<UserLayout> <Profile /> </UserLayout> } />
 
 
         {/* ADMIN ROUTES */}

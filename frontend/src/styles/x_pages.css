@@ -3762,7 +3762,7 @@ body {
 .x_gallery_hero_left {
   position: relative;
   z-index: 1;
-  padding: 80px 60px 80px 0;
+  padding: 40px 60px 40px 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -4609,7 +4609,6 @@ body {
 
 /* Brand */
 .x_footer_logo {
-  display: flex;
   align-items: center;
   gap: 14px;
   margin-bottom: 24px;
@@ -4763,11 +4762,12 @@ body {
 .x_footer_hours_item {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   font-family: 'Playfair Display', serif;
   font-size: 0.85rem;
   color: var(--text-tertiary);
-  padding: 9px 0;
+  /* padding: 9px 0; */
   border-bottom: 1px solid var(--border-subtle);
 }
 

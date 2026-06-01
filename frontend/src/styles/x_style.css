@@ -257,6 +257,7 @@ body {
 
 .x_navbar-link:hover::before {
   width: 60%;
+  
 }
 
 .x_navbar-link:hover::after {
@@ -1011,7 +1012,7 @@ body {
   color: var(--d-gold);
   text-transform: uppercase;
   opacity: 0.8;
-  margin-bottom: 3px;
+  /* margin-bottom: 3px; */
   display: block;
   font-weight: 400;
 }

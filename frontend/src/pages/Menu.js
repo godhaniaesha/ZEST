@@ -344,14 +344,6 @@ const Menu = () => {
                     <div className="menu_card_badge">
                       {categoryLabelMap[item.category] || item.category}
                     </div>
-                    {savePercent > 0 && (
-                      <div
-                        className="menu_card_badge"
-                        style={{ left: 'auto', right: 18, background: 'rgba(46,204,113,0.9)', color: '#fff' }}
-                      >
-                        -{savePercent}%
-                      </div>
-                    )}
                   </div>
 
                   {/* Content */}
@@ -377,7 +369,7 @@ const Menu = () => {
                   </div>
 
                   {/* Animated arrow */}
-                  <div className="menu_card_view_btn" aria-hidden="true">↗</div>
+                  {/* <div className="menu_card_view_btn" aria-hidden="true">↗</div> */}
                 </article>
               );
             })}

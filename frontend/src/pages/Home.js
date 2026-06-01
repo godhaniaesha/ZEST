@@ -88,7 +88,6 @@ body {
 /* ── HERO ── */
 .d_hero {
   position: relative;
-  min-height: 100svh;
   background: var(--d-primary);
   display: flex;
   align-items: center;
