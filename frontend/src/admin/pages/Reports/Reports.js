@@ -27,7 +27,9 @@ export default function Reports() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Analytics & Reports</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdShowChart /> Analytics & Reports
+          </div>
           <div className="d-page-sub">
             Comprehensive overview of your business performance
           </div>

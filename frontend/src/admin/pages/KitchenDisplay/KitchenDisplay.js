@@ -119,8 +119,8 @@ export default function KitchenDisplay() {
             <MdArrowBack fontSize="1.2rem" />
           </button>
           <div>
-            <div className="d-page-heading">
-              Kitchen Display System <span className="d-live-dot"></span>
+            <div className="d-page-heading d-flex align-items-center gap-2">
+              <MdKitchen /> Kitchen Display System <span className="d-live-dot"></span>
             </div>
             <div className="d-page-sub">Real-time Order Monitoring & Management</div>
           </div>

@@ -13,7 +13,9 @@ export default function SystemLogs() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">System Logs 📜</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdHistory /> System Logs
+          </div>
           <div className="d-page-sub">Track all system activities and security events</div>
         </div>
         <button className="d-btn-outline"><MdFilterList /> Filter Logs</button>

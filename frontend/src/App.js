@@ -60,9 +60,7 @@ function App() {
         <Route path="/gallery" element={<UserLayout>  <Gallery/> </UserLayout>} />
         <Route path="/blog/:id" element={<UserLayout>  <BlogDetail /> </UserLayout>} />
 
-
         <Route path="/reservations" element={<UserLayout> <Reservation /> </UserLayout> } />
-
 
         {/* ADMIN ROUTES */}
         <Route path="/admin/*" element={<AppRoutes />} />

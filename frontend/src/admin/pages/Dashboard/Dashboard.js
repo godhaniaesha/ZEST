@@ -4,7 +4,7 @@ import {
   MdTrendingUp, MdReceiptLong, MdPeople, MdStar,
   MdArrowUpward, MdArrowDownward, MdMoreVert,
   MdLocalCafe, MdLocalBar, MdInventory, MdNotificationsActive,
-  MdFiberManualRecord
+  MdFiberManualRecord, MdDashboard
 } from 'react-icons/md';
 
 const STATS = [
@@ -63,7 +63,9 @@ export default function Dashboard() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Dashboard Overview 👋</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdDashboard /> Dashboard Overview
+          </div>
           <div className="d-page-sub">Real-time management for Breva Café & Bar</div>
         </div>
         <div className="d-flex gap-2">

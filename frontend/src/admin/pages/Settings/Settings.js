@@ -12,7 +12,9 @@ export default function Settings() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Settings</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdSettings /> Settings
+          </div>
           <div className="d-page-sub">Configure your system preferences and business details</div>
         </div>
         <button className="d-btn-gold"><MdSave /> Save All Changes</button>

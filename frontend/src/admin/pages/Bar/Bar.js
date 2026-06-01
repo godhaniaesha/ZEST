@@ -94,7 +94,9 @@ export default function Bar({ userRole = 'chef' }) {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Bar & Beverage Management</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdLocalBar /> Bar & Beverage Management
+          </div>
           <div className="d-page-sub">Curate your premium spirits and cocktail collection</div>
         </div>
         <div className="d-flex gap-2">

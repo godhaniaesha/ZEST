@@ -134,7 +134,9 @@ export default function Menu({ userRole = 'chef' }) {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Menu Management</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdRestaurant /> Menu Management
+          </div>
           <div className="d-page-sub">Create and manage your culinary offerings</div>
         </div>
         <div className="d-flex gap-2">

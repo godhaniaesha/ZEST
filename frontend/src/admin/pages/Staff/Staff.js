@@ -3,7 +3,8 @@ import { Row, Col, Form } from 'react-bootstrap';
 import { 
   MdAdd, MdPhone, MdEmail, MdSearch, 
   MdMoreVert, MdBadge, MdAccessTime, MdFiberManualRecord,
-  MdEdit, MdDelete
+  MdEdit, MdDelete,
+  MdPeople
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
@@ -66,7 +67,9 @@ export default function Staff() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Staff & Personnel</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdPeople /> Staff & Personnel
+          </div>
           <div className="d-page-sub">Manage your service team and schedules</div>
         </div>
         <div className="d-flex gap-2">

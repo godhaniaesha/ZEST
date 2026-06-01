@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Row, Col, Badge } from 'react-bootstrap';
 import { 
   MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant, 
-  MdAdd, MdRemove, MdDeleteOutline, MdSend, MdHistory
+  MdAdd, MdRemove, MdDeleteOutline, MdSend, MdHistory,
+  MdReceipt, MdShoppingCart
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 
@@ -69,9 +70,11 @@ export default function TakeOrder() {
         <Col xs={12} lg={8}>
           <div className="d-page-header">
             <div>
-              <div className="d-page-heading">New Order 📝</div>
-              <div className="d-page-sub">Select items for the customer</div>
+            <div className="d-page-heading d-flex align-items-center gap-2">
+              <MdReceipt /> New Order
             </div>
+            <div className="d-page-sub">Select items for the customer</div>
+          </div>
             <div className="d-flex gap-2">
               <button className="d-btn-outline" onClick={() => navigate('/admin/orders')}>
                 <MdHistory className="me-2" /> Recent Orders
@@ -153,7 +156,7 @@ export default function TakeOrder() {
             <div className="d-pos-cart-items">
               {cart.length === 0 ? (
                 <div className="text-center mt-5" style={{ color: 'var(--d-text-muted)', opacity: 0.5 }}>
-                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛒</div>
+                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}><MdShoppingCart /></div>
                   <p style={{ fontWeight: 600 }}>Your cart is empty</p>
                   <small>Select items from the menu</small>
                 </div>
@@ -170,8 +173,11 @@ export default function TakeOrder() {
                         <span className="d-pos-qty-val">{item.qty}</span>
                         <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1); }}><MdAdd /></button>
                       </div>
-                      <button className="d-icon-btn text-danger" style={{ background: 'none' }} onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }}>
-                        <MdDeleteOutline fontSize="1.3rem" />
+                      <button 
+                        className="d-pos-delete-btn" 
+                        onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }}
+                      >
+                        <MdDeleteOutline fontSize="1rem" />
                       </button>
                     </div>
                   </div>
@@ -210,6 +216,24 @@ export default function TakeOrder() {
           </div>
         </Col>
       </Row>
+      <style jsx>{`
+        .d-pos-delete-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          border: none;
+          background: rgba(231, 76, 60, 0.1);
+          color: var(--d-danger);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .d-pos-delete-btn:hover {
+          background: rgba(231, 76, 60, 0.2);
+        }
+      `}</style>
     </div>
   );
 }

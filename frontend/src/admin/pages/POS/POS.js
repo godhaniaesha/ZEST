@@ -69,7 +69,9 @@ export default function POS() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">POS & Billing 💳</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdPayment /> POS & Billing
+          </div>
           <div className="d-page-sub">
             Point of Sale terminal for Breva Café & Bar
           </div>
