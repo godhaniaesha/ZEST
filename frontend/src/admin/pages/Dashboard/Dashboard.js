@@ -39,6 +39,26 @@ const INVENTORY_ALERTS = [
 ];
 
 export default function Dashboard() {
+  const handleDownloadReport = () => {
+    alert("Downloading sales report...");
+  };
+
+  const handleNewOrder = () => {
+    alert("Opening new order form...");
+  };
+
+  const viewAllOrders = () => {
+    alert("Navigating to Orders page...");
+  };
+
+  const manageRoster = () => {
+    alert("Navigating to Staff page...");
+  };
+
+  const handleTableClick = (tableNum) => {
+    alert(`Table ${tableNum} details`);
+  };
+
   return (
     <>
       <div className="d-page-header">
@@ -47,8 +67,8 @@ export default function Dashboard() {
           <div className="d-page-sub">Real-time management for Breva Café & Bar</div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline d-hide-mobile">Download Report</button>
-          <button className="d-btn-gold">+ New Order</button>
+          <button className="d-btn-outline d-hide-mobile" onClick={handleDownloadReport}>Download Report</button>
+          <button className="d-btn-gold" onClick={handleNewOrder}>+ New Order</button>
         </div>
       </div>
 
@@ -79,7 +99,7 @@ export default function Dashboard() {
                 <div className="d-section-title">Live Orders</div>
                 <div className="d-section-sub">Tracking Café & Bar active sessions</div>
               </div>
-              <button className="d-btn-outline" style={{ padding: '6px 14px', fontSize: '0.78rem' }}>View All</button>
+              <button className="d-btn-outline" style={{ padding: '6px 14px', fontSize: '0.78rem' }} onClick={viewAllOrders}>View All</button>
             </div>
             <div className="d-table-wrap">
               <table className="d-table">
@@ -168,16 +188,20 @@ export default function Dashboard() {
                 const color = s === 'occupied' ? 'var(--d-danger)' : s === 'reserved' ? 'var(--d-info)' : 'var(--d-success)';
                 const bg = s === 'occupied' ? 'rgba(231,76,60,0.1)' : s === 'reserved' ? 'rgba(52,152,219,0.1)' : 'rgba(46,204,113,0.1)';
                 return (
-                  <div key={i} style={{
-                    background: bg,
-                    border: `1.5px solid ${color}`,
-                    borderRadius: 'var(--d-radius-md)',
-                    padding: '12px 8px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    transition: 'var(--d-transition)',
-                    position: 'relative'
-                  }}>
+                  <div 
+                    key={i} 
+                    style={{
+                      background: bg,
+                      border: `1.5px solid ${color}`,
+                      borderRadius: 'var(--d-radius-md)',
+                      padding: '12px 8px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'var(--d-transition)',
+                      position: 'relative'
+                    }}
+                    onClick={() => handleTableClick(i + 1)}
+                  >
                     <div style={{ fontSize: '0.8rem', fontWeight: 800, color, fontFamily: 'Lato,sans-serif' }}>T{i + 1}</div>
                     <div style={{ fontSize: '0.6rem', color, textTransform: 'uppercase', fontWeight: 700, marginTop: '2px' }}>{s}</div>
                   </div>
@@ -215,7 +239,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            <button className="d-btn-primary w-100 mt-2" style={{ justifyContent: 'center' }}>Manage Roster</button>
+            <button className="d-btn-primary w-100 mt-2" style={{ justifyContent: 'center' }} onClick={manageRoster}>Manage Roster</button>
           </div>
         </Col>
       </Row>

@@ -24,10 +24,46 @@ export default function POS() {
     { id: 1, name: "Cappuccino", price: 180, qty: 2 },
     { id: 5, name: "Truffle Risotto", price: 680, qty: 1 },
   ]);
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
   const tax = subtotal * 0.05;
   const total = subtotal + tax;
+
+  const addToCart = (item) => {
+    setCart((prevCart) => {
+      const existing = prevCart.find((i) => i.id === item.id);
+      if (existing) {
+        return prevCart.map((i) =>
+          i.id === item.id ? { ...i, qty: i.qty + 1 } : i
+        );
+      }
+      return [...prevCart, { ...item, qty: 1 }];
+    });
+  };
+
+  const updateQty = (id, delta) => {
+    setCart((prevCart) =>
+      prevCart
+        .map((item) =>
+          item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
+        )
+        .filter((item) => item.qty > 0)
+    );
+  };
+
+  const removeFromCart = (id) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  };
+
+  const handlePayment = () => {
+    alert(`Payment of ₹${total.toLocaleString()} completed via ${paymentMethod}`);
+    setCart([]);
+  };
+
+  const handlePrintBill = () => {
+    alert("Bill sent to printer");
+  };
 
   return (
     <>
@@ -67,6 +103,7 @@ export default function POS() {
                       background: "var(--d-bg)",
                       transition: "var(--d-transition)",
                     }}
+                    onClick={() => addToCart(item)}
                   >
                     <div className="fw-bold" style={{ fontSize: "0.9rem" }}>
                       {item.name}
@@ -108,11 +145,17 @@ export default function POS() {
                       <td>₹{item.price}</td>
                       <td>
                         <div className="d-flex align-items-center gap-2">
-                          <button className="btn btn-sm btn-light p-1">
+                          <button
+                            className="btn btn-sm btn-light p-1"
+                            onClick={() => updateQty(item.id, -1)}
+                          >
                             <MdRemove />
                           </button>
                           <span>{item.qty}</span>
-                          <button className="btn btn-sm btn-light p-1">
+                          <button
+                            className="btn btn-sm btn-light p-1"
+                            onClick={() => updateQty(item.id, 1)}
+                          >
                             <MdAdd />
                           </button>
                         </div>
@@ -121,7 +164,10 @@ export default function POS() {
                         <strong>₹{item.price * item.qty}</strong>
                       </td>
                       <td>
-                        <button className="text-danger border-0 bg-transparent">
+                        <button
+                          className="text-danger border-0 bg-transparent"
+                          onClick={() => removeFromCart(item.id)}
+                        >
                           <MdDelete />
                         </button>
                       </td>
@@ -171,20 +217,23 @@ export default function POS() {
                 <div className="text-muted small mb-2">Payment Method</div>
                 <div className="d-flex gap-2">
                   <button
-                    className="d-btn-outline flex-grow-1 active"
+                    className={`d-btn-outline flex-grow-1 ${paymentMethod === "Cash" ? "active" : ""}`}
                     style={{ fontSize: "0.75rem" }}
+                    onClick={() => setPaymentMethod("Cash")}
                   >
                     Cash
                   </button>
                   <button
-                    className="d-btn-outline flex-grow-1"
+                    className={`d-btn-outline flex-grow-1 ${paymentMethod === "Card" ? "active" : ""}`}
                     style={{ fontSize: "0.75rem" }}
+                    onClick={() => setPaymentMethod("Card")}
                   >
                     Card
                   </button>
                   <button
-                    className="d-btn-outline flex-grow-1"
+                    className={`d-btn-outline flex-grow-1 ${paymentMethod === "UPI" ? "active" : ""}`}
                     style={{ fontSize: "0.75rem" }}
+                    onClick={() => setPaymentMethod("UPI")}
                   >
                     UPI
                   </button>
@@ -194,12 +243,14 @@ export default function POS() {
               <button
                 className="d-btn-gold w-100 py-3"
                 style={{ justifyContent: "center", fontSize: "1rem" }}
+                onClick={handlePayment}
               >
                 <MdPayment className="me-2" /> Complete Payment
               </button>
               <button
                 className="d-btn-outline w-100 mt-2"
                 style={{ justifyContent: "center" }}
+                onClick={handlePrintBill}
               >
                 <MdReceipt className="me-2" /> Print Bill
               </button>

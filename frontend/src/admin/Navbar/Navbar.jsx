@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { MdNotifications, MdSearch, MdFullscreen, MdPerson, MdSettings, MdLogout } from 'react-icons/md';
+import { MdNotifications, MdSearch, MdFullscreen, MdPerson, MdSettings, MdLogout, MdSwapVert } from 'react-icons/md';
 
 const PAGE_TITLES = {
   '/':             { title: 'Dashboard',    sub: 'Welcome back, Admin' },
@@ -15,7 +15,14 @@ const PAGE_TITLES = {
   '/settings':     { title: 'Settings',     sub: 'System preferences' },
 };
 
-export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar }) {
+const ROLE_LABELS = {
+  'superadmin': 'Super Admin',
+  'manager': 'Manager',
+  'chef': 'Chef',
+  'waiter': 'Waiter'
+};
+
+export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRole = 'superadmin', setUserRole }) {
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -27,6 +34,11 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar }) {
     'd-navbar',
     collapsed ? 'd-sidebar-collapsed' : ''
   ].filter(Boolean).join(' ');
+
+  const handleRoleChange = (newRole) => {
+    setUserRole(newRole);
+    setProfileOpen(false);
+  };
 
   return (
     <header className={navbarClass}>
@@ -120,12 +132,39 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar }) {
             <div className="d-avatar">AD</div>
             <div className="d-avatar-info">
               <span className="d-avatar-name">Admin User</span>
-              <span className="d-avatar-role">Super Admin</span>
+              <span className="d-avatar-role">{ROLE_LABELS[userRole] || 'Super Admin'}</span>
             </div>
           </div>
 
           {profileOpen && (
             <div className="d-profile-dropdown">
+              {/* Role Switcher for Demo */}
+              <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--d-border)', marginBottom: '8px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--d-text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MdSwapVert /> Switch Role (Demo)
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {Object.keys(ROLE_LABELS).map(role => (
+                    <button
+                      key={role}
+                      className={`d-dropdown-item ${userRole === role ? 'active' : ''}`}
+                      onClick={() => handleRoleChange(role)}
+                      style={{
+                        padding: '6px 10px',
+                        fontSize: '0.8rem',
+                        background: userRole === role ? 'var(--d-primary)' : 'transparent',
+                        color: userRole === role ? 'white' : 'var(--d-text-muted)',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      {ROLE_LABELS[role]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="d-dropdown-divider" />
+
               <Link to="/profile" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
                 <MdPerson /> Profile
               </Link>

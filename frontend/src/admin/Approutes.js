@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 
 import Layout from './Layout/Layout';
 
@@ -21,6 +21,12 @@ import Tables from './pages/Tables/Tables';
 import TakeOrder from './pages/TakeOrder/TakeOrder';
 import ServiceRequests from './pages/ServiceRequests/ServiceRequests';
 
+// Wrapper component to pass userRole to pages
+function PageWrapper({ Component }) {
+  const { userRole, setUserRole } = useOutletContext();
+  return <Component userRole={userRole} setUserRole={setUserRole} />;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -29,23 +35,23 @@ export default function AppRoutes() {
 
         <Route index element={<Navigate to="dashboard" replace />} />
 
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="menu" element={<Menu />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="reservations" element={<Reservations />} />
-        <Route path="bar" element={<Bar />} />
-        <Route path="inventory" element={<Inventory />} />
-        <Route path="staff" element={<Staff />} />
-        <Route path="reviews" element={<Reviews />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="users" element={<Users />} />
-        <Route path="system-logs" element={<SystemLogs />} />
-        <Route path="pos" element={<POS />} />
-        <Route path="kitchen-display" element={<KitchenDisplay />} />
-        <Route path="tables" element={<Tables />} />
-        <Route path="take-order" element={<TakeOrder />} />
-        <Route path="service-requests" element={<ServiceRequests />} />
+        <Route path="dashboard" element={<PageWrapper Component={Dashboard} />} />
+        <Route path="menu" element={<PageWrapper Component={Menu} />} />
+        <Route path="orders" element={<PageWrapper Component={Orders} />} />
+        <Route path="reservations" element={<PageWrapper Component={Reservations} />} />
+        <Route path="bar" element={<PageWrapper Component={Bar} />} />
+        <Route path="inventory" element={<PageWrapper Component={Inventory} />} />
+        <Route path="staff" element={<PageWrapper Component={Staff} />} />
+        <Route path="reviews" element={<PageWrapper Component={Reviews} />} />
+        <Route path="reports" element={<PageWrapper Component={Reports} />} />
+        <Route path="settings" element={<PageWrapper Component={Settings} />} />
+        <Route path="users" element={<PageWrapper Component={Users} />} />
+        <Route path="system-logs" element={<PageWrapper Component={SystemLogs} />} />
+        <Route path="pos" element={<PageWrapper Component={POS} />} />
+        <Route path="kitchen-display" element={<PageWrapper Component={KitchenDisplay} />} />
+        <Route path="tables" element={<PageWrapper Component={Tables} />} />
+        <Route path="take-order" element={<PageWrapper Component={TakeOrder} />} />
+        <Route path="service-requests" element={<PageWrapper Component={ServiceRequests} />} />
 
       </Route>
 

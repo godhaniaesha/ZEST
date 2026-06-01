@@ -18,7 +18,7 @@ const DRINKS = [
 
 const CATEGORIES = ['All', 'Cocktail', 'Beer', 'Wine', 'Spirits'];
 
-export default function Bar() {
+export default function Bar({ userRole = 'chef' }) {
   const [drinks, setDrinks] = useState(DRINKS);
   const [active, setActive] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,6 +29,9 @@ export default function Bar() {
   const [currentItem, setCurrentItem] = useState(null);
   const [formData, setFormData] = useState({ name: '', cat: 'Cocktail', price: '', available: true });
 
+  // Role-based permissions
+  const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
+
   const filtered = drinks.filter(d => {
     const matchesCat = active === 'All' || d.cat === active;
     const matchesSearch = d.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -36,18 +39,30 @@ export default function Bar() {
   });
 
   const handleAdd = () => {
+    if (!canAddEditDelete) {
+      alert('You do not have permission to add drinks.');
+      return;
+    }
     setCurrentItem(null);
     setFormData({ name: '', cat: 'Cocktail', price: '', available: true });
     setShowForm(true);
   };
 
   const handleEdit = (item) => {
+    if (!canAddEditDelete) {
+      alert('You do not have permission to edit drinks.');
+      return;
+    }
     setCurrentItem(item);
     setFormData({ name: item.name, cat: item.cat, price: item.price.replace('₹', ''), available: item.available });
     setShowForm(true);
   };
 
   const handleDeleteClick = (item) => {
+    if (!canAddEditDelete) {
+      alert('You do not have permission to delete drinks.');
+      return;
+    }
     setCurrentItem(item);
     setShowDelete(true);
   };
@@ -67,6 +82,14 @@ export default function Bar() {
     setShowDelete(false);
   };
 
+  const handleStockInventory = () => {
+    if (!canAddEditDelete) {
+      alert('You do not have permission to manage inventory.');
+      return;
+    }
+    alert('Stock Inventory functionality - Opens inventory management modal');
+  };
+
   return (
     <>
       <div className="d-page-header">
@@ -75,8 +98,16 @@ export default function Bar() {
           <div className="d-page-sub">Curate your premium spirits and cocktail collection</div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline d-hide-mobile">Stock Inventory</button>
-          <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> Add New Drink</button>
+          {canAddEditDelete && (
+            <button className="d-btn-outline d-hide-mobile" onClick={handleStockInventory}>
+              Stock Inventory
+            </button>
+          )}
+          {canAddEditDelete && (
+            <button className="d-btn-gold" onClick={handleAdd}>
+              <MdAdd /> Add New Drink
+            </button>
+          )}
         </div>
       </div>
 
@@ -87,17 +118,7 @@ export default function Bar() {
               <button 
                 key={c} 
                 onClick={() => setActive(c)} 
-                style={{
-                  background: active === c ? 'var(--d-primary)' : 'var(--d-white)',
-                  color: active === c ? 'var(--d-white)' : 'var(--d-text-muted)',
-                  border: '1.5px solid var(--d-border)',
-                  borderRadius: 'var(--d-radius-md)',
-                  padding: '8px 18px',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  transition: 'var(--d-transition)',
-                  cursor: 'pointer'
-                }}
+                className={`d-btn-filter ${active === c ? 'active' : ''}`}
               >
                 {c}
               </button>
@@ -116,6 +137,10 @@ export default function Bar() {
           </div>
         </Col>
       </Row>
+
+      <div className="d-section-sub mb-3">
+        {filtered.length} {filtered.length === 1 ? 'drink' : 'drinks'} found
+      </div>
 
       <Row className="g-3">
         {filtered.map((d, i) => (
@@ -139,10 +164,24 @@ export default function Bar() {
                 <div className="flex-grow-1">
                   <div className="d-flex justify-content-between align-items-start">
                     <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{d.name}</h5>
-                    <div className="d-flex gap-1">
-                      <button className="d-navbar-icon-btn" onClick={() => handleEdit(d)} style={{ width: '28px', height: '28px', fontSize: '1rem' }}><MdEdit /></button>
-                      <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(d)} style={{ width: '28px', height: '28px', fontSize: '1rem' }}><MdDelete /></button>
-                    </div>
+                    {canAddEditDelete && (
+                      <div className="d-flex gap-1">
+                        <button 
+                          className="d-navbar-icon-btn" 
+                          onClick={() => handleEdit(d)} 
+                          style={{ width: '28px', height: '28px', fontSize: '1rem' }}
+                        >
+                          <MdEdit />
+                        </button>
+                        <button 
+                          className="d-navbar-icon-btn text-danger" 
+                          onClick={() => handleDeleteClick(d)} 
+                          style={{ width: '28px', height: '28px', fontSize: '1rem' }}
+                        >
+                          <MdDelete />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="d-page-sub mb-2">{d.cat}</div>
                   <div className="d-flex justify-content-between align-items-center mt-3">
@@ -235,6 +274,30 @@ export default function Bar() {
         onConfirm={confirmDelete}
         itemName={currentItem?.name}
       />
+
+      <style jsx>{`
+        .d-btn-filter {
+          padding: 8px 16px;
+          border: 1.5px solid var(--d-border);
+          border-radius: var(--d-radius-md);
+          background: var(--d-white);
+          color: var(--d-text-muted);
+          font-weight: 600;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: var(--d-transition);
+        }
+        .d-btn-filter:hover {
+          background: var(--d-accent-soft);
+          border-color: var(--d-primary);
+          color: var(--d-primary);
+        }
+        .d-btn-filter.active {
+          background: var(--d-primary);
+          color: var(--d-white);
+          border-color: var(--d-primary);
+        }
+      `}</style>
     </>
   );
 }

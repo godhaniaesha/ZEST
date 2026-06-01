@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useOutletContext } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
 
@@ -7,6 +7,7 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 992);
+  const [userRole, setUserRole] = useState('superadmin'); // Default to superadmin for demo
 
   const handleToggle = () => {
     if (isMobile) {
@@ -40,6 +41,7 @@ export default function Layout() {
         collapsed={collapsed}
         mobileOpen={mobileOpen}
         onClose={handleClose}
+        currentUserRole={userRole}
       />
 
       <div className={mainClass}>
@@ -47,12 +49,19 @@ export default function Layout() {
           collapsed={collapsed}
           sidebarOpen={isMobile ? mobileOpen : !collapsed}
           onToggleSidebar={handleToggle}
+          userRole={userRole}
+          setUserRole={setUserRole}
         />
 
         <main className="d-page-body">
-          <Outlet />
+          <Outlet context={{ userRole, setUserRole }} />
         </main>
       </div>
     </div>
   );
+}
+
+// Hook to use the outlet context in child components
+export function useUserRole() {
+  return useOutletContext();
 }
