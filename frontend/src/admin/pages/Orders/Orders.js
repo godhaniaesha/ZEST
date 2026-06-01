@@ -26,6 +26,18 @@ export default function Orders() {
   const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Cancelled'];
   const filtered = filter === 'All' ? ORDERS : ORDERS.filter(o => o.status === filter);
 
+  const handleRefresh = () => {
+    alert("Refreshing order feed...");
+  };
+
+  const handleNewKOT = () => {
+    alert("Opening new Kitchen Order Ticket...");
+  };
+
+  const handleOrderAction = (orderId) => {
+    alert(`Actions for order ${orderId}`);
+  };
+
   return (
     <>
       <div className="d-page-header">
@@ -34,8 +46,8 @@ export default function Orders() {
           <div className="d-page-sub">Real-time order management for Café & Bar</div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline"><MdRefresh /> Refresh Feed</button>
-          <button className="d-btn-gold"><MdReceipt /> New KOT</button>
+          <button className="d-btn-outline" onClick={handleRefresh}><MdRefresh /> Refresh Feed</button>
+          <button className="d-btn-gold" onClick={handleNewKOT}><MdReceipt /> New KOT</button>
         </div>
       </div>
 
@@ -119,7 +131,7 @@ export default function Orders() {
                     </div>
                   </td>
                   <td>
-                    <button className="d-navbar-icon-btn">
+                    <button className="d-navbar-icon-btn" onClick={() => handleOrderAction(o.id)}>
                       <MdMoreVert />
                     </button>
                   </td>
