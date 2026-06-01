@@ -43,7 +43,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={`x_navbar x_navbar-dark${scrolled ? ' x_scrolled' : ''}`}>
+      <nav className={`x_navbar-dark${scrolled ? ' x_scrolled' : ''}`}>
         <div className="x_navbar-container">
 
           {/* Logo */}

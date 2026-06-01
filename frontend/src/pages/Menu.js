@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Star } from 'lucide-react';
+import { Search, Star, ArrowUpRight } from 'lucide-react';
 import { FaArrowLeftLong, FaArrowRightLong } from 'react-icons/fa6';
 import '../styles/menu_style.css';
 
@@ -182,108 +182,111 @@ const Menu = () => {
     .filter((item) => {
       const query = searchQuery.trim().toLowerCase();
       if (!query) return true;
-
       return (
         item.name.toLowerCase().includes(query) ||
         item.description.toLowerCase().includes(query) ||
         (categoryLabelMap[item.category] || item.category).toLowerCase().includes(query)
       );
     })
-    .sort((firstItem, secondItem) => {
-      if (sortBy === 'price-low') return firstItem.price - secondItem.price;
-      if (sortBy === 'price-high') return secondItem.price - firstItem.price;
-      if (sortBy === 'rating') return secondItem.rating - firstItem.rating;
-      return firstItem.id - secondItem.id;
+    .sort((a, b) => {
+      if (sortBy === 'price-low') return a.price - b.price;
+      if (sortBy === 'price-high') return b.price - a.price;
+      if (sortBy === 'rating') return b.rating - a.rating;
+      return a.id - b.id;
     });
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleCategoryChange = (categoryId) => {
-    setActiveCategory(categoryId);
-    setCurrentPage(1);
-  };
+  /* ── Discount helper ── */
+  const getSavePercent = (price, orig) =>
+    orig ? Math.round(((orig - price) / orig) * 100) : 0;
 
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleSortChange = (event) => {
-    setSortBy(event.target.value);
-    setCurrentPage(1);
-  };
-
+  /* ── Handlers ── */
+  const handleCategoryChange = (id) => { setActiveCategory(id); setCurrentPage(1); };
+  const handleSearchChange = (e) => { setSearchQuery(e.target.value); setCurrentPage(1); };
+  const handleSortChange = (e) => { setSortBy(e.target.value); setCurrentPage(1); };
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
-
-  const handleCardClick = (itemId) => {
-    navigate(`/menu/${itemId}`);
+  const handleCardClick = (id) => navigate(`/menu/${id}`);
+  const handleCardKeyDown = (e, id) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(id); }
   };
-
-  const handleCardKeyDown = (event, itemId) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleCardClick(itemId);
-    }
-  };
-
   const resetFilters = () => {
-    setActiveCategory('all');
-    setSearchQuery('');
-    setSortBy('featured');
-    setCurrentPage(1);
+    setActiveCategory('all'); setSearchQuery(''); setSortBy('featured'); setCurrentPage(1);
   };
 
   return (
     <main className="menu_page">
       <div className="menu_container">
+
+        {/* ══════════════════ HERO HEADER ══════════════════ */}
         <section className="menu_header">
           <div className="menu_header_copy">
-            <span className="menu_eyebrow">Zest kitchen selection</span>
-            <h1>Explore flavors made for the table.</h1>
+            <span className="menu_eyebrow">Zest Kitchen &amp; Bar</span>
+
+            <h1>
+              Explore <em>flavours</em><br />
+              made for the table.
+            </h1>
+
             <p>
-              Browse chef-loved plates, cafe classics, chilled drinks, and desserts with quick filters for every mood.
+              Browse chef-loved plates, cafe classics, craft cocktails, and
+              desserts — with quick filters for every mood and occasion.
             </p>
+
             <div className="menu_header_stats" aria-label="Menu highlights">
-              <span>{menuItems.length} dishes</span>
-              <span>{categories.length - 1} categories</span>
-              <span>From {'\u20B9'}65</span>
+              <span data-value={menuItems.length}>Dishes</span>
+              <span data-value={categories.length - 1}>Categories</span>
+              <span data-value="₹65">From</span>
             </div>
           </div>
 
+          {/* ── Spotlight Card ── */}
           <button
             type="button"
             className="menu_spotlight"
             onClick={() => handleCardClick(featuredItem.id)}
             aria-label={`View featured dish ${featuredItem.name}`}
           >
-            <img src={featuredItem.image} alt={featuredItem.name} />
-            <span className="menu_spotlight_badge">Chef pick</span>
-            <span className="menu_spotlight_content">
+            <img src={featuredItem.image} alt={featuredItem.name} loading="lazy" />
+            <span className="menu_spotlight_badge">Chef's Pick</span>
+
+            <div className="menu_spotlight_content">
               <span>{categoryLabelMap[featuredItem.category]}</span>
               <strong>{featuredItem.name}</strong>
               <small>
-                {'\u20B9'}{featuredItem.price} · {featuredItem.rating} rating
+                ₹{featuredItem.price} &nbsp;·&nbsp; {featuredItem.rating} ★ rating
               </small>
-            </span>
+            </div>
+
+            {/* hover CTA */}
+            <div className="menu_spotlight_overlay" aria-hidden="true">
+              <span>View Dish ↗</span>
+            </div>
           </button>
         </section>
 
-        <section className="menu_control_panel">
-          <div className="menu_tools" aria-label="Menu search and sorting">
+        {/* ── Divider ── */}
+        <div className="menu_divider" aria-hidden="true">
+          <div className="menu_divider_icon" />
+        </div>
+
+        {/* ══════════════════ CONTROL PANEL ══════════════════ */}
+        <section className="menu_control_panel" aria-label="Menu filters and search">
+          <div className="menu_tools">
             <label className="menu_search">
-              <Search size={18} />
+              <Search size={17} />
               <input
                 type="search"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                placeholder="Search dishes, drinks, desserts..."
+                placeholder="Search dishes, drinks, desserts…"
                 aria-label="Search menu items"
               />
             </label>
@@ -292,108 +295,122 @@ const Menu = () => {
               <span>Sort</span>
               <select value={sortBy} onChange={handleSortChange} aria-label="Sort menu items">
                 <option value="featured">Featured</option>
-                <option value="rating">Top rated</option>
-                <option value="price-low">Price low to high</option>
-                <option value="price-high">Price high to low</option>
+                <option value="rating">Top Rated</option>
+                <option value="price-low">Price: Low → High</option>
+                <option value="price-high">Price: High → Low</option>
               </select>
             </label>
           </div>
 
-          <section className="menu_filters" aria-label="Menu categories">
-            {categories.map((category) => (
+          <div className="menu_filters" role="group" aria-label="Menu categories">
+            {categories.map((cat) => (
               <button
                 type="button"
-                key={category.id}
-                className={`menu_filter_btn ${activeCategory === category.id ? 'active' : ''}`}
-                onClick={() => handleCategoryChange(category.id)}
-                aria-pressed={activeCategory === category.id}
+                key={cat.id}
+                className={`menu_filter_btn${activeCategory === cat.id ? ' active' : ''}`}
+                onClick={() => handleCategoryChange(cat.id)}
+                aria-pressed={activeCategory === cat.id}
               >
-                {category.label}
+                {cat.label}
               </button>
             ))}
-          </section>
+          </div>
         </section>
 
+        {/* ── Results bar ── */}
         <div className="menu_results_bar">
-          <span>
-            Showing {paginatedItems.length} of {filteredItems.length} items
-          </span>
+          <span>Showing {paginatedItems.length} of {filteredItems.length} items</span>
           <strong>{categoryLabelMap[activeCategory]}</strong>
         </div>
 
+        {/* ══════════════════ GRID ══════════════════ */}
         {paginatedItems.length > 0 ? (
-          <section className="menu_grid">
-            {paginatedItems.map((item) => (
-              <div
-                key={item.id}
-                className="menu_card"
-                onClick={() => handleCardClick(item.id)}
-                onKeyDown={(event) => handleCardKeyDown(event, item.id)}
-                role="button"
-                tabIndex={0}
-                aria-label={`View ${item.name}`}
-              >
-                <div className="menu_card_image">
-                  <img src={item.image} alt={item.name} />
-                  <div className="menu_card_badge">
-                    {categoryLabelMap[item.category] || item.category}
-                  </div>
-                </div>
-                <div className="menu_card_content">
-                  <span className="menu_card_category">
-                    {categoryLabelMap[item.category] || item.category}
-                  </span>
-                  <h3 className="menu_card_title">{item.name}</h3>
-                  <p className="menu_card_description">{item.description}</p>
-                  <div className="menu_card_footer">
-                    <div className="menu_card_prices">
-                      <span className="menu_card_price">{'\u20B9'}{item.price}</span>
-                      {item.originalPrice && (
-                        <span className="menu_card_original_price">
-                          {'\u20B9'}{item.originalPrice}
-                        </span>
-                      )}
+          <section className="menu_grid" aria-label="Menu items">
+            {paginatedItems.map((item) => {
+              const savePercent = getSavePercent(item.price, item.originalPrice);
+              return (
+                <article
+                  key={item.id}
+                  className="menu_card"
+                  onClick={() => handleCardClick(item.id)}
+                  onKeyDown={(e) => handleCardKeyDown(e, item.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View ${item.name}`}
+                >
+                  {/* Image */}
+                  <div className="menu_card_image">
+                    <img src={item.image} alt={item.name} loading="lazy" />
+                    <div className="menu_card_badge">
+                      {categoryLabelMap[item.category] || item.category}
                     </div>
-                    <div className="menu_card_rating">
-                      <Star size={16} fill="currentColor" />
-                      <span>
-                        {item.rating} ({item.reviews})
-                      </span>
+                    {savePercent > 0 && (
+                      <div
+                        className="menu_card_badge"
+                        style={{ left: 'auto', right: 18, background: 'rgba(46,204,113,0.9)', color: '#fff' }}
+                      >
+                        -{savePercent}%
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="menu_card_content">
+                    <span className="menu_card_category">
+                      {categoryLabelMap[item.category] || item.category}
+                    </span>
+                    <h3 className="menu_card_title">{item.name}</h3>
+                    <p className="menu_card_description">{item.description}</p>
+
+                    <div className="menu_card_footer">
+                      <div className="menu_card_prices">
+                        <span className="menu_card_price">₹{item.price}</span>
+                        {item.originalPrice && (
+                          <span className="menu_card_original_price">₹{item.originalPrice}</span>
+                        )}
+                      </div>
+                      <div className="menu_card_rating">
+                        <Star size={14} fill="currentColor" />
+                        <span>{item.rating} ({item.reviews})</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
+
+                  {/* Animated arrow */}
+                  <div className="menu_card_view_btn" aria-hidden="true">↗</div>
+                </article>
+              );
+            })}
           </section>
         ) : (
           <section className="menu_empty">
-            <h2>No menu items found</h2>
-            <p>Try another category or search term.</p>
-            <button type="button" onClick={resetFilters}>
-              Reset filters
-            </button>
+            <span className="menu_empty_icon" aria-hidden="true">🍽</span>
+            <h2>No items found</h2>
+            <p>Try a different category or search term.</p>
+            <button type="button" onClick={resetFilters}>Reset Filters</button>
           </section>
         )}
 
+        {/* ══════════════════ PAGINATION ══════════════════ */}
         {filteredItems.length > 0 && totalPages > 1 && (
-          <div className="menu_pagination">
+          <nav className="menu_pagination" aria-label="Page navigation">
             <button
               type="button"
               className="pagination_btn"
               onClick={() => handlePageChange(1)}
               disabled={currentPage === 1}
-              aria-label="Go to first page"
+              aria-label="First page"
             >
-              <FaArrowLeftLong />
+              <FaArrowLeftLong size={13} />
             </button>
 
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 type="button"
                 key={page}
-                className={`pagination_btn ${currentPage === page ? 'active' : ''}`}
+                className={`pagination_btn${currentPage === page ? ' active' : ''}`}
                 onClick={() => handlePageChange(page)}
-                aria-label={`Go to page ${page}`}
+                aria-label={`Page ${page}`}
                 aria-current={currentPage === page ? 'page' : undefined}
               >
                 {page}
@@ -405,11 +422,11 @@ const Menu = () => {
               className="pagination_btn"
               onClick={() => handlePageChange(totalPages)}
               disabled={currentPage === totalPages}
-              aria-label="Go to last page"
+              aria-label="Last page"
             >
-              <FaArrowRightLong />
+              <FaArrowRightLong size={13} />
             </button>
-          </div>
+          </nav>
         )}
 
         {filteredItems.length > 0 && (

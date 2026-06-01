@@ -796,14 +796,23 @@ export default function ZestReservation() {
   };
   const onCvvChange = (v) => update("cvv", v.replace(/\D/g, "").slice(0, 3));
 
-  const handleClockInput = (cx, cy) => {
+  const selectHour = (h) => {
+    setSelHour(h === 0 ? 12 : h);
+    setActiveView("minute");
+  };
+
+  const selectMinute = (m) => {
+    setSelMin(m);
+  };
+
+  const handleClockInput = (cx, cy, view = activeView) => {
     if (!clockRef.current) return;
     const rect = clockRef.current.getBoundingClientRect();
     const x = cx - (rect.left + rect.width / 2);
     const y = cy - (rect.top + rect.height / 2);
     let deg = (Math.atan2(y, x) * 180) / Math.PI + 90;
     if (deg < 0) deg += 360;
-    if (activeView === "hour") {
+    if (view === "hour") {
       const h = Math.round(deg / 30) % 12;
       setSelHour(h === 0 ? 12 : h);
     } else {
@@ -813,11 +822,13 @@ export default function ZestReservation() {
 
   const onClockPointerDown = (e) => {
     e.preventDefault();
-    handleClockInput(e.clientX, e.clientY);
-    const move = (me) => handleClockInput(me.clientX, me.clientY);
+    const dragView = activeView;
+    handleClockInput(e.clientX, e.clientY, dragView);
+    const move = (me) => handleClockInput(me.clientX, me.clientY, dragView);
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      if (dragView === "hour") setActiveView("minute");
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -884,7 +895,7 @@ export default function ZestReservation() {
   return (
     <>
       <style>{h_res_css}</style>
-      <div className="h_res_wrapper" style={{ marginTop: "70px" }}>
+      <div className="h_res_wrapper">
         <div className="h_res_glows">
           <div className="h_res_glow_1" />
           <div className="h_res_glow_2" />
@@ -986,11 +997,11 @@ export default function ZestReservation() {
                             <button
                               key={num}
                               className={`h_clock_num ${(activeView === "hour" ? selHour : selMin) === num ? "selected" : ""}`}
-                              onClick={() =>
-                                activeView === "hour"
-                                  ? setSelHour(num)
-                                  : setSelMin(num)
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (activeView === "hour") selectHour(num);
+                                else selectMinute(num);
+                              }}
                               style={{
                                 left: `calc(50% + ${clockRadius * Math.cos(angle)}px)`,
                                 top: `calc(50% + ${clockRadius * Math.sin(angle)}px)`,
