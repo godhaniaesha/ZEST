@@ -11,7 +11,7 @@ import {
     ChevronRight,
     Award,
 } from 'lucide-react';
-import '../styles/profile.css';
+// import '../styles/profile.css';
 
 const Profile = () => {
     const [activeTab, setActiveTab] = useState('profile');
@@ -330,29 +330,6 @@ const Profile = () => {
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="x_profile_security_section">
-                                            <h3>Security & Privacy</h3>
-                                            <div className="x_profile_actions_grid">
-                                                <button
-                                                    className="x_profile_action_card"
-                                                    onClick={() => setShowChangePassword(true)}
-                                                >
-                                                    <Lock size={24} />
-                                                    <div>
-                                                        <h4>Change Password</h4>
-                                                        <p>Update your password to keep your account secure</p>
-                                                    </div>
-                                                </button>
-                                                <button className="x_profile_action_card">
-                                                    <Mail size={24} />
-                                                    <div>
-                                                        <h4>Email Preferences</h4>
-                                                        <p>Manage notification and email settings</p>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        </div>
                                     </>
                                 )}
                             </div>
@@ -424,28 +401,6 @@ const Profile = () => {
                                 </div>
                             )}
 
-                            <div className="x_booking_security_section">
-                                <h3>Security & Preferences</h3>
-                                <div className="x_booking_actions_grid">
-                                    <button
-                                        className="x_booking_action_card"
-                                        onClick={() => setShowChangePassword(true)}
-                                    >
-                                        <Lock size={24} />
-                                        <div>
-                                            <h4>Change Password</h4>
-                                            <p>Update your password to keep your account secure</p>
-                                        </div>
-                                    </button>
-                                    <button className="x_booking_action_card">
-                                        <Mail size={24} />
-                                        <div>
-                                            <h4>Email Preferences</h4>
-                                            <p>Manage reservation and booking notifications</p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     )}
 
