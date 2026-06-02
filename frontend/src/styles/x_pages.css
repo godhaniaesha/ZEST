@@ -3719,6 +3719,7 @@ body {
   color: var(--text-primary);
   padding-top: var(--d-navbar-height);
   overflow-x: hidden;
+  padding-bottom: 60px;
 }
 
 .x_gallery_inner {
@@ -3813,6 +3814,7 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: shimmer 6s linear infinite, fadeUp 0.9s ease-out 0.3s both;
+  line-height: 1.2;
 }
 
 .x_gallery_hero_sub {
@@ -4082,9 +4084,6 @@ body {
 /* ═══════════════════════════════════════════════════════════
    GALLERY GRID
    ═══════════════════════════════════════════════════════════ */
-.x_gallery_grid_section {
-  padding: 0 0 100px;
-}
 
 /* ── GRID MODE ── */
 .x_gallery_grid.view_grid {
@@ -4933,7 +4932,7 @@ body {
   }
 
   .x_gallery_hero_left {
-    padding: 80px 0 40px;
+    padding: 0 0 40px;
     text-align: center;
     align-items: center;
   }
@@ -5012,10 +5011,6 @@ body {
 
   .x_gallery_hero_left {
     padding: 64px 0 32px;
-  }
-
-  .x_gallery_stats {
-    gap: 24px;
   }
 
   .x_gallery_stats_item strong {
@@ -5685,6 +5680,7 @@ x_gallery_divider_gem span {
     padding-top: 64px;
   }
 
+
   .x_gallery_hero,
   .x_blog_hero {
     padding: 80px 20px 60px;
@@ -5698,7 +5694,7 @@ x_gallery_divider_gem span {
   .x_gallery_page,
   .x_blog_page,
   .x_blogdetail_page {
-    padding-top: 60px;
+    padding: 60px 0px;
   }
 
   .x_gallery_hero,
@@ -5801,7 +5797,7 @@ x_gallery_divider_gem span {
   .x_gallery_page,
   .x_blog_page,
   .x_blogdetail_page {
-    padding-top: 52px;
+    padding-top: 0px;
   }
 
   .x_gallery_hero,
@@ -5812,8 +5808,14 @@ x_gallery_divider_gem span {
   .x_gallery_headline,
   .x_blog_headline,
   .x_blogdetail_title {
-    font-size: clamp(1.3rem, 3vw, 2rem);
+    font-size: clamp(2.3rem, 3vw, 2rem);
     margin: 12px 0 16px;
+  }
+  .x_gallery_hero_label {
+    margin-bottom: 20px;
+  }
+  .x_gallery_hero_sub {
+        margin: 12px 0 38px;
   }
 
   .x_gallery_grid {
@@ -5935,10 +5937,6 @@ x_gallery_divider_gem span {
     aspect-ratio: 1;
   }
 
-  .x_gallery_filter_buttons {
-    gap: 6px;
-  }
-
   .x_gallery_filter_btn {
     padding: 7px 12px;
     font-size: 0.8rem;
@@ -5958,8 +5956,8 @@ x_gallery_divider_gem span {
   }
 
   .x_gallery_close {
-    top: -35px;
-    right: -5px;
+    top: 18px;
+    right: 12px;
   }
 
   .x_blogdetail_nav_grid {

@@ -757,7 +757,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: rgba(201, 168, 76, 0.4);
+  color: var(--d-gold-light);
   font-size: 11px;
   letter-spacing: 4px;
   font-family: 'Cinzel', serif;
@@ -850,7 +850,7 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-size: 16px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(255 255 255 / 80%);
   margin-bottom: 0;
   font-style: italic;
 }
@@ -860,7 +860,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgb(255 255 255 / 80%);
   text-decoration: none;
   margin-bottom: 12px;
   transition: var(--d-transition);
@@ -988,7 +988,7 @@ body {
 .x_footer_contact_value {
   font-family: 'Jost', sans-serif;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgb(255 255 255 / 80%);
   font-weight: 300;
 }
 
@@ -1009,7 +1009,7 @@ body {
   font-family: 'Cinzel', serif;
   font-size: 9px;
   letter-spacing: 2px;
-  color: var(--d-gold);
+  color: var(--d-gold-light);
   text-transform: uppercase;
   opacity: 0.8;
   /* margin-bottom: 3px; */
@@ -1020,7 +1020,7 @@ body {
 .x_footer_hours_time {
   font-family: 'Cormorant Garamond', serif;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgb(255 255 255 / 80%);
   font-style: italic;
   display: block;
 }

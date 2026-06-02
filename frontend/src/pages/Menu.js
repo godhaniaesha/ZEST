@@ -162,12 +162,12 @@ const Menu = () => {
   const categories = [
     { id: 'all', label: 'All Items' },
     { id: 'appetizers', label: 'Appetizers' },
-    { id: 'mains', label: 'Main Course' },
+    { id: 'salads', label: 'Salads' },
     { id: 'desserts', label: 'Desserts' },
+    { id: 'mains', label: 'Main Course' },
     { id: 'beverages', label: 'Beverages' },
     { id: 'cocktails', label: 'Cocktails' },
     { id: 'breakfast', label: 'Breakfast' },
-    { id: 'salads', label: 'Salads' },
   ];
 
   const categoryLabelMap = categories.reduce((labels, category) => {
@@ -227,8 +227,11 @@ const Menu = () => {
 
         {/* ══════════════════ HERO HEADER ══════════════════ */}
         <section className="menu_header">
+
           <div className="menu_header_copy">
-            <span className="menu_eyebrow">Zest Kitchen &amp; Bar</span>
+            <div className="menu_eyebrow_wrapper">
+              <span className="menu_eyebrow">Zest Kitchen &amp; Bar</span>
+            </div>
 
             <h1>
               Explore <em>flavours</em><br />
@@ -241,35 +244,55 @@ const Menu = () => {
             </p>
 
             <div className="menu_header_stats" aria-label="Menu highlights">
-              <span data-value={menuItems.length}>Dishes</span>
-              <span data-value={categories.length - 1}>Categories</span>
-              <span data-value="₹65">From</span>
+              <div className="stat_item">
+                <span className="stat_value">{menuItems.length}</span>
+                <span className="stat_label">Dishes</span>
+              </div>
+              <div className="stat_item">
+                <span className="stat_value">{categories.length - 1}</span>
+                <span className="stat_label">Categories</span>
+              </div>
+              <div className="stat_item">
+                <span className="stat_value">₹65</span>
+                <span className="stat_label">START AT</span>
+              </div>
             </div>
           </div>
 
-          {/* ── Spotlight Card ── */}
-          <button
-            type="button"
-            className="menu_spotlight"
-            onClick={() => handleCardClick(featuredItem.id)}
-            aria-label={`View featured dish ${featuredItem.name}`}
-          >
-            <img src={featuredItem.image} alt={featuredItem.name} loading="lazy" />
-            <span className="menu_spotlight_badge">Chef's Pick</span>
+          {/* ── Spotlight Showcase (Premium Layered Design) ── */}
+          <div className="menu_spotlight_showcase">
+            <button
+              type="button"
+              className="spotlight_main_card"
+              onClick={() => handleCardClick(featuredItem.id)}
+              aria-label={`Featured: ${featuredItem.name}`}
+            >
+              <div className="spotlight_image_container">
+                <img src={featuredItem.image} alt={featuredItem.name} loading="lazy" />
+                <div className="spotlight_image_overlay" />
+              </div>
 
-            <div className="menu_spotlight_content">
-              <span>{categoryLabelMap[featuredItem.category]}</span>
-              <strong>{featuredItem.name}</strong>
-              <small>
-                ₹{featuredItem.price} &nbsp;·&nbsp; {featuredItem.rating} ★ rating
-              </small>
-            </div>
+              <div className="spotlight_floating_plate">
+                <span className="spotlight_tag">Chef's Selection</span>
+                <div className="spotlight_info">
+                  <span className="spotlight_category">{categoryLabelMap[featuredItem.category]}</span>
+                  <h2 className="spotlight_title">{featuredItem.name}</h2>
+                  <div className="spotlight_meta">
+                    <span className="spotlight_price">₹{featuredItem.price}</span>
+                    <span className="spotlight_rating"><Star size={12} fill="currentColor" /> {featuredItem.rating}</span>
+                  </div>
+                </div>
+                <div className="spotlight_action">
+                  <span>Explore Dish</span>
+                  <ArrowUpRight size={18} />
+                </div>
+              </div>
 
-            {/* hover CTA */}
-            <div className="menu_spotlight_overlay" aria-hidden="true">
-              <span>View Dish ↗</span>
-            </div>
-          </button>
+              {/* Decorative Accent Elements */}
+              <div className="spotlight_accent_frame" aria-hidden="true" />
+              <div className="spotlight_glow" aria-hidden="true" />
+            </button>
+          </div>
         </section>
 
         {/* ── Divider ── */}
