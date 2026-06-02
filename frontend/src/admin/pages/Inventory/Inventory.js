@@ -77,7 +77,9 @@ export default function Inventory() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Stock & Inventory</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdInventory /> Stock & Inventory
+          </div>
           <div className="d-page-sub">Monitor supplies for your kitchen and bar</div>
         </div>
         <div className="d-flex gap-2">

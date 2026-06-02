@@ -22,7 +22,9 @@ export default function Reviews() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Guest Reviews</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdStar /> Guest Reviews
+          </div>
           <div className="d-page-sub">Monitor and respond to customer feedback</div>
         </div>
         <div className="d-flex gap-2">

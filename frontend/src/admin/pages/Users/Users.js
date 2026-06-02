@@ -56,7 +56,9 @@ export default function Users() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">User Management 👥</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdAdminPanelSettings /> User Management
+          </div>
           <div className="d-page-sub">Manage staff accounts and permissions</div>
         </div>
         <button className="d-btn-gold" onClick={handleAdd}><MdPersonAdd /> Add New User</button>

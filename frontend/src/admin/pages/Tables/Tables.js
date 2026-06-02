@@ -141,7 +141,9 @@ export default function Tables({ userRole = 'waiter' }) {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Table Management 🪑</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdTableRestaurant /> Table Management
+          </div>
           <div className="d-page-sub">Manage restaurant tables and seating arrangements</div>
         </div>
         <div className="d-flex gap-3 align-items-center flex-wrap">

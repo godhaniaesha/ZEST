@@ -15,7 +15,9 @@ export default function ServiceRequests() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Customer Requests 🔔</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdNotificationsActive /> Customer Requests
+          </div>
           <div className="d-page-sub">Live service notifications and alerts from tables</div>
         </div>
         <div className="d-flex gap-2">

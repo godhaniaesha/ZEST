@@ -42,7 +42,9 @@ export default function Orders() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Live Orders</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdReceipt /> Live Orders
+          </div>
           <div className="d-page-sub">Real-time order management for Café & Bar</div>
         </div>
         <div className="d-flex gap-2">

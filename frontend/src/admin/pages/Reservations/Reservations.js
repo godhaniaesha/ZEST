@@ -18,7 +18,9 @@ export default function Reservations() {
     <>
       <div className="d-page-header">
         <div>
-          <div className="d-page-heading">Reservations</div>
+          <div className="d-page-heading d-flex align-items-center gap-2">
+            <MdEventSeat /> Reservations
+          </div>
           <div className="d-page-sub">Manage guest bookings and table assignments</div>
         </div>
         <div className="d-flex gap-2">
