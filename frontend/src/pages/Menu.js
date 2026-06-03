@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Star, ArrowUpRight } from 'lucide-react';
+import { Search, Star } from 'lucide-react';
 import { FaArrowLeftLong, FaArrowRightLong } from 'react-icons/fa6';
 import '../styles/menu_style.css';
 
@@ -199,10 +199,6 @@ const Menu = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-  /* ── Discount helper ── */
-  const getSavePercent = (price, orig) =>
-    orig ? Math.round(((orig - price) / orig) * 100) : 0;
-
   /* ── Handlers ── */
   const handleCategoryChange = (id) => { setActiveCategory(id); setCurrentPage(1); };
   const handleSearchChange = (e) => { setSearchQuery(e.target.value); setCurrentPage(1); };
@@ -222,187 +218,185 @@ const Menu = () => {
   };
 
   return (
-    <main className="menu_page">
-      <div className="menu_container">
+    <div className="x_menu_page">
+      <div className="x_menu_inner">
 
         {/* ══════════════════ HERO HEADER ══════════════════ */}
-        <section className="menu_header">
-
-          <div className="menu_header_copy">
-            <div className="menu_eyebrow_wrapper">
-              <span className="menu_eyebrow">Zest Kitchen &amp; Bar</span>
+        <section className="x_menu_hero">
+          <div className="x_menu_hero_left">
+            <div className="x_menu_hero_label">
+              <span className="x_menu_hero_label_line" />
+              <span className="x_menu_hero_label_text">Zest Kitchen &amp; Bar</span>
             </div>
 
-            <h1>
-              Explore <em>flavours</em><br />
-              made for the table.
+            <h1 className="x_menu_headline">
+              Savour <em>flavours</em><br />
+              Crafted to Delight.
             </h1>
 
-            <p>
+            <p className="x_menu_hero_sub">
               Browse chef-loved plates, cafe classics, craft cocktails, and
               desserts — with quick filters for every mood and occasion.
             </p>
 
-            <div className="menu_header_stats" aria-label="Menu highlights">
-              <div className="stat_item">
-                <span className="stat_value">{menuItems.length}</span>
-                <span className="stat_label">Dishes</span>
+            <div className="x_menu_stats" aria-label="Menu highlights">
+              <div className="x_menu_stats_item">
+                <strong>{menuItems.length}</strong>
+                <span>Dishes</span>
               </div>
-              <div className="stat_item">
-                <span className="stat_value">{categories.length - 1}</span>
-                <span className="stat_label">Categories</span>
+              <div className="x_menu_stats_item">
+                <strong>{categories.length - 1}</strong>
+                <span>Categories</span>
               </div>
-              <div className="stat_item">
-                <span className="stat_value">₹65</span>
-                <span className="stat_label">START AT</span>
+              <div className="x_menu_stats_item">
+                <strong>₹65</strong>
+                <span>Starts at</span>
               </div>
             </div>
           </div>
 
-          {/* ── Spotlight Showcase (Premium Layered Design) ── */}
-          <div className="menu_spotlight_showcase">
-            <button
-              type="button"
-              className="spotlight_main_card"
-              onClick={() => handleCardClick(featuredItem.id)}
-              aria-label={`Featured: ${featuredItem.name}`}
-            >
-              <div className="spotlight_image_container">
-                <img src={featuredItem.image} alt={featuredItem.name} loading="lazy" />
-                <div className="spotlight_image_overlay" />
+          <div className="x_menu_hero_right">
+            <div className="x_menu_showcase">
+              {/* Main Plate with unique mask */}
+              <div className="x_menu_plate_wrap">
+                <img src={menuItems[7]?.image} alt="Signature Dish" className="x_menu_main_plate" />
+                <div className="x_menu_plate_ring" />
               </div>
 
-              <div className="spotlight_floating_plate">
-                <span className="spotlight_tag">Chef's Selection</span>
-                <div className="spotlight_info">
-                  <span className="spotlight_category">{categoryLabelMap[featuredItem.category]}</span>
-                  <h2 className="spotlight_title">{featuredItem.name}</h2>
-                  <div className="spotlight_meta">
-                    <span className="spotlight_price">₹{featuredItem.price}</span>
-                    <span className="spotlight_rating"><Star size={12} fill="currentColor" /> {featuredItem.rating}</span>
-                  </div>
-                </div>
-                <div className="spotlight_action">
-                  <span>Explore Dish</span>
-                  <ArrowUpRight size={18} />
-                </div>
+              {/* Floating accent elements */}
+              <div className="x_menu_accent x_accent_1">
+                <img src={menuItems[1]?.image} alt="Dessert" />
+              </div>
+              <div className="x_menu_accent x_accent_2">
+                <img src={menuItems[2]?.image} alt="Cocktail" />
               </div>
 
-              {/* Decorative Accent Elements */}
-              <div className="spotlight_accent_frame" aria-hidden="true" />
-              <div className="spotlight_glow" aria-hidden="true" />
-            </button>
+              {/* Decorative text/badges */}
+              <div className="x_menu_badge_float">
+                <Star size={12} fill="currentColor" />
+                <span>Chef's Choice</span>
+              </div>
+              
+              <div className="x_menu_experience_badge">
+                <strong>100%</strong>
+                <span>Fresh</span>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ── Divider ── */}
-        <div className="menu_divider" aria-hidden="true">
-          <div className="menu_divider_icon" />
+        {/* ══ SECTION HEAD ══ */}
+        <div className="x_gallery_section_head">
+          <div className="x_gallery_section_title_group">
+            <span className="x_gallery_section_num">01</span>
+            <h2 className="x_gallery_section_title">
+              Our <em>Culinary</em> Menu
+            </h2>
+          </div>
         </div>
 
         {/* ══════════════════ CONTROL PANEL ══════════════════ */}
-        <section className="menu_control_panel" aria-label="Menu filters and search">
-          <div className="menu_tools">
-            <label className="menu_search">
-              <Search size={17} />
+        <section className="x_menu_controls_section">
+          <div className="x_menu_top_controls">
+            <div className="x_menu_search_wrap">
+              <Search size={18} />
               <input
                 type="search"
+                className="x_menu_search_input"
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Search dishes, drinks, desserts…"
                 aria-label="Search menu items"
               />
-            </label>
+            </div>
 
-            <label className="menu_sort">
-              <span>Sort</span>
-              <select value={sortBy} onChange={handleSortChange} aria-label="Sort menu items">
+            <div className="x_menu_sort_wrap">
+              <span className="x_menu_sort_label">Sort By</span>
+              <select 
+                className="x_menu_sort_select"
+                value={sortBy} 
+                onChange={handleSortChange} 
+                aria-label="Sort menu items"
+              >
                 <option value="featured">Featured</option>
                 <option value="rating">Top Rated</option>
                 <option value="price-low">Price: Low → High</option>
                 <option value="price-high">Price: High → Low</option>
               </select>
-            </label>
+            </div>
           </div>
 
-          <div className="menu_filters" role="group" aria-label="Menu categories">
-            {categories.map((cat) => (
-              <button
-                type="button"
-                key={cat.id}
-                className={`menu_filter_btn${activeCategory === cat.id ? ' active' : ''}`}
-                onClick={() => handleCategoryChange(cat.id)}
-                aria-pressed={activeCategory === cat.id}
-              >
-                {cat.label}
-              </button>
-            ))}
+          <div className="x_menu_filters_bar">
+            <div className="x_menu_filter_buttons" role="group" aria-label="Menu categories">
+              {categories.map((cat) => (
+                <button
+                  type="button"
+                  key={cat.id}
+                  className={`x_menu_filter_btn${activeCategory === cat.id ? ' active' : ''}`}
+                  onClick={() => handleCategoryChange(cat.id)}
+                  aria-pressed={activeCategory === cat.id}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* ── Results bar ── */}
-        <div className="menu_results_bar">
-          <span>Showing {paginatedItems.length} of {filteredItems.length} items</span>
-          <strong>{categoryLabelMap[activeCategory]}</strong>
+        <div className="x_menu_results_info">
+          <span className="x_menu_results_count">Showing {paginatedItems.length} of {filteredItems.length} items</span>
+          <strong className="x_menu_active_cat">{categoryLabelMap[activeCategory]}</strong>
         </div>
 
         {/* ══════════════════ GRID ══════════════════ */}
         {paginatedItems.length > 0 ? (
-          <section className="menu_grid" aria-label="Menu items">
+          <section className="x_menu_grid" aria-label="Menu items">
             {paginatedItems.map((item) => {
-              const savePercent = getSavePercent(item.price, item.originalPrice);
               return (
                 <article
                   key={item.id}
-                  className="menu_card"
+                  className="x_menu_card"
                   onClick={() => handleCardClick(item.id)}
                   onKeyDown={(e) => handleCardKeyDown(e, item.id)}
                   role="button"
                   tabIndex={0}
                   aria-label={`View ${item.name}`}
                 >
-                  {/* Image */}
-                  <div className="menu_card_image">
+                  <div className="x_menu_card_img_wrap">
                     <img src={item.image} alt={item.name} loading="lazy" />
-                    <div className="menu_card_badge">
+                    <div className="x_menu_card_badge">
                       {categoryLabelMap[item.category] || item.category}
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="menu_card_content">
-                    <span className="menu_card_category">
-                      {categoryLabelMap[item.category] || item.category}
-                    </span>
-                    <h3 className="menu_card_title">{item.name}</h3>
-                    <p className="menu_card_description">{item.description}</p>
+                  <div className="x_menu_card_content">
+                    <h3 className="x_menu_card_title">{item.name}</h3>
+                    <p className="x_menu_card_desc">{item.description}</p>
 
-                    <div className="menu_card_footer">
-                      <div className="menu_card_prices">
-                        <span className="menu_card_price">₹{item.price}</span>
+                    <div className="x_menu_card_footer">
+                      <div className="x_menu_card_price_group">
+                        <span className="x_menu_card_price">₹{item.price}</span>
                         {item.originalPrice && (
-                          <span className="menu_card_original_price">₹{item.originalPrice}</span>
+                          <span className="x_menu_card_orig_price">₹{item.originalPrice}</span>
                         )}
                       </div>
-                      <div className="menu_card_rating">
+                      <div className="x_menu_card_rating">
                         <Star size={14} fill="currentColor" />
                         <span>{item.rating} ({item.reviews})</span>
                       </div>
                     </div>
                   </div>
-
-                  {/* Animated arrow */}
-                  {/* <div className="menu_card_view_btn" aria-hidden="true">↗</div> */}
                 </article>
               );
             })}
           </section>
         ) : (
-          <section className="menu_empty">
-            <span className="menu_empty_icon" aria-hidden="true">🍽</span>
+          <section className="x_menu_empty">
+            <span className="x_menu_empty_icon" aria-hidden="true">🍽</span>
             <h2>No items found</h2>
             <p>Try a different category or search term.</p>
-            <button type="button" onClick={resetFilters}>Reset Filters</button>
+            <button type="button" className="x_menu_reset_btn" onClick={resetFilters}>Reset Filters</button>
           </section>
         )}
 
@@ -450,7 +444,7 @@ const Menu = () => {
           </span>
         )}
       </div>
-    </main>
+    </div>
   );
 };
 
