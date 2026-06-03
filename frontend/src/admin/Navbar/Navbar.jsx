@@ -165,10 +165,10 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
 
               <div className="d-dropdown-divider" />
 
-              <Link to="/profile" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
+              <Link to="/admin/profile" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
                 <MdPerson /> Profile
               </Link>
-              <Link to="/settings" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
+              <Link to="/admin/settings" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
                 <MdSettings /> Settings
               </Link>
               <div className="d-dropdown-divider" />

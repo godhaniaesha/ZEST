@@ -120,7 +120,7 @@ export default function Orders() {
                       <span>{o.waiter}</span>
                     </div>
                   </td>
-                  <td style={{ color: 'var(--d-text-muted)', maxWidth: 200 }} title={o.items}>
+                  <td title={o.items}>
                     {o.items}
                   </td>
                   <td><strong>{o.amount}</strong></td>

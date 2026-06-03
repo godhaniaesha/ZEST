@@ -35,7 +35,7 @@ export default function POS() {
       const existing = prevCart.find((i) => i.id === item.id);
       if (existing) {
         return prevCart.map((i) =>
-          i.id === item.id ? { ...i, qty: i.qty + 1 } : i
+          i.id === item.id ? { ...i, qty: i.qty + 1 } : i,
         );
       }
       return [...prevCart, { ...item, qty: 1 }];
@@ -46,9 +46,11 @@ export default function POS() {
     setCart((prevCart) =>
       prevCart
         .map((item) =>
-          item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
+          item.id === id
+            ? { ...item, qty: Math.max(1, item.qty + delta) }
+            : item,
         )
-        .filter((item) => item.qty > 0)
+        .filter((item) => item.qty > 0),
     );
   };
 
@@ -57,7 +59,9 @@ export default function POS() {
   };
 
   const handlePayment = () => {
-    alert(`Payment of ₹${total.toLocaleString()} completed via ${paymentMethod}`);
+    alert(
+      `Payment of ₹${total.toLocaleString()} completed via ${paymentMethod}`,
+    );
     setCart([]);
   };
 

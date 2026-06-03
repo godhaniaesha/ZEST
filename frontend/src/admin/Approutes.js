@@ -20,6 +20,7 @@ import KitchenDisplay from './pages/KitchenDisplay/KitchenDisplay';
 import Tables from './pages/Tables/Tables';
 import TakeOrder from './pages/TakeOrder/TakeOrder';
 import ServiceRequests from './pages/ServiceRequests/ServiceRequests';
+import Profile from './pages/Profile/Profile';
 
 // Wrapper component to pass userRole to pages
 function PageWrapper({ Component }) {
@@ -52,6 +53,7 @@ export default function AppRoutes() {
         <Route path="tables" element={<PageWrapper Component={Tables} />} />
         <Route path="take-order" element={<PageWrapper Component={TakeOrder} />} />
         <Route path="service-requests" element={<PageWrapper Component={ServiceRequests} />} />
+        <Route path="profile" element={<PageWrapper Component={Profile} />} />
 
       </Route>
 
