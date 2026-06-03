@@ -110,7 +110,7 @@ const AboutUs = () => {
         </div>
       </section>
 
-      <section className="z_about_story" id="z_about_story">
+      <section className="z_about_story" id="z_about_story">                     
         <div className="z_about_story_row row align-items-center">
           <div className="z_about_story_media_col col-lg-5">
             <div className="z_about_story_media">
@@ -137,11 +137,11 @@ const AboutUs = () => {
               Every detail, from the menu to the music, is chosen to make guests feel comfortable,
               cared for, and ready to enjoy the moment.
             </p>
-            <div className="z_about_timing">
+            <div className="z_about_timing"> 
               <Clock size={20} />
               <span>Open daily for coffee, dining, cocktails, and late conversations.</span>
             </div>
-          </div>
+          </div>    
         </div>
       </section>
 
@@ -156,8 +156,16 @@ const AboutUs = () => {
             {z_highlights.map((item) => (
               <div className="z_about_card_wrap col-md-6 col-lg-4" key={item.title}>
                 <article className="z_about_card">
-                  <div className="z_about_card_icon">{item.icon}</div>
-                  <h3>{item.title}</h3>
+                  <div
+                    style={{
+                      display: "flex",               
+                      alignItems: "baseline",
+                      gap: "10px",
+                    }}
+                  >
+                    <div className="z_about_card_icon">{item.icon}</div>
+                    <h3>{item.title}</h3>
+                  </div>
                   <p>{item.text}</p>
                 </article>
               </div>

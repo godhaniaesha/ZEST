@@ -69,7 +69,6 @@ body{
   background: var(--d-bg);
   color: var(--d-text);
   overflow: hidden;
-  padding-top: var(--d-navbar-height);
 }
 
 /* Responsive padding for different screen sizes */
@@ -505,7 +504,7 @@ body{
 .z_about_experience {
   position: relative;
   background: var(--d-primary);
-  padding: 76px 0;
+  padding: 76px 20px;
   overflow: hidden;
 }
 
@@ -551,7 +550,7 @@ body{
 .z_about_card {
   position: relative;
   height: 100%;
-  min-height: 250px;
+  min-height: 215px;
   padding: 28px;
   border: 1px solid var(--d-primary-lighter);
   border-radius: var(--d-radius-md);
@@ -574,12 +573,12 @@ body{
   transition: transform 0.35s ease;
 }
 
-.z_about_card:hover {
+.z_about_card:hover {      
   border-color: var(--d-gold-dark);
   transform: translateY(-10px);
   box-shadow: var(--d-shadow-lg);
 }
-
+                              
 .z_about_card:hover::after {
   transform: scaleX(1);
 }
@@ -588,9 +587,9 @@ body{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
-  margin-bottom: 22px;
+  width: 45px;
+  height: 45px;
+  /* margin-bottom: 22px; */
   border: 1px solid var(--d-gold-dark);
   border-radius: var(--d-radius-sm);
   background: var(--d-primary-dark);
@@ -880,7 +879,7 @@ body{
   }
 
   .z_about_experience {
-    padding: 56px 0;
+    padding: 56px 20px;
   }
 
   .z_about_card,

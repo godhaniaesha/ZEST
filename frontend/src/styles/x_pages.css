@@ -459,14 +459,14 @@ body {
   margin: 0 0 6px;
   color: var(--d-primary);
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
 .x_contact_info_value {
   margin: 0;
   color: var(--d-primary-dark);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .x_contact_info_subtext {
@@ -2410,7 +2410,7 @@ body {
   .x_services_hero,
   .x_privacy_hero,
   .x_terms_hero {
-    padding: 50px 0 40px;
+    padding: 20px 0 40px;
   }
 
   .x_contact_headline,
@@ -2463,8 +2463,20 @@ body {
     gap: 16px;
   }
 
+  .x_contact_info_card {
+    border-bottom: 1px solid var(--d-border);
+  }
+
+  .x_contact_info {
+    margin: 30px auto 40px;
+  }
+
   .x_services_filter_tabs {
     gap: 8px;
+  }
+
+  .x_contact_main {
+    padding: 42px 0 60px;
   }
 
   .x_filter_tab {
@@ -2550,7 +2562,7 @@ body {
   .x_services_hero,
   .x_privacy_hero,
   .x_terms_hero {
-    padding: 40px 0 30px;
+    padding: 10px 0 30px;
   }
 
   .x_contact_headline,
@@ -2749,7 +2761,7 @@ body {
   .x_services_hero,
   .x_privacy_hero,
   .x_terms_hero {
-    padding: 30px 0 20px;
+    padding: 10px 0 20px;
   }
 
   .x_contact_headline,
@@ -2775,8 +2787,20 @@ body {
     height: 48px;
   }
 
+  .x_contact_faq_header {
+    text-align: center;
+  }
+
   .x_contact_form_section {
     padding: 16px;
+  }
+
+  .x_contact_faq_header .x_contact_eyebrow {
+    margin-bottom: 8px;
+  }
+
+  .x_contact_quick_note {
+    font-weight: 600;
   }
 
   .x_form_input,
@@ -2908,7 +2932,7 @@ body {
   .x_services_headline,
   .x_privacy_headline,
   .x_terms_headline {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
   }
 
   .x_contact_hero p,
@@ -2928,7 +2952,11 @@ body {
   }
 
   .x_contact_form_section {
-    padding: 12px;
+    padding: 17px;
+  }
+
+  .x_contact_quick_note {
+    font-weight: 400;
   }
 
   .x_form_input,
@@ -3010,7 +3038,7 @@ body {
   .x_services_page,
   .x_privacy_page,
   .x_terms_page {
-    padding-top: 80px;
+    padding-top: 20px;
   }
 }
 
@@ -3021,7 +3049,7 @@ body {
   .x_services_page,
   .x_privacy_page,
   .x_terms_page {
-    padding-top: 56px;
+    padding-top: 0px;
   }
 }
 
@@ -3032,7 +3060,24 @@ body {
   .x_services_page,
   .x_privacy_page,
   .x_terms_page {
-    padding-top: 52px;
+    padding-top: 0px;
+  }
+
+  .x_contact_main {
+    padding-top: 0px;
+    padding-bottom: 50px;
+  }
+
+  .x_contact_info_card h3 {
+    font-weight: 600;
+  }
+
+  .x_contact_info_value {
+    font-weight: 600;
+  }
+
+  .x_contact_form_section::before {
+    width: 0px;
   }
 }
 
@@ -5811,11 +5856,13 @@ x_gallery_divider_gem span {
     font-size: clamp(2.3rem, 3vw, 2rem);
     margin: 12px 0 16px;
   }
+
   .x_gallery_hero_label {
     margin-bottom: 20px;
   }
+
   .x_gallery_hero_sub {
-        margin: 12px 0 38px;
+    margin: 12px 0 38px;
   }
 
   .x_gallery_grid {
