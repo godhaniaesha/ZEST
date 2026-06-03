@@ -246,7 +246,7 @@ export default function KitchenDisplay() {
         .d-kot-page {
           padding: 20px;
           background: #f5f7fa;
-          min-height: 100vh;
+          min-height: auto;
           overflow-x: hidden;
         }
 

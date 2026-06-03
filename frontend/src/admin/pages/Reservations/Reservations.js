@@ -67,34 +67,34 @@ export default function Reservations() {
             <tbody>
               {RESERVATIONS.map(r => (
                 <tr key={r.id}>
-                  <td style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }}>{r.id}</td>
-                  <td>
+                  <td style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }} title={r.id}>{r.id}</td>
+                  <td title={r.name}>
                     <div style={{ fontWeight: 700, color: 'var(--d-primary)' }}>{r.name}</div>
                   </td>
-                  <td>
+                  <td title={r.time}>
                     <div className="d-flex align-items-center gap-2">
                       <MdPendingActions className="text-muted" />
                       <span style={{ fontWeight: 600 }}>{r.time}</span>
                     </div>
                   </td>
-                  <td>
+                  <td title={`${r.guests} Guests`}>
                     <div className="d-flex align-items-center gap-1">
                       <MdPeople style={{ color: 'var(--d-text-light)' }} />
                       <span>{r.guests} Guests</span>
                     </div>
                   </td>
-                  <td>
+                  <td title={r.table}>
                     <div className="d-flex align-items-center gap-1">
                       <MdEventSeat style={{ color: 'var(--d-gold)' }} />
                       <span>{r.table}</span>
                     </div>
                   </td>
-                  <td>
+                  <td title={r.phone}>
                     <div className="d-flex align-items-center gap-1" style={{ color: 'var(--d-text-muted)', fontSize: '0.85rem' }}>
                       <MdPhone /> {r.phone}
                     </div>
                   </td>
-                  <td>
+                  <td title={r.status}>
                     <span className={`d-chip ${r.status === 'Confirmed' ? 'd-chip-green' : r.status === 'Pending' ? 'd-chip-gold' : 'd-chip-red'}`}>
                       {r.status}
                     </span>

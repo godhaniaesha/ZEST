@@ -36,11 +36,11 @@ export default function SystemLogs() {
             <tbody>
               {LOGS.map((log, i) => (
                 <tr key={i}>
-                  <td style={{ fontSize: '0.85rem' }}>{log.time}</td>
-                  <td><strong>{log.user}</strong></td>
-                  <td>{log.action}</td>
-                  <td><span className="d-chip d-chip-blue" style={{ fontSize: '0.7rem' }}>{log.module}</span></td>
-                  <td><span className={`d-chip ${log.status === 'Success' ? 'd-chip-green' : 'd-chip-gold'}`}>{log.status}</span></td>
+                  <td style={{ fontSize: '0.85rem' }} title={log.time}>{log.time}</td>
+                  <td title={log.user}><strong>{log.user}</strong></td>
+                  <td title={log.action}>{log.action}</td>
+                  <td title={log.module}><span className="d-chip d-chip-blue" style={{ fontSize: '0.7rem' }}>{log.module}</span></td>
+                  <td title={log.status}><span className={`d-chip ${log.status === 'Success' ? 'd-chip-green' : 'd-chip-gold'}`}>{log.status}</span></td>
                 </tr>
               ))}
             </tbody>

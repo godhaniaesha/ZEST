@@ -82,10 +82,10 @@ export default function Users() {
             <tbody>
               {users.map((user, i) => (
                 <tr key={i}>
-                  <td><strong>{user.name}</strong></td>
-                  <td><span className="text-capitalize">{user.role}</span></td>
-                  <td style={{ color: 'var(--d-text-muted)' }}>{user.email}</td>
-                  <td><span className={`d-chip ${user.status === 'Active' || user.status === 'On Duty' ? 'd-chip-green' : 'd-chip-gold'}`}>{user.status}</span></td>
+                  <td title={user.name}><strong>{user.name}</strong></td>
+                  <td title={user.role}><span className="text-capitalize">{user.role}</span></td>
+                  <td style={{ color: 'var(--d-text-muted)' }} title={user.email}>{user.email}</td>
+                  <td title={user.status}><span className={`d-chip ${user.status === 'Active' || user.status === 'On Duty' ? 'd-chip-green' : 'd-chip-gold'}`}>{user.status}</span></td>
                   <td>
                     <div className="d-flex gap-2">
                       <button className="d-navbar-icon-btn" onClick={() => handleEdit(user)} style={{ width: '28px', height: '28px', fontSize: '1rem' }}><MdEdit /></button>
