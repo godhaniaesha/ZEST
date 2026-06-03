@@ -6,6 +6,8 @@ import '../src/styles/h_style.css';
 import '../src/styles/x_style.css';
 import '../src/styles/z_style.css';
 import '../src/styles/menu_style.css';
+import '../src/styles/profile.css';
+
 
 import Home from './pages/Home';
 import ContactUs from './pages/ContactUs';
