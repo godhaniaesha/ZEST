@@ -89,6 +89,16 @@ export default function Tables({ userRole = 'waiter' }) {
   };
 
   const handleSave = () => {
+    // Validation
+    if (!formData.name) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    if (parseInt(formData.capacity) <= 0 || parseInt(formData.capacity) > 50) {
+      alert('Capacity must be between 1 and 50');
+      return;
+    }
+
     if (currentTable) {
       // Edit
       setTables(tables.map(t => t.id === currentTable.id ? { ...t, ...formData } : t));

@@ -10,12 +10,12 @@ import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 
 const STAFF = [
-  { id: 1, name: 'Rajesh Kumar',   role: 'Head Chef',  shift: 'Morning', status: 'On Duty',  initials: 'RK', color: '#C9A84C' },
-  { id: 2, name: 'Priya Sharma',   role: 'Waiter',     shift: 'Evening', status: 'On Duty',  initials: 'PS', color: '#3498db' },
-  { id: 3, name: 'Sam D\'Souza',   role: 'Bartender',  shift: 'Evening', status: 'On Duty',  initials: 'SD', color: '#2ecc71' },
-  { id: 4, name: 'Anita Verma',    role: 'Cashier',    shift: 'Morning', status: 'Off Duty', initials: 'AV', color: '#9b59b6' },
-  { id: 5, name: 'Dev Malhotra',   role: 'Sous Chef',  shift: 'Morning', status: 'On Duty',  initials: 'DM', color: '#e74c3c' },
-  { id: 6, name: 'Leena Nair',     role: 'Manager',    shift: 'Both',    status: 'On Duty',  initials: 'LN', color: '#16302B' },
+  { id: 1, name: 'Rajesh Kumar',   role: 'Head Chef',  shift: 'Morning', status: 'On Duty',  initials: 'RK', color: '#C9A84C', phone: '+91 98765 43210', email: 'rajesh@breva.com', salary: '45000', leavesTaken: 2, leavesTotal: 15, joiningDate: '2023-01-10' },
+  { id: 2, name: 'Priya Sharma',   role: 'Waiter',     shift: 'Evening', status: 'On Duty',  initials: 'PS', color: '#3498db', phone: '+91 91234 56789', email: 'priya@breva.com', salary: '20000', leavesTaken: 5, leavesTotal: 12, joiningDate: '2023-03-15' },
+  { id: 3, name: 'Sam D\'Souza',   role: 'Bartender',  shift: 'Evening', status: 'On Leave',  initials: 'SD', color: '#2ecc71', phone: '+91 98001 11222', email: 'sam@breva.com', salary: '28000', leavesTaken: 8, leavesTotal: 12, joiningDate: '2022-11-20' },
+  { id: 4, name: 'Anita Verma',    role: 'Cashier',    shift: 'Morning', status: 'Off Duty', initials: 'AV', color: '#9b59b6', phone: '+91 77654 32109', email: 'anita@breva.com', salary: '22000', leavesTaken: 3, leavesTotal: 12, joiningDate: '2023-05-01' },
+  { id: 5, name: 'Dev Malhotra',   role: 'Sous Chef',  shift: 'Morning', status: 'On Duty',  initials: 'DM', color: '#e74c3c', phone: '+91 88001 99882', email: 'dev@breva.com', salary: '35000', leavesTaken: 1, leavesTotal: 15, joiningDate: '2023-02-28' },
+  { id: 6, name: 'Leena Nair',     role: 'Manager',    shift: 'Both',    status: 'On Duty',  initials: 'LN', color: '#16302B', phone: '+91 99999 11111', email: 'leena@breva.com', salary: '55000', leavesTaken: 0, leavesTotal: 20, joiningDate: '2022-06-10' },
 ];
 
 export default function Staff() {
@@ -26,19 +26,30 @@ export default function Staff() {
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', role: '', shift: 'Morning', status: 'On Duty' });
+  const [formData, setFormData] = useState({ name: '', role: '', shift: 'Morning', status: 'On Duty', phone: '', email: '', salary: '', leavesTaken: 0, leavesTotal: 12, joiningDate: '' });
 
   const filtered = staffList.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.role.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const handleAdd = () => {
     setCurrentItem(null);
-    setFormData({ name: '', role: '', shift: 'Morning', status: 'On Duty' });
+    setFormData({ name: '', role: '', shift: 'Morning', status: 'On Duty', phone: '', email: '', salary: '', leavesTaken: 0, leavesTotal: 12, joiningDate: '' });
     setShowForm(true);
   };
 
   const handleEdit = (item) => {
     setCurrentItem(item);
-    setFormData({ name: item.name, role: item.role, shift: item.shift, status: item.status });
+    setFormData({ 
+      name: item.name, 
+      role: item.role, 
+      shift: item.shift, 
+      status: item.status, 
+      phone: item.phone || '', 
+      email: item.email || '',
+      salary: item.salary || '',
+      leavesTaken: item.leavesTaken || 0,
+      leavesTotal: item.leavesTotal || 12,
+      joiningDate: item.joiningDate || ''
+    });
     setShowForm(true);
   };
 
@@ -48,6 +59,12 @@ export default function Staff() {
   };
 
   const handleSave = () => {
+    // Validation
+    if (!formData.name || !formData.role) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
     if (currentItem) {
       setStaffList(staffList.map(s => s.id === currentItem.id ? { ...s, ...formData } : s));
     } else {
@@ -137,13 +154,41 @@ export default function Staff() {
                   <span className="text-muted">Shift:</span>
                   <span style={{ fontWeight: 600 }}>{s.shift}</span>
                 </div>
-                <div className="d-flex justify-content-between">
+                <div className="d-flex justify-content-between mb-1">
                   <span className="text-muted">Status:</span>
-                  <span className={`d-chip ${s.status === 'On Duty' ? 'd-chip-green' : 'd-chip-gray'}`} style={{ fontSize: '0.65rem' }}>
+                  <span className={`d-chip ${
+                    s.status === 'On Duty' ? 'd-chip-green' : 
+                    s.status === 'On Leave' ? 'd-chip-gold' : 
+                    'd-chip-gray'
+                  }`} style={{ fontSize: '0.65rem' }}>
                     {s.status}
                   </span>
                 </div>
+                <div className="d-flex justify-content-between mb-1">
+                  <span className="text-muted">Salary:</span>
+                  <span style={{ fontWeight: 600 }}>₹{s.salary}</span>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <span className="text-muted">Leaves:</span>
+                  <span style={{ fontWeight: 600 }}>{s.leavesTaken}/{s.leavesTotal}</span>
+                </div>
               </div>
+
+              {s.joiningDate && (
+                <div className="mb-2" style={{ fontSize: '0.8rem', color: 'var(--d-text-muted)' }}>
+                  <span className="text-muted">Joining:</span> {new Date(s.joiningDate).toLocaleDateString('en-IN')}
+                </div>
+              )}
+              {s.phone && (
+                <div className="mb-1" style={{ fontSize: '0.85rem', color: 'var(--d-text-muted)' }}>
+                  <MdPhone className="me-1" /> {s.phone}
+                </div>
+              )}
+              {s.email && (
+                <div className="mb-3" style={{ fontSize: '0.85rem', color: 'var(--d-text-muted)' }}>
+                  <MdEmail className="me-1" /> {s.email}
+                </div>
+              )}
 
               <div className="d-flex gap-2">
                 <button className="d-btn-outline flex-grow-1" style={{ padding: '6px', fontSize: '0.8rem' }}><MdPhone /> Call</button>
@@ -164,7 +209,7 @@ export default function Staff() {
         <Row className="g-3">
           <Col xs={12}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Full Name</Form.Label>
+              <Form.Label className="small fw-bold">Full Name *</Form.Label>
               <Form.Control 
                 type="text" 
                 placeholder="e.g. Rajesh Kumar"
@@ -176,7 +221,7 @@ export default function Staff() {
           </Col>
           <Col xs={12} md={6}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Role</Form.Label>
+              <Form.Label className="small fw-bold">Role *</Form.Label>
               <Form.Control 
                 type="text" 
                 placeholder="e.g. Head Chef"
@@ -199,25 +244,82 @@ export default function Staff() {
               </Form.Select>
             </Form.Group>
           </Col>
-          <Col xs={12}>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Phone Number</Form.Label>
+              <Form.Control 
+                type="tel" 
+                placeholder="+91 98765 43210"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Email</Form.Label>
+              <Form.Control 
+                type="email" 
+                placeholder="staff@breva.com"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Salary (₹)</Form.Label>
+              <Form.Control 
+                type="number" 
+                placeholder="25000"
+                value={formData.salary}
+                onChange={(e) => setFormData({...formData, salary: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Leaves Taken</Form.Label>
+              <Form.Control 
+                type="number" 
+                min="0"
+                value={formData.leavesTaken}
+                onChange={(e) => setFormData({...formData, leavesTaken: parseInt(e.target.value) || 0})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Total Leaves</Form.Label>
+              <Form.Control 
+                type="number" 
+                min="0"
+                value={formData.leavesTotal}
+                onChange={(e) => setFormData({...formData, leavesTotal: parseInt(e.target.value) || 12})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Joining Date</Form.Label>
+              <Form.Control 
+                type="date"
+                value={formData.joiningDate}
+                onChange={(e) => setFormData({...formData, joiningDate: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
             <Form.Group>
               <Form.Label className="small fw-bold">Status</Form.Label>
-              <div className="d-flex gap-3">
-                <Form.Check 
-                  type="radio" 
-                  label="On Duty" 
-                  name="status" 
-                  checked={formData.status === 'On Duty'}
-                  onChange={() => setFormData({...formData, status: 'On Duty'})}
-                />
-                <Form.Check 
-                  type="radio" 
-                  label="Off Duty" 
-                  name="status" 
-                  checked={formData.status === 'Off Duty'}
-                  onChange={() => setFormData({...formData, status: 'Off Duty'})}
-                />
-              </div>
+              <Form.Select 
+                value={formData.status}
+                onChange={(e) => setFormData({...formData, status: e.target.value})}
+              >
+                <option value="On Duty">On Duty</option>
+                <option value="Off Duty">Off Duty</option>
+                <option value="On Leave">On Leave</option>
+              </Form.Select>
             </Form.Group>
           </Col>
         </Row>

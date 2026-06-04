@@ -8,12 +8,12 @@ import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 
 const DRINKS = [
-  { id: 1, name: 'Classic Mojito',     cat: 'Cocktail', price: '320', available: true,  img: <MdLocalBar />, color: '#2ecc71' },
-  { id: 2, name: 'Old Fashioned',      cat: 'Cocktail', price: '480', available: true,  img: <MdLocalBar />, color: '#f39c12' },
-  { id: 3, name: 'Kingfisher Draught', cat: 'Beer',     price: '180', available: true,  img: <MdSportsBar />, color: '#3498db' },
-  { id: 4, name: 'House Red Wine',     cat: 'Wine',     price: '420', available: true,  img: <MdWine />, color: '#e74c3c' },
-  { id: 5, name: 'Espresso Martini',   cat: 'Cocktail', price: '380', available: false, img: <MdLocalBar />, color: '#9b59b6' },
-  { id: 6, name: 'Whiskey Sour',       cat: 'Cocktail', price: '440', available: true,  img: <MdLocalBar />, color: '#e67e22' },
+  { id: 1, name: 'Classic Mojito', cat: 'Cocktail', price: '320', available: true,  img: <MdLocalBar />, color: '#2ecc71', description: 'Refreshing mint and lime cocktail with white rum', ingredients: 'White rum, mint, lime, sugar, soda water', alcoholContent: '12%', prepTime: 5 },
+  { id: 2, name: 'Old Fashioned', cat: 'Cocktail', price: '480', available: true, img: <MdLocalBar />, color: '#f39c12', description: 'Classic bourbon cocktail with bitters and orange peel', ingredients: 'Bourbon, sugar cube, bitters, orange peel, ice', alcoholContent: '35%', prepTime: 7 },
+  { id: 3, name: 'Kingfisher Draught', cat: 'Beer', price: '180', available: true, img: <MdSportsBar />, color: '#3498db', description: 'Crisp and refreshing Indian lager beer', ingredients: 'Water, malt, hops, yeast', alcoholContent: '5%', prepTime: 1 },
+  { id: 4, name: 'House Red Wine', cat: 'Wine', price: '420', available: true, img: <MdWine />, color: '#e74c3c', description: 'Smooth and full-bodied red wine blend', ingredients: 'Red wine grapes', alcoholContent: '13%', prepTime: 2 },
+  { id: 5, name: 'Espresso Martini', cat: 'Cocktail', price: '380', available: false, img: <MdLocalBar />, color: '#9b59b6', description: 'Vodka and coffee liqueur with fresh espresso', ingredients: 'Vodka, Kahlua, espresso, simple syrup', alcoholContent: '20%', prepTime: 6 },
+  { id: 6, name: 'Whiskey Sour', cat: 'Cocktail', price: '440', available: true, img: <MdLocalBar />, color: '#e67e22', description: 'Classic sour cocktail with whiskey and lemon', ingredients: 'Whiskey, lemon juice, simple syrup, egg white', alcoholContent: '25%', prepTime: 8 },
 ];
 
 const CATEGORIES = ['All', 'Cocktail', 'Beer', 'Wine', 'Spirits'];
@@ -27,7 +27,7 @@ export default function Bar({ userRole = 'chef' }) {
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', cat: 'Cocktail', price: '', available: true });
+  const [formData, setFormData] = useState({ name: '', cat: 'Cocktail', price: '', available: true, description: '', ingredients: '', alcoholContent: '', prepTime: 5 });
 
   // Role-based permissions
   const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
@@ -44,7 +44,7 @@ export default function Bar({ userRole = 'chef' }) {
       return;
     }
     setCurrentItem(null);
-    setFormData({ name: '', cat: 'Cocktail', price: '', available: true });
+    setFormData({ name: '', cat: 'Cocktail', price: '', available: true, description: '', ingredients: '', alcoholContent: '', prepTime: 5 });
     setShowForm(true);
   };
 
@@ -54,7 +54,16 @@ export default function Bar({ userRole = 'chef' }) {
       return;
     }
     setCurrentItem(item);
-    setFormData({ name: item.name, cat: item.cat, price: item.price.replace('₹', ''), available: item.available });
+    setFormData({
+      name: item.name,
+      cat: item.cat,
+      price: item.price.replace('₹', ''),
+      available: item.available,
+      description: item.description || '',
+      ingredients: item.ingredients || '',
+      alcoholContent: item.alcoholContent || '',
+      prepTime: item.prepTime || 5
+    });
     setShowForm(true);
   };
 
@@ -68,6 +77,16 @@ export default function Bar({ userRole = 'chef' }) {
   };
 
   const handleSave = () => {
+    // Validation
+    if (!formData.name || !formData.price || !formData.cat) {
+      alert('Please fill in all required fields (Name, Price, Category)');
+      return;
+    }
+    if (parseFloat(formData.price) <= 0) {
+      alert('Price must be greater than 0');
+      return;
+    }
+
     if (currentItem) {
       setDrinks(drinks.map(d => d.id === currentItem.id ? { ...d, ...formData } : d));
     } else {
@@ -168,16 +187,16 @@ export default function Bar({ userRole = 'chef' }) {
                     <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{d.name}</h5>
                     {canAddEditDelete && (
                       <div className="d-flex gap-1">
-                        <button 
-                          className="d-navbar-icon-btn" 
-                          onClick={() => handleEdit(d)} 
+                        <button
+                          className="d-navbar-icon-btn"
+                          onClick={() => handleEdit(d)}
                           style={{ width: '28px', height: '28px', fontSize: '1rem' }}
                         >
                           <MdEdit />
                         </button>
-                        <button 
-                          className="d-navbar-icon-btn text-danger" 
-                          onClick={() => handleDeleteClick(d)} 
+                        <button
+                          className="d-navbar-icon-btn text-danger"
+                          onClick={() => handleDeleteClick(d)}
                           style={{ width: '28px', height: '28px', fontSize: '1rem' }}
                         >
                           <MdDelete />
@@ -185,11 +204,19 @@ export default function Bar({ userRole = 'chef' }) {
                       </div>
                     )}
                   </div>
-                  <div className="d-page-sub mb-2">{d.cat}</div>
-                  <div className="d-flex justify-content-between align-items-center mt-3">
-                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
-                      ₹{d.price}
-                    </span>
+                  <div className="d-page-sub mb-1">{d.cat}{d.alcoholContent && <span className="ml-2" style={{ fontSize: '0.8rem' }}>• {d.alcoholContent}</span>}</div>
+                  {d.description && <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{d.description}</div>}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
+                        ₹{d.price}
+                      </span>
+                      {d.prepTime && (
+                        <span className="text-muted small ml-2" style={{ fontSize: '0.8rem' }}>
+                          • {d.prepTime} mins
+                        </span>
+                      )}
+                    </div>
                     <span className={`d-chip ${d.available ? 'd-chip-green' : 'd-chip-red'}`}>
                       {d.available ? 'In Stock' : 'Out of Stock'}
                     </span>
@@ -211,7 +238,7 @@ export default function Bar({ userRole = 'chef' }) {
         <Row className="g-3">
           <Col xs={12}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Drink Name</Form.Label>
+              <Form.Label className="small fw-bold">Drink Name *</Form.Label>
               <Form.Control 
                 type="text" 
                 placeholder="e.g. Classic Mojito"
@@ -223,7 +250,7 @@ export default function Bar({ userRole = 'chef' }) {
           </Col>
           <Col xs={12} md={6}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Category</Form.Label>
+              <Form.Label className="small fw-bold">Category *</Form.Label>
               <Form.Select 
                 value={formData.cat}
                 onChange={(e) => setFormData({...formData, cat: e.target.value})}
@@ -236,35 +263,72 @@ export default function Bar({ userRole = 'chef' }) {
           </Col>
           <Col xs={12} md={6}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Price (₹)</Form.Label>
+              <Form.Label className="small fw-bold">Price (₹) *</Form.Label>
               <Form.Control 
                 type="number" 
-                placeholder="0.00"
+                placeholder="0"
                 value={formData.price}
                 onChange={(e) => setFormData({...formData, price: e.target.value})}
                 required
               />
             </Form.Group>
           </Col>
-          <Col xs={12}>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Alcohol Content</Form.Label>
+              <Form.Control 
+                type="text" 
+                placeholder="e.g. 12%"
+                value={formData.alcoholContent}
+                onChange={(e) => setFormData({...formData, alcoholContent: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Prep Time (mins)</Form.Label>
+              <Form.Control 
+                type="number" 
+                placeholder="5"
+                value={formData.prepTime}
+                onChange={(e) => setFormData({...formData, prepTime: parseInt(e.target.value) || 5})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
             <Form.Group>
               <Form.Label className="small fw-bold">Availability</Form.Label>
-              <div className="d-flex gap-3">
-                <Form.Check 
-                  type="radio" 
-                  label="In Stock" 
-                  name="available" 
-                  checked={formData.available === true}
-                  onChange={() => setFormData({...formData, available: true})}
-                />
-                <Form.Check 
-                  type="radio" 
-                  label="Out of Stock" 
-                  name="available" 
-                  checked={formData.available === false}
-                  onChange={() => setFormData({...formData, available: false})}
-                />
-              </div>
+              <Form.Select 
+                value={formData.available ? 'In Stock' : 'Out of Stock'}
+                onChange={(e) => setFormData({...formData, available: e.target.value === 'In Stock'})}
+              >
+                <option value="In Stock">In Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Description</Form.Label>
+              <Form.Control 
+                as="textarea" 
+                rows={2}
+                placeholder="Brief description of the drink..."
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Ingredients</Form.Label>
+              <Form.Control 
+                as="textarea" 
+                rows={2}
+                placeholder="List of ingredients..."
+                value={formData.ingredients}
+                onChange={(e) => setFormData({...formData, ingredients: e.target.value})}
+              />
             </Form.Group>
           </Col>
         </Row>

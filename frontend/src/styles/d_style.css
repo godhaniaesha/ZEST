@@ -1,4 +1,4 @@
-﻿/* =============================================
+/* =============================================
    ROOT COLOR VARIABLES â€” CafÃ© & Bar Admin
    ============================================= */
 :root {
@@ -302,8 +302,9 @@ body {
   position: relative;
   background: none;
   border: none;
-  width: 40px;
-  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 12px;
   border-radius: var(--d-radius-sm);
   display: flex;
   align-items: center;
@@ -312,11 +313,20 @@ body {
   font-size: 1.2rem;
   cursor: pointer;
   transition: var(--d-transition);
+  gap: 6px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .d-navbar-icon-btn:hover {
   background: var(--d-accent-soft);
   color: var(--d-primary);
+}
+
+.d-navbar-icon-btn.text-danger:hover {
+  background: rgba(231,76,60,0.1);
+  color: var(--d-danger);
 }
 
 .d-badge-dot {
@@ -1888,6 +1898,79 @@ body {
   }
 }
 
+/* =============================================
+   CATEGORIES PAGE
+   ============================================= */
+.d-custom-tabs {
+  background: var(--d-white);
+  border-radius: var(--d-radius-lg);
+  border: 1.5px solid var(--d-border);
+  overflow: hidden;
+}
+
+.d-custom-tabs .nav-tabs {
+  border-bottom: 1.5px solid var(--d-border);
+  background: var(--d-bg);
+  padding: 0 12px;
+}
+
+.d-custom-tabs .nav-tabs .nav-link {
+  border: none;
+  padding: 16px 24px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  color: var(--d-text-muted);
+  font-size: 0.9rem;
+  transition: var(--d-transition);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.d-custom-tabs .nav-tabs .nav-link:hover {
+  color: var(--d-primary);
+  background: transparent;
+}
+
+.d-custom-tabs .nav-tabs .nav-link.active {
+  color: var(--d-primary);
+  background: var(--d-white);
+  border-bottom: 2px solid var(--d-gold);
+}
+
+.d-custom-tabs .tab-content {
+  padding: 24px;
+}
+
+.d-category-card {
+  background: var(--d-white);
+  border-radius: var(--d-radius-lg);
+  border: 1.5px solid var(--d-border);
+  padding: 20px;
+  box-shadow: var(--d-shadow-sm);
+  transition: var(--d-transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.d-category-card:hover {
+  box-shadow: var(--d-shadow-md);
+  transform: translateY(-4px);
+  border-color: var(--d-gold);
+}
+
+.d-category-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--d-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
 @media (max-width: 575.98px) {
   .d-page-heading { font-size: 1.3rem; }
   .d-page-body { padding: 16px 12px; }
@@ -1906,5 +1989,8 @@ body {
   }
   .d-hamburger-btn .d-ham-line {
     width: 18px;
+  }
+  .d-custom-tabs .tab-content {
+    padding: 16px;
   }
 }

@@ -1,30 +1,49 @@
 import React, { useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
-import { 
-  MdMoreVert, MdRefresh, MdLocalCafe, MdLocalBar, 
-  MdAccessTime, MdPerson, MdReceipt 
+import {
+  MdMoreVert, MdRefresh, MdLocalCafe, MdLocalBar,
+  MdAccessTime, MdPerson, MdReceipt
 } from 'react-icons/md';
+import Pagination from '../../components/Pagination';
 
 const ORDERS = [
-  { id: '#T-1021', table: 'Table 4', waiter: 'Raj',   items: 'Pasta, Wine x2',      type: 'Bar',  amount: '₹1,250', status: 'Served',     time: '2 min ago' },
-  { id: '#T-1020', table: 'Table 7', waiter: 'Priya', items: 'Steak, Beer',          type: 'Bar',  amount: '₹980',   status: 'Preparing',  time: '8 min ago' },
-  { id: '#T-1019', table: 'Bar',     waiter: 'Sam',   items: 'Mojito x3',            type: 'Bar',  amount: '₹750',   status: 'Served',     time: '14 min ago' },
-  { id: '#T-1018', table: 'Table 2', waiter: 'Anita', items: 'Risotto, Water',       type: 'Cafe', amount: '₹620',   status: 'Pending',    time: '20 min ago' },
-  { id: '#T-1017', table: 'Table 9', waiter: 'Raj',   items: 'Burger, Fries',        type: 'Cafe', amount: '₹540',   status: 'Cancelled',  time: '35 min ago' },
-  { id: '#T-1016', table: 'Table 1', waiter: 'Priya', items: 'Soup, Salad, Dessert', type: 'Cafe', amount: '₹870',   status: 'Served',     time: '45 min ago' },
+  { id: '#T-1021', table: 'Table 4', waiter: 'Raj', items: 'Pasta, Wine x2', type: 'Bar', amount: '₹1,250', status: 'Served', time: '2 min ago' },
+  { id: '#T-1020', table: 'Table 7', waiter: 'Priya', items: 'Steak, Beer', type: 'Bar', amount: '₹980', status: 'Preparing', time: '8 min ago' },
+  { id: '#T-1019', table: 'Bar', waiter: 'Sam', items: 'Mojito x3', type: 'Bar', amount: '₹750', status: 'Served', time: '14 min ago' },
+  { id: '#T-1018', table: 'Table 2', waiter: 'Anita', items: 'Risotto, Water', type: 'Cafe', amount: '₹620', status: 'Pending', time: '20 min ago' },
+  { id: '#T-1017', table: 'Table 9', waiter: 'Raj', items: 'Burger, Fries', type: 'Cafe', amount: '₹540', status: 'Cancelled', time: '35 min ago' },
+  { id: '#T-1016', table: 'Table 1', waiter: 'Priya', items: 'Soup, Salad, Dessert', type: 'Cafe', amount: '₹870', status: 'Served', time: '45 min ago' },
+  { id: '#T-1015', table: 'Table 5', waiter: 'Sam', items: 'Tiramisu, Coffee', type: 'Cafe', amount: '₹450', status: 'Served', time: '50 min ago' },
+  { id: '#T-1014', table: 'Table 8', waiter: 'Anita', items: 'Espresso Martini x2', type: 'Bar', amount: '₹760', status: 'Preparing', time: '55 min ago' },
+  { id: '#T-1013', table: 'Table 3', waiter: 'Raj', items: 'Caesar Salad', type: 'Cafe', amount: '₹320', status: 'Served', time: '1 hour ago' },
+  { id: '#T-1012', table: 'Table 6', waiter: 'Priya', items: 'Beef Tenderloin', type: 'Cafe', amount: '₹1,200', status: 'Served', time: '1.2 hours ago' },
+  { id: '#T-1011', table: 'Bar', waiter: 'Sam', items: 'Old Fashioned', type: 'Bar', amount: '₹480', status: 'Served', time: '1.5 hours ago' },
+  { id: '#T-1010', table: 'Table 10', waiter: 'Anita', items: 'Pizza, Wine', type: 'Bar', amount: '₹950', status: 'Pending', time: '1.8 hours ago' },
+  { id: '#T-1009', table: 'Table 12', waiter: 'Raj', items: 'Fish and Chips', type: 'Cafe', amount: '₹680', status: 'Preparing', time: '2 hours ago' },
+  { id: '#T-1008', table: 'Table 11', waiter: 'Priya', items: 'Mocktails x4', type: 'Bar', amount: '₹560', status: 'Served', time: '2.2 hours ago' },
+  { id: '#T-1007', table: 'Table 4', waiter: 'Sam', items: 'Chocolate Cake', type: 'Cafe', amount: '₹350', status: 'Served', time: '2.5 hours ago' },
+  { id: '#T-1006', table: 'Table 7', waiter: 'Anita', items: 'Gin Tonic x2', type: 'Bar', amount: '₹640', status: 'Cancelled', time: '2.8 hours ago' },
+  { id: '#T-1005', table: 'Table 2', waiter: 'Raj', items: 'Bruschetta', type: 'Cafe', amount: '₹280', status: 'Served', time: '3 hours ago' },
+  { id: '#T-1004', table: 'Table 9', waiter: 'Priya', items: 'Truffle Risotto', type: 'Cafe', amount: '₹680', status: 'Served', time: '3.2 hours ago' },
+  { id: '#T-1003', table: 'Bar', waiter: 'Sam', items: 'Whiskey Sour', type: 'Bar', amount: '₹440', status: 'Preparing', time: '3.5 hours ago' },
+  { id: '#T-1002', table: 'Table 1', waiter: 'Anita', items: 'Lobster Bisque', type: 'Cafe', amount: '₹520', status: 'Served', time: '3.8 hours ago' },
 ];
 
 const STATUS_MAP = {
-  Served:     'd-chip-green',
-  Preparing:  'd-chip-gold',
-  Pending:    'd-chip-blue',
-  Cancelled:  'd-chip-red',
+  Served: 'd-chip-green',
+  Preparing: 'd-chip-gold',
+  Pending: 'd-chip-blue',
+  Cancelled: 'd-chip-red',
 };
 
 export default function Orders() {
   const [filter, setFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Cancelled'];
   const filtered = filter === 'All' ? ORDERS : ORDERS.filter(o => o.status === filter);
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const currentData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleRefresh = () => {
     alert("Refreshing order feed...");
@@ -71,9 +90,9 @@ export default function Orders() {
 
       <div className="d-flex gap-2 mb-4 flex-wrap">
         {statuses.map(s => (
-          <button 
-            key={s} 
-            onClick={() => setFilter(s)} 
+          <button
+            key={s}
+            onClick={() => setFilter(s)}
             style={{
               background: filter === s ? 'var(--d-primary)' : 'var(--d-white)',
               color: filter === s ? 'var(--d-white)' : 'var(--d-text-muted)',
@@ -107,7 +126,7 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(o => (
+              {currentData.map(o => (
                 <tr key={o.id}>
                   <td><strong>{o.id}</strong></td>
                   <td>
@@ -141,6 +160,15 @@ export default function Orders() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="px-4">
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       </div>
     </>

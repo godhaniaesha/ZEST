@@ -8,12 +8,12 @@ import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 
 const MENU_ITEMS = [
-  { id: 1, name: 'Truffle Risotto', category: 'Mains', price: '680', status: 'Available', type: 'Cafe', cuisine: 'Italian', img: <MdRestaurant />, color: '#2ecc71' },
-  { id: 2, name: 'Mojito Classic', category: 'Cocktails', price: '320', status: 'Available', type: 'Bar', cuisine: 'International', img: <MdLocalBar />, color: '#3498db' },
-  { id: 3, name: 'Beef Tenderloin', category: 'Mains', price: '1200', status: 'Available', type: 'Cafe', cuisine: 'Continental', img: <MdRestaurant />, color: '#2ecc71' },
-  { id: 4, name: 'Tiramisu', category: 'Desserts', price: '280', status: 'Sold Out', type: 'Cafe', cuisine: 'Italian', img: <MdIcecream />, color: '#e74c3c' },
-  { id: 5, name: 'Espresso Martini', category: 'Cocktails', price: '380', status: 'Available', type: 'Bar', cuisine: 'International', img: <MdLocalBar />, color: '#3498db' },
-  { id: 6, name: 'Caesar Salad', category: 'Starters', price: '320', status: 'Available', type: 'Cafe', cuisine: 'Continental', img: <MdRestaurant />, color: '#f39c12' },
+  { id: 1, name: 'Truffle Risotto', category: 'Mains', price: '680', status: 'Available', type: 'Cafe', cuisine: 'Italian', img: <MdRestaurant />, color: '#2ecc71', description: 'Creamy arborio rice with fresh truffle oil and parmesan', prepTime: 25, ingredients: 'Arborio rice, truffle oil, parmesan, vegetable broth, mushrooms' },
+  { id: 2, name: 'Mojito Classic', category: 'Cocktails', price: '320', status: 'Available', type: 'Bar', cuisine: 'International', img: <MdLocalBar />, color: '#3498db', description: 'Fresh mint, lime, rum, and soda water - the perfect summer drink', prepTime: 5, ingredients: 'White rum, mint leaves, lime, sugar, soda water' },
+  { id: 3, name: 'Beef Tenderloin', category: 'Mains', price: '1200', status: 'Available', type: 'Cafe', cuisine: 'Continental', img: <MdRestaurant />, color: '#2ecc71', description: 'Premium tenderloin with red wine reduction and roasted vegetables', prepTime: 35, ingredients: 'Beef tenderloin, red wine, garlic, rosemary, seasonal vegetables' },
+  { id: 4, name: 'Tiramisu', category: 'Desserts', price: '280', status: 'Sold Out', type: 'Cafe', cuisine: 'Italian', img: <MdIcecream />, color: '#e74c3c', description: 'Classic Italian dessert with coffee-soaked ladyfingers and mascarpone', prepTime: 20, ingredients: 'Ladyfingers, espresso, mascarpone, eggs, cocoa powder' },
+  { id: 5, name: 'Espresso Martini', category: 'Cocktails', price: '380', status: 'Available', type: 'Bar', cuisine: 'International', img: <MdLocalBar />, color: '#3498db', description: 'Vodka, coffee liqueur, and freshly brewed espresso', prepTime: 7, ingredients: 'Vodka, Kahlua, espresso, simple syrup' },
+  { id: 6, name: 'Caesar Salad', category: 'Starters', price: '320', status: 'Available', type: 'Cafe', cuisine: 'Continental', img: <MdRestaurant />, color: '#f39c12', description: 'Romaine lettuce with caesar dressing, parmesan, and croutons', prepTime: 10, ingredients: 'Romaine lettuce, caesar dressing, parmesan, croutons, lemon' },
 ];
 
 const CATEGORIES = [
@@ -48,7 +48,7 @@ export default function Menu({ userRole = 'chef' }) {
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', category: 'Mains', price: '', status: 'Available', type: 'Cafe', cuisine: 'Indian' });
+  const [formData, setFormData] = useState({ name: '', category: 'Starters', price: '', status: 'Available', type: 'Cafe', cuisine: 'Indian', description: '', prepTime: 15, ingredients: '' });
 
   // Role-based permissions
   const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
@@ -65,7 +65,7 @@ export default function Menu({ userRole = 'chef' }) {
       return;
     }
     setCurrentItem(null);
-    setFormData({ name: '', category: 'Mains', price: '', status: 'Available', type: 'Cafe', cuisine: 'Indian' });
+    setFormData({ name: '', category: 'Starters', price: '', status: 'Available', type: 'Cafe', cuisine: 'Indian', description: '', prepTime: 15, ingredients: '' });
     setShowForm(true);
   };
 
@@ -81,7 +81,10 @@ export default function Menu({ userRole = 'chef' }) {
       price: item.price.replace('₹', '').replace(',', ''),
       status: item.status,
       type: item.type || 'Cafe',
-      cuisine: item.cuisine || 'Indian'
+      cuisine: item.cuisine || 'Indian',
+      description: item.description || '',
+      prepTime: item.prepTime || 15,
+      ingredients: item.ingredients || ''
     });
     setShowForm(true);
   };
@@ -96,6 +99,16 @@ export default function Menu({ userRole = 'chef' }) {
   };
 
   const handleSave = () => {
+    // Validation
+    if (!formData.name || !formData.price || !formData.category) {
+      alert('Please fill in all required fields (Name, Price, Category)');
+      return;
+    }
+    if (parseFloat(formData.price) <= 0) {
+      alert('Price must be greater than 0');
+      return;
+    }
+
     if (currentItem) {
       // Edit
       setItems(items.map(i => i.id === currentItem.id ? { ...i, ...formData, price: formData.price } : i));
@@ -226,10 +239,18 @@ export default function Menu({ userRole = 'chef' }) {
                     )}
                   </div>
                   <div className="d-page-sub mb-2">{item.category} • {item.cuisine}</div>
-                  <div className="d-flex justify-content-between align-items-center mt-3">
-                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
-                      ₹{item.price}
-                    </span>
+                  {item.description && <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
+                        ₹{item.price}
+                      </span>
+                      {item.prepTime && (
+                        <span className="text-muted small ml-2" style={{ fontSize: '0.8rem' }}>
+                          • {item.prepTime} mins
+                        </span>
+                      )}
+                    </div>
                     <span className={`d-chip ${item.status === 'Available' ? 'd-chip-green' : 'd-chip-red'}`}>
                       {item.status}
                     </span>
@@ -251,7 +272,7 @@ export default function Menu({ userRole = 'chef' }) {
         <Row className="g-3">
           <Col xs={12}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Item Name</Form.Label>
+              <Form.Label className="small fw-bold">Item Name *</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="e.g. Truffle Risotto"
@@ -263,7 +284,7 @@ export default function Menu({ userRole = 'chef' }) {
           </Col>
           <Col xs={12} md={6}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Category</Form.Label>
+              <Form.Label className="small fw-bold">Category *</Form.Label>
               <Form.Select
                 value={formData.category}
                 onChange={(e) => {
@@ -294,37 +315,63 @@ export default function Menu({ userRole = 'chef' }) {
               </Form.Select>
             </Form.Group>
           </Col>
-          <Col xs={12} md={6}>
+          <Col xs={12} md={4}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Price (₹)</Form.Label>
+              <Form.Label className="small fw-bold">Price (₹) *</Form.Label>
               <Form.Control
                 type="number"
-                placeholder="0.00"
+                placeholder="0"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 required
               />
             </Form.Group>
           </Col>
-          <Col xs={12}>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Prep Time (mins)</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="15"
+                value={formData.prepTime}
+                onChange={(e) => setFormData({ ...formData, prepTime: parseInt(e.target.value) || 15 })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
             <Form.Group>
               <Form.Label className="small fw-bold">Status</Form.Label>
-              <div className="d-flex gap-3">
-                <Form.Check
-                  type="radio"
-                  label="Available"
-                  name="status"
-                  checked={formData.status === 'Available'}
-                  onChange={() => setFormData({ ...formData, status: 'Available' })}
-                />
-                <Form.Check
-                  type="radio"
-                  label="Sold Out"
-                  name="status"
-                  checked={formData.status === 'Sold Out'}
-                  onChange={() => setFormData({ ...formData, status: 'Sold Out' })}
-                />
-              </div>
+              <Form.Select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="Available">Available</option>
+                <option value="Sold Out">Sold Out</option>
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                placeholder="Brief description of the item..."
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Ingredients</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                placeholder="List of ingredients..."
+                value={formData.ingredients}
+                onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
+              />
             </Form.Group>
           </Col>
         </Row>

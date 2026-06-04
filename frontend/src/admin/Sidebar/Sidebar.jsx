@@ -4,7 +4,8 @@ import {
   MdDashboard, MdRestaurantMenu, MdReceiptLong, MdEventSeat,
   MdInventory2, MdPeople, MdBarChart, MdSettings, MdLogout,
   MdLocalBar, MdStar, MdKitchen, MdCountertops, MdTableRestaurant,
-  MdLocalAtm, MdAdminPanelSettings, MdHistory, MdNotificationsActive
+  MdLocalAtm, MdAdminPanelSettings, MdHistory, MdNotificationsActive,
+  MdLocalDining
 } from 'react-icons/md';
 
 // Available Roles in your system:
@@ -46,6 +47,7 @@ const NAV_GROUPS = [
       { to: '/admin/kitchen-display', icon: <MdKitchen />, label: 'Live Orders (KOT)', badge: '5', roles: ['chef', 'manager', 'superadmin'] },
       { to: '/admin/menu', icon: <MdRestaurantMenu />, label: 'Menu Items', badge: null, roles: ['chef', 'manager', 'superadmin'] },
       { to: '/admin/bar', icon: <MdLocalBar />, label: 'Bar & Drinks', badge: null, roles: ['chef', 'manager', 'superadmin'] }, // Bartender/Chef roles
+      { to: '/admin/categories', icon: <MdLocalDining />, label: 'Categories & Cuisines', badge: null, roles: ['chef', 'manager', 'superadmin'] },
       { to: '/admin/inventory', icon: <MdInventory2 />, label: 'Kitchen Stock', roles: ['chef', 'manager', 'superadmin'] }
     ]
   },
