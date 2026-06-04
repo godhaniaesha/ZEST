@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MdHistory, MdFilterList } from 'react-icons/md';
+import Pagination from '../../components/Pagination';
 
 export default function SystemLogs() {
   const LOGS = [
@@ -9,6 +10,24 @@ export default function SystemLogs() {
     { time: '2026-05-25 12:30', user: 'Manager John', action: 'Changed Table Status T-4', module: 'Floor', status: 'Warning' },
   ];
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filtered = LOGS.filter(
+    log =>
+      log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.module.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.status.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+  const currentData = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   return (
     <>
       <div className="d-page-header">
@@ -34,7 +53,7 @@ export default function SystemLogs() {
               </tr>
             </thead>
             <tbody>
-              {LOGS.map((log, i) => (
+              {currentData.map((log, i) => (
                 <tr key={i}>
                   <td style={{ fontSize: '0.85rem' }} title={log.time}>{log.time}</td>
                   <td title={log.user}><strong>{log.user}</strong></td>
@@ -46,6 +65,13 @@ export default function SystemLogs() {
             </tbody>
           </table>
         </div>
+          {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     </>
   );

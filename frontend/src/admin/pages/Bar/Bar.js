@@ -4,10 +4,17 @@ import {
   MdLocalBar, MdAdd, MdSearch, MdFilterList,
   MdWineBar, MdSportsBar, MdWineBar as MdWine, MdEdit, MdDelete
 } from 'react-icons/md';
-import DeleteModal from '../../components/DeleteModal.jsx';
-import FormModal from '../../components/FormModal.jsx';
-import { menuAPI } from '../../../api';
-import { useAuth } from '../../../contexts/AuthContext';
+import DeleteModal from '../../components/DeleteModal';
+import FormModal from '../../components/FormModal';
+
+const DRINKS = [
+  { id: 1, name: 'Classic Mojito', cat: 'Cocktail', price: '320', available: true,  img: <MdLocalBar />, color: '#2ecc71', description: 'Refreshing mint and lime cocktail with white rum', ingredients: 'White rum, mint, lime, sugar, soda water', alcoholContent: '12%', prepTime: 5 },
+  { id: 2, name: 'Old Fashioned', cat: 'Cocktail', price: '480', available: true, img: <MdLocalBar />, color: '#f39c12', description: 'Classic bourbon cocktail with bitters and orange peel', ingredients: 'Bourbon, sugar cube, bitters, orange peel, ice', alcoholContent: '35%', prepTime: 7 },
+  { id: 3, name: 'Kingfisher Draught', cat: 'Beer', price: '180', available: true, img: <MdSportsBar />, color: '#3498db', description: 'Crisp and refreshing Indian lager beer', ingredients: 'Water, malt, hops, yeast', alcoholContent: '5%', prepTime: 1 },
+  { id: 4, name: 'House Red Wine', cat: 'Wine', price: '420', available: true, img: <MdWine />, color: '#e74c3c', description: 'Smooth and full-bodied red wine blend', ingredients: 'Red wine grapes', alcoholContent: '13%', prepTime: 2 },
+  { id: 5, name: 'Espresso Martini', cat: 'Cocktail', price: '380', available: false, img: <MdLocalBar />, color: '#9b59b6', description: 'Vodka and coffee liqueur with fresh espresso', ingredients: 'Vodka, Kahlua, espresso, simple syrup', alcoholContent: '20%', prepTime: 6 },
+  { id: 6, name: 'Whiskey Sour', cat: 'Cocktail', price: '440', available: true, img: <MdLocalBar />, color: '#e67e22', description: 'Classic sour cocktail with whiskey and lemon', ingredients: 'Whiskey, lemon juice, simple syrup, egg white', alcoholContent: '25%', prepTime: 8 },
+];
 
 const CATEGORIES = ['All', 'Cocktail', 'Beer', 'Wine', 'Spirits'];
 const FORM_SKIP_KEYS = ['_id', '__v', 'createdAt', 'updatedAt', 'type'];
@@ -25,8 +32,7 @@ export default function Bar() {
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const { user } = useAuth();
-  const userRole = user?.role || 'chef';
+  const [formData, setFormData] = useState({ name: '', cat: 'Cocktail', price: '', available: true, description: '', ingredients: '', alcoholContent: '', prepTime: 5 });
 
   const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin' || userRole === 'bartender';
 
@@ -56,11 +62,22 @@ export default function Bar() {
 
   const handleAdd = () => {
     setCurrentItem(null);
+    setFormData({ name: '', cat: 'Cocktail', price: '', available: true, description: '', ingredients: '', alcoholContent: '', prepTime: 5 });
     setShowForm(true);
   };
 
   const handleEdit = (item) => {
     setCurrentItem(item);
+    setFormData({
+      name: item.name,
+      cat: item.cat,
+      price: item.price.replace('₹', ''),
+      available: item.available,
+      description: item.description || '',
+      ingredients: item.ingredients || '',
+      alcoholContent: item.alcoholContent || '',
+      prepTime: item.prepTime || 5
+    });
     setShowForm(true);
   };
 
@@ -69,33 +86,22 @@ export default function Bar() {
     setShowDelete(true);
   };
 
-  const handleSave = async (formData, fileData) => {
-    try {
-      const data = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (FORM_SKIP_KEYS.includes(key)) return;
-        const value = formData[key];
-        if (value === null || value === undefined || typeof value === 'object') return;
-        data.append(key, value);
-      });
-      data.append('type', 'Bar');
-      if (!currentItem) {
-        data.append('color', '#2ecc71');
-      }
-      
-      if (fileData && fileData.file) {
-        data.append(fileData.name, fileData.file);
-      }
-      
-      if (currentItem) {
-        await menuAPI.update(currentItem._id, data);
-      } else {
-        await menuAPI.create(data);
-      }
-      loadData();
-      setShowForm(false);
-    } catch (error) {
-      console.error(error);
+  const handleSave = () => {
+    // Validation
+    if (!formData.name || !formData.price || !formData.cat) {
+      alert('Please fill in all required fields (Name, Price, Category)');
+      return;
+    }
+    if (parseFloat(formData.price) <= 0) {
+      alert('Price must be greater than 0');
+      return;
+    }
+
+    if (currentItem) {
+      setDrinks(drinks.map(d => d.id === currentItem.id ? { ...d, ...formData } : d));
+    } else {
+      const newId = drinks.length + 1;
+      setDrinks([...drinks, { id: newId, ...formData, img: <MdLocalBar />, color: '#2ecc71' }]);
     }
   };
 
@@ -244,13 +250,21 @@ export default function Bar() {
                       </div>
                     )}
                   </div>
-                  <div className="d-page-sub mb-2">{d.category}</div>
-                  <div className="d-flex justify-content-between align-items-center mt-3">
-                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
-                      ₹{d.price}
-                    </span>
-                    <span className={`d-chip ${d.status === 'Available' ? 'd-chip-green' : 'd-chip-red'}`}>
-                      {d.status}
+                  <div className="d-page-sub mb-1">{d.cat}{d.alcoholContent && <span className="ml-2" style={{ fontSize: '0.8rem' }}>• {d.alcoholContent}</span>}</div>
+                  {d.description && <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{d.description}</div>}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
+                        ₹{d.price}
+                      </span>
+                      {d.prepTime && (
+                        <span className="text-muted small ml-2" style={{ fontSize: '0.8rem' }}>
+                          • {d.prepTime} mins
+                        </span>
+                      )}
+                    </div>
+                    <span className={`d-chip ${d.available ? 'd-chip-green' : 'd-chip-red'}`}>
+                      {d.available ? 'In Stock' : 'Out of Stock'}
                     </span>
                   </div>
                 </div>
@@ -265,8 +279,112 @@ export default function Bar() {
         onHide={() => setShowForm(false)}
         onSave={handleSave}
         title={currentItem ? "Edit Drink" : "Add New Drink"}
-        initialData={currentItem || {}}
-        fields={formFields}
+        onSubmit={handleSave}
+      >
+        <Row className="g-3">
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Drink Name *</Form.Label>
+              <Form.Control 
+                type="text" 
+                placeholder="e.g. Classic Mojito"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Category *</Form.Label>
+              <Form.Select 
+                value={formData.cat}
+                onChange={(e) => setFormData({...formData, cat: e.target.value})}
+              >
+                {CATEGORIES.filter(c => c !== 'All').map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Price (₹) *</Form.Label>
+              <Form.Control 
+                type="number" 
+                placeholder="0"
+                value={formData.price}
+                onChange={(e) => setFormData({...formData, price: e.target.value})}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Alcohol Content</Form.Label>
+              <Form.Control 
+                type="text" 
+                placeholder="e.g. 12%"
+                value={formData.alcoholContent}
+                onChange={(e) => setFormData({...formData, alcoholContent: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Prep Time (mins)</Form.Label>
+              <Form.Control 
+                type="number" 
+                placeholder="5"
+                value={formData.prepTime}
+                onChange={(e) => setFormData({...formData, prepTime: parseInt(e.target.value) || 5})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Availability</Form.Label>
+              <Form.Select 
+                value={formData.available ? 'In Stock' : 'Out of Stock'}
+                onChange={(e) => setFormData({...formData, available: e.target.value === 'In Stock'})}
+              >
+                <option value="In Stock">In Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Description</Form.Label>
+              <Form.Control 
+                as="textarea" 
+                rows={2}
+                placeholder="Brief description of the drink..."
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Ingredients</Form.Label>
+              <Form.Control 
+                as="textarea" 
+                rows={2}
+                placeholder="List of ingredients..."
+                value={formData.ingredients}
+                onChange={(e) => setFormData({...formData, ingredients: e.target.value})}
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+      </FormModal>
+
+      <DeleteModal 
+        show={showDelete} 
+        onHide={() => setShowDelete(false)} 
+        onConfirm={confirmDelete}
+        itemName={currentItem?.name}
       />
 
       <DeleteModal
