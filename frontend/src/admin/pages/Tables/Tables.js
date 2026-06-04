@@ -1,122 +1,92 @@
-import React, { useState } from 'react';
-import { Row, Col, Form, Badge } from 'react-bootstrap';
-import { 
-  MdTableRestaurant, MdFiberManualRecord, MdPeople, 
+import React, { useState, useEffect } from 'react';
+import { Row, Col } from 'react-bootstrap';
+import {
+  MdTableRestaurant, MdFiberManualRecord, MdPeople,
   MdAdd, MdEdit, MdDelete, MdSearch, MdFilterList
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-
-const INITIAL_TABLES = [
-  { id: 'T-1', name: 'Table 1', capacity: 2, type: 'Cafe', status: 'Occupied', location: 'Indoor' },
-  { id: 'T-2', name: 'Table 2', capacity: 4, type: 'Cafe', status: 'Free', location: 'Indoor' },
-  { id: 'T-3', name: 'Table 3', capacity: 2, type: 'Cafe', status: 'Reserved', location: 'Outdoor' },
-  { id: 'T-4', name: 'Table 4', capacity: 6, type: 'Cafe', status: 'Occupied', location: 'Indoor' },
-  { id: 'T-5', name: 'Table 5', capacity: 4, type: 'Cafe', status: 'Free', location: 'Indoor' },
-  { id: 'T-6', name: 'Table 6', capacity: 2, type: 'Cafe', status: 'Free', location: 'Outdoor' },
-  { id: 'T-7', name: 'Table 7', capacity: 4, type: 'Cafe', status: 'Occupied', location: 'Indoor' },
-  { id: 'T-8', name: 'Table 8', capacity: 4, type: 'Cafe', status: 'Reserved', location: 'Outdoor' },
-  { id: 'B-1', name: 'Bar Seat 1', capacity: 1, type: 'Bar', status: 'Occupied', location: 'Bar Counter' },
-  { id: 'B-2', name: 'Bar Seat 2', capacity: 1, type: 'Bar', status: 'Free', location: 'Bar Counter' },
-];
+import { tablesAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const TABLE_TYPES = ['All', 'Cafe', 'Bar'];
 const LOCATIONS = ['Indoor', 'Outdoor', 'Bar Counter'];
 const STATUSES = ['All', 'Free', 'Occupied', 'Reserved'];
 
-export default function Tables({ userRole = 'waiter' }) {
-  const [tables, setTables] = useState(INITIAL_TABLES);
+export default function Tables() {
+  const [tables, setTables] = useState([]);
   const [activeType, setActiveType] = useState('All');
   const [activeStatus, setActiveStatus] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Modal States
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
-  const [currentTable, setCurrentTable] = useState(null);
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    capacity: 2, 
-    type: 'Cafe', 
-    status: 'Free', 
-    location: 'Indoor' 
-  });
+  const [currentItem, setCurrentItem] = useState(null);
+  const { user } = useAuth();
+  const userRole = user?.role || 'waiter';
 
-  // Role-based permissions
   const canAddEditDelete = userRole === 'manager' || userRole === 'superadmin';
+
+  const loadData = async () => {
+    try {
+      const response = await tablesAPI.getAll();
+      setTables(response.data);
+    } catch (error) {
+      console.error('Error fetching tables:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const filtered = tables.filter(table => {
     const matchesType = activeType === 'All' || table.type === activeType;
     const matchesStatus = activeStatus === 'All' || table.status === activeStatus;
-    const matchesSearch = table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         table.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = table.number.toString().includes(searchTerm.toLowerCase()) ||
+                         table.location.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesType && matchesStatus && matchesSearch;
   });
 
   const handleAdd = () => {
-    if (!canAddEditDelete) {
-      alert('You do not have permission to add tables.');
-      return;
-    }
-    setCurrentTable(null);
-    setFormData({ name: '', capacity: 2, type: 'Cafe', status: 'Free', location: 'Indoor' });
+    setCurrentItem(null);
     setShowForm(true);
   };
 
   const handleEdit = (table) => {
-    if (!canAddEditDelete) {
-      alert('You do not have permission to edit tables.');
-      return;
-    }
-    setCurrentTable(table);
-    setFormData({ 
-      name: table.name, 
-      capacity: table.capacity, 
-      type: table.type, 
-      status: table.status, 
-      location: table.location 
-    });
+    setCurrentItem(table);
     setShowForm(true);
   };
 
   const handleDeleteClick = (table) => {
-    if (!canAddEditDelete) {
-      alert('You do not have permission to delete tables.');
-      return;
-    }
-    setCurrentTable(table);
+    setCurrentItem(table);
     setShowDelete(true);
   };
 
-  const handleSave = () => {
-    if (currentTable) {
-      // Edit
-      setTables(tables.map(t => t.id === currentTable.id ? { ...t, ...formData } : t));
-    } else {
-      // Add
-      const prefix = formData.type === 'Bar' ? 'B' : 'T';
-      const maxId = tables.filter(t => t.type === formData.type).length + 1;
-      const newId = `${prefix}-${maxId}`;
-      setTables([...tables, { id: newId, ...formData }]);
+  const handleSave = async (formData) => {
+    try {
+      if (currentItem) {
+        await tablesAPI.update(currentItem._id, formData);
+      } else {
+        await tablesAPI.create(formData);
+      }
+      loadData();
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving table:', error);
     }
-    setShowForm(false);
   };
 
-  const confirmDelete = () => {
-    setTables(tables.filter(t => t.id !== currentTable.id));
-    setShowDelete(false);
-  };
-
-  const handleQuickReserve = () => {
-    if (!canAddEditDelete) {
-      alert('You do not have permission to reserve tables.');
-      return;
+  const confirmDelete = async () => {
+    try {
+      await tablesAPI.delete(currentItem._id);
+      loadData();
+      setShowDelete(false);
+    } catch (error) {
+      console.error('Error deleting table:', error);
     }
-    alert('Quick Reserve functionality - Opens reservation modal');
-  };
-
-  const handleTableClick = (table) => {
-    alert(`Table: ${table.name}\nStatus: ${table.status}\nCapacity: ${table.capacity}\nLocation: ${table.location}`);
   };
 
   const getStatusColor = (status) => {
@@ -136,6 +106,14 @@ export default function Tables({ userRole = 'waiter' }) {
       default: return 'var(--d-bg)';
     }
   };
+
+  const formFields = [
+    { name: 'number', label: 'Table Number', type: 'number', required: true, col: 6 },
+    { name: 'capacity', label: 'Capacity', type: 'number', required: true, col: 6, min: 1, max: 20 },
+    { name: 'type', label: 'Type', type: 'select', required: true, col: 6, options: TABLE_TYPES.filter(c => c !== 'All').map(c => ({ label: c, value: c })) },
+    { name: 'location', label: 'Location', type: 'select', required: true, col: 6, options: LOCATIONS.map(c => ({ label: c, value: c })) },
+    { name: 'status', label: 'Status', type: 'select', required: true, col: 12, options: STATUSES.filter(c => c !== 'All').map(c => ({ label: c, value: c })) },
+  ];
 
   return (
     <>
@@ -166,15 +144,24 @@ export default function Tables({ userRole = 'waiter' }) {
         </div>
       </div>
 
-      {/* Filters */}
       <Row className="g-3 mb-4">
         <Col xs={12} md={6}>
           <div className="d-flex gap-2 flex-wrap">
             {TABLE_TYPES.map(type => (
-              <button 
+              <button
                 key={type}
                 onClick={() => setActiveType(type)}
-                className={`d-btn-filter ${activeType === type ? 'active' : ''}`}
+                style={{
+                  padding: '8px 16px',
+                  border: '1.5px solid var(--d-border)',
+                  borderRadius: 'var(--d-radius-md)',
+                  background: activeType === type ? 'var(--d-primary)' : 'var(--d-white)',
+                  color: activeType === type ? 'var(--d-white)' : 'var(--d-text-muted)',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'var(--d-transition)'
+                }}
               >
                 {type}
               </button>
@@ -184,10 +171,20 @@ export default function Tables({ userRole = 'waiter' }) {
         <Col xs={12} md={6}>
           <div className="d-flex gap-2 flex-wrap">
             {STATUSES.map(status => (
-              <button 
+              <button
                 key={status}
                 onClick={() => setActiveStatus(status)}
-                className={`d-btn-filter ${activeStatus === status ? 'active' : ''}`}
+                style={{
+                  padding: '8px 16px',
+                  border: '1.5px solid var(--d-border)',
+                  borderRadius: 'var(--d-radius-md)',
+                  background: activeStatus === status ? 'var(--d-primary)' : 'var(--d-white)',
+                  color: activeStatus === status ? 'var(--d-white)' : 'var(--d-text-muted)',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'var(--d-transition)'
+                }}
               >
                 {status}
               </button>
@@ -200,279 +197,167 @@ export default function Tables({ userRole = 'waiter' }) {
         <Col xs={12} md={6}>
           <div className="d-navbar-search-box w-100 m-0">
             <MdSearch className="d-search-icon" />
-            <input 
-              type="text" 
-              placeholder="Search tables..." 
+            <input
+              type="text"
+              placeholder="Search tables..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </Col>
-        <Col xs={12} md={6} className="d-flex justify-content-end">
-          {canAddEditDelete && (
-            <button className="d-btn-outline" onClick={handleQuickReserve}>
-              <MdFilterList /> Quick Reserve
-            </button>
-          )}
-        </Col>
       </Row>
 
-      {/* Tables Grid */}
       <div className="d-card">
         <div className="d-section-title">Floor Plan Overview</div>
         <div className="d-section-sub">
-          {filtered.length} {filtered.length === 1 ? 'table' : 'tables'} found
+          {loading ? 'Loading...' : `${filtered.length} ${filtered.length === 1 ? 'table' : 'tables'} found`}
         </div>
-        
-        {filtered.length === 0 ? (
+
+        {loading ? (
+          <div className="text-center py-5 text-muted">Loading tables...</div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-5 text-muted">
             <MdTableRestaurant fontSize="3rem" />
             <p className="mt-3">No tables found matching your criteria</p>
           </div>
         ) : (
-          <div className="d-table-status-grid mt-4">
+          <div className="d-table-status-grid mt-4" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gap: '20px'
+          }}>
             {filtered.map((table) => (
-              <div 
-                key={table.id} 
+              <div
+                key={table._id}
                 className="d-table-box"
                 style={{
-                  borderColor: getStatusColor(table.status),
+                  border: `2px solid ${getStatusColor(table.status)}`,
+                  borderRadius: 'var(--d-radius-md)',
+                  padding: '20px',
+                  textAlign: 'center',
+                  transition: 'var(--d-transition)',
+                  cursor: 'pointer',
+                  position: 'relative',
                   background: getStatusBg(table.status)
                 }}
-                onClick={() => handleTableClick(table)}
               >
-                <div className="d-table-header">
-                  <div className="d-table-id">{table.id}</div>
+                <div className="d-table-header" style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '8px'
+                }}>
+                  <div className="d-table-id" style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontSize: '1.3rem',
+                    fontWeight: 800,
+                    color: 'var(--d-primary)'
+                  }}>{table.displayId || (table.type === 'Bar' ? 'B-' : 'C-') + String(table.number).padStart(2, '0')}</div>
                   {canAddEditDelete && (
-                    <div className="d-table-actions">
-                      <button 
+                    <div className="d-table-actions" style={{
+                      display: 'flex',
+                      gap: '4px'
+                    }}>
+                      <button
                         className="d-table-action-btn"
-                        onClick={(e) => { e.stopPropagation(); handleEdit(table); }}
+                        onClick={() => handleEdit(table)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          border: 'none',
+                          background: 'var(--d-white)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'var(--d-transition)'
+                        }}
                       >
                         <MdEdit fontSize="0.9rem" />
                       </button>
-                      <button 
+                      <button
                         className="d-table-action-btn text-danger"
-                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(table); }}
+                        onClick={() => handleDeleteClick(table)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          border: 'none',
+                          background: 'var(--d-white)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'var(--d-transition)'
+                        }}
                       >
                         <MdDelete fontSize="0.9rem" />
                       </button>
                     </div>
                   )}
                 </div>
-                <div className="d-table-name">{table.name}</div>
-                <div className="d-table-details">
-                  <div className="d-table-detail-item">
+                <div className="d-table-details" style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '12px',
+                  marginBottom: '12px'
+                }}>
+                  <div className="d-table-detail-item" style={{
+                    fontSize: '0.8rem',
+                    color: 'var(--d-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
                     <MdPeople /> {table.capacity}
                   </div>
-                  <div className="d-table-detail-item">
+                  <div className="d-table-detail-item" style={{
+                    fontSize: '0.8rem',
+                    color: 'var(--d-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
                     {table.type}
                   </div>
                 </div>
-                <div className="d-table-status-text" style={{ color: getStatusColor(table.status) }}>
+                <div className="d-table-status-text" style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '8px',
+                  color: getStatusColor(table.status)
+                }}>
                   {table.status}
                 </div>
-                <div className="d-table-location">{table.location}</div>
+                <div className="d-table-location" style={{
+                  fontSize: '0.7rem',
+                  color: 'var(--d-text-light)',
+                  fontWeight: 600
+                }}>{table.location}</div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Add/Edit Modal */}
-      <FormModal 
-        show={showForm} 
-        onHide={() => setShowForm(false)} 
-        title={currentTable ? "Edit Table" : "Add New Table"}
-        onSubmit={handleSave}
-      >
-        <Row className="g-3">
-          <Col xs={12}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Table Name</Form.Label>
-              <Form.Control 
-                type="text" 
-                placeholder="e.g. Table 1"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Capacity</Form.Label>
-              <Form.Control 
-                type="number" 
-                min="1"
-                max="20"
-                value={formData.capacity}
-                onChange={(e) => setFormData({...formData, capacity: parseInt(e.target.value)})}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Type</Form.Label>
-              <Form.Select 
-                value={formData.type}
-                onChange={(e) => setFormData({...formData, type: e.target.value})}
-              >
-                <option value="Cafe">Cafe</option>
-                <option value="Bar">Bar</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Location</Form.Label>
-              <Form.Select 
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-              >
-                {LOCATIONS.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Status</Form.Label>
-              <Form.Select 
-                value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value})}
-              >
-                <option value="Free">Free</option>
-                <option value="Occupied">Occupied</option>
-                <option value="Reserved">Reserved</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-        </Row>
-      </FormModal>
-
-      {/* Delete Modal */}
-      <DeleteModal 
-        show={showDelete} 
-        onHide={() => setShowDelete(false)} 
-        onConfirm={confirmDelete}
-        itemName={currentTable?.name}
+      <FormModal
+        show={showForm}
+        onHide={() => setShowForm(false)}
+        onSave={handleSave}
+        title={currentItem ? "Edit Table" : "Add New Table"}
+        initialData={currentItem || {}}
+        fields={formFields}
       />
 
-      <style jsx>{`
-        .d-table-status-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          gap: 20px;
-        }
-        .d-table-box {
-          border-radius: var(--d-radius-md);
-          padding: 20px;
-          text-align: center;
-          border: 2px solid var(--d-border);
-          transition: var(--d-transition);
-          cursor: pointer;
-          position: relative;
-          background: var(--d-bg);
-        }
-        .d-table-box:hover {
-          transform: translateY(-4px);
-          box-shadow: var(--d-shadow-md);
-        }
-        .d-table-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-        }
-        .d-table-id {
-          font-family: 'Playfair Display', serif;
-          font-size: 1.3rem;
-          font-weight: 800;
-          color: var(--d-primary);
-        }
-        .d-table-actions {
-          display: flex;
-          gap: 4px;
-        }
-        .d-table-action-btn {
-          width: 28px;
-          height: 28px;
-          border: none;
-          background: var(--d-white);
-          border-radius: 6px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: var(--d-transition);
-        }
-        .d-table-action-btn:hover {
-          background: var(--d-accent-soft);
-        }
-        .d-table-name {
-          font-size: 0.9rem;
-          font-weight: 600;
-          color: var(--d-text-muted);
-          margin-bottom: 12px;
-        }
-        .d-table-details {
-          display: flex;
-          justify-content: center;
-          gap: 12px;
-          margin-bottom: 12px;
-        }
-        .d-table-detail-item {
-          font-size: 0.8rem;
-          color: var(--d-text-muted);
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-        .d-table-status-text {
-          font-size: 0.75rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 8px;
-        }
-        .d-table-location {
-          font-size: 0.7rem;
-          color: var(--d-text-light);
-          font-weight: 600;
-        }
-        .d-btn-filter {
-          padding: 8px 16px;
-          border: 1.5px solid var(--d-border);
-          border-radius: var(--d-radius-md);
-          background: var(--d-white);
-          color: var(--d-text-muted);
-          font-weight: 600;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: var(--d-transition);
-        }
-        .d-btn-filter:hover {
-          background: var(--d-accent-soft);
-          border-color: var(--d-primary);
-          color: var(--d-primary);
-        }
-        .d-btn-filter.active {
-          background: var(--d-primary);
-          color: var(--d-white);
-          border-color: var(--d-primary);
-        }
-        @media (max-width: 768px) {
-          .d-table-status-grid {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-          }
-          .d-table-id {
-            font-size: 1.1rem;
-          }
-        }
-      `}</style>
+      <DeleteModal
+        show={showDelete}
+        onHide={() => setShowDelete(false)}
+        onDelete={confirmDelete}
+        itemName={`Table ${currentItem?.number}`}
+      />
     </>
   );
 }

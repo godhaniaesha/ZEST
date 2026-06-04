@@ -1,5 +1,6 @@
 import './App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from './contexts/AuthContext';
 
 import '../src/styles/d_style.css';
 import '../src/styles/h_style.css';
@@ -44,34 +45,36 @@ function UserLayout({ children }) {
 
 function App() {
   return (
-    <BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
 
-      <Routes>
+        <Routes>
 
-        {/* USER ROUTES */}
-        <Route path="/" element={<UserLayout>  <Home /> </UserLayout>} />
-        <Route path="/home" element={<UserLayout>  <Home /> </UserLayout>} />
-        <Route path="/aboutus" element={<UserLayout>  <AboutUs /> </UserLayout>} />
-        <Route path="/contactus" element={<UserLayout>  <ContactUs /> </UserLayout>} />
-        <Route path="/services" element={<UserLayout>  <Services /> </UserLayout>} />
-        <Route path="/privacy-policy" element={<UserLayout>  <PrivacyPolicy /> </UserLayout>} />
-        <Route path="/terms" element={<UserLayout>  <TermsAndConditions /> </UserLayout>} />
-        <Route path="/menu" element={<UserLayout>  <Menu /> </UserLayout>} />
-        <Route path="/menu/:id" element={<UserLayout>  <MenuDetail /> </UserLayout>} />
-        <Route path="/auth" element={<UserLayout>  <Auth /> </UserLayout>} />
-        <Route path="/blog" element={<UserLayout>  <Blog /> </UserLayout>} />
-        <Route path="/gallery" element={<UserLayout>  <Gallery/> </UserLayout>} />
-        <Route path="/blog/:id" element={<UserLayout>  <BlogDetail /> </UserLayout>} />
+          {/* USER ROUTES */}
+          <Route path="/" element={<UserLayout>  <Home /> </UserLayout>} />
+          <Route path="/home" element={<UserLayout>  <Home /> </UserLayout>} />
+          <Route path="/aboutus" element={<UserLayout>  <AboutUs /> </UserLayout>} />
+          <Route path="/contactus" element={<UserLayout>  <ContactUs /> </UserLayout>} />
+          <Route path="/services" element={<UserLayout>  <Services /> </UserLayout>} />
+          <Route path="/privacy-policy" element={<UserLayout>  <PrivacyPolicy /> </UserLayout>} />
+          <Route path="/terms" element={<UserLayout>  <TermsAndConditions /> </UserLayout>} />
+          <Route path="/menu" element={<UserLayout>  <Menu /> </UserLayout>} />
+          <Route path="/menu/:id" element={<UserLayout>  <MenuDetail /> </UserLayout>} />
+          <Route path="/auth" element={<UserLayout>  <Auth /> </UserLayout>} />
+          <Route path="/blog" element={<UserLayout>  <Blog /> </UserLayout>} />
+          <Route path="/gallery" element={<UserLayout>  <Gallery/> </UserLayout>} />
+          <Route path="/blog/:id" element={<UserLayout>  <BlogDetail /> </UserLayout>} />
 
-        <Route path="/reservations" element={<UserLayout> <Reservation /> </UserLayout> } />
-        <Route path="/profile" element={<UserLayout> <Profile /> </UserLayout> } />
+          <Route path="/reservations" element={<UserLayout> <Reservation /> </UserLayout> } />
+          <Route path="/profile" element={<UserLayout> <Profile /> </UserLayout> } />
 
-        {/* ADMIN ROUTES */}
-        <Route path="/admin/*" element={<AppRoutes />} />
+          {/* ADMIN ROUTES */}
+          <Route path="/admin/*" element={<AppRoutes />} />
 
-      </Routes>
+        </Routes>
 
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

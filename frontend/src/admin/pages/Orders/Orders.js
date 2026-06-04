@@ -1,18 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import { 
   MdMoreVert, MdRefresh, MdLocalCafe, MdLocalBar, 
-  MdAccessTime, MdPerson, MdReceipt 
+  MdAccessTime, MdPerson, MdReceipt, MdEdit, MdDelete
 } from 'react-icons/md';
-
-const ORDERS = [
-  { id: '#T-1021', table: 'Table 4', waiter: 'Raj',   items: 'Pasta, Wine x2',      type: 'Bar',  amount: '₹1,250', status: 'Served',     time: '2 min ago' },
-  { id: '#T-1020', table: 'Table 7', waiter: 'Priya', items: 'Steak, Beer',          type: 'Bar',  amount: '₹980',   status: 'Preparing',  time: '8 min ago' },
-  { id: '#T-1019', table: 'Bar',     waiter: 'Sam',   items: 'Mojito x3',            type: 'Bar',  amount: '₹750',   status: 'Served',     time: '14 min ago' },
-  { id: '#T-1018', table: 'Table 2', waiter: 'Anita', items: 'Risotto, Water',       type: 'Cafe', amount: '₹620',   status: 'Pending',    time: '20 min ago' },
-  { id: '#T-1017', table: 'Table 9', waiter: 'Raj',   items: 'Burger, Fries',        type: 'Cafe', amount: '₹540',   status: 'Cancelled',  time: '35 min ago' },
-  { id: '#T-1016', table: 'Table 1', waiter: 'Priya', items: 'Soup, Salad, Dessert', type: 'Cafe', amount: '₹870',   status: 'Served',     time: '45 min ago' },
-];
+import { ordersAPI } from '../../../api';
+import FormModal from '../../components/FormModal';
+import DeleteModal from '../../components/DeleteModal';
 
 const STATUS_MAP = {
   Served:     'd-chip-green',
@@ -22,20 +16,88 @@ const STATUS_MAP = {
 };
 
 export default function Orders() {
+  const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('All');
+  const [showForm, setShowForm] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
   const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Cancelled'];
-  const filtered = filter === 'All' ? ORDERS : ORDERS.filter(o => o.status === filter);
+  const filtered = filter === 'All' ? orders : orders.filter(o => o.status === filter);
 
-  const handleRefresh = () => {
-    alert("Refreshing order feed...");
+  const loadData = async () => {
+    try {
+      const response = await ordersAPI.getAll();
+      setOrders(response.data);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleNewKOT = () => {
-    alert("Opening new Kitchen Order Ticket...");
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleSave = async (formData) => {
+    try {
+      if (currentItem) {
+        await ordersAPI.update(currentItem._id, formData);
+      } else {
+        await ordersAPI.create(formData);
+      }
+      loadData();
+      setShowForm(false);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleOrderAction = (orderId) => {
-    alert(`Actions for order ${orderId}`);
+  const handleDelete = async () => {
+    try {
+      await ordersAPI.delete(currentItem._id);
+      loadData();
+      setShowDelete(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const openEdit = (item) => {
+    setCurrentItem(item);
+    setShowForm(true);
+  };
+
+  const openDelete = (item) => {
+    setCurrentItem(item);
+    setShowDelete(true);
+  };
+
+  const formFields = [
+    { name: 'id', label: 'Order ID', type: 'text', required: true },
+    { name: 'table', label: 'Table', type: 'text', required: true },
+    { name: 'waiter', label: 'Waiter', type: 'text', required: true },
+    { name: 'items', label: 'Items', type: 'text', required: true },
+    { name: 'type', label: 'Type', type: 'select', required: true, options: [
+      { label: 'Cafe', value: 'Cafe' },
+      { label: 'Bar', value: 'Bar' }
+    ]},
+    { name: 'amount', label: 'Amount', type: 'text', required: true },
+    { name: 'status', label: 'Status', type: 'select', required: true, options: [
+      { label: 'Pending', value: 'Pending' },
+      { label: 'Preparing', value: 'Preparing' },
+      { label: 'Served', value: 'Served' },
+      { label: 'Cancelled', value: 'Cancelled' }
+    ]},
+    { name: 'time', label: 'Time', type: 'text', required: true }
+  ];
+
+  const stats = {
+    active: orders.filter(o => ['Pending', 'Preparing'].includes(o.status)).length,
+    served: orders.filter(o => o.status === 'Served').length,
+    cancelled: orders.filter(o => o.status === 'Cancelled').length
   };
 
   return (
@@ -48,13 +110,19 @@ export default function Orders() {
           <div className="d-page-sub">Real-time order management for Café & Bar</div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline" onClick={handleRefresh}><MdRefresh /> Refresh Feed</button>
-          <button className="d-btn-gold" onClick={handleNewKOT}><MdReceipt /> New KOT</button>
+          <button className="d-btn-outline" onClick={loadData}><MdRefresh /> Refresh Feed</button>
+          <button className="d-btn-gold" onClick={() => { setCurrentItem(null); setShowForm(true); }}>
+            <MdReceipt /> New KOT
+          </button>
         </div>
       </div>
 
       <Row className="g-3 mb-4">
-        {[['Active Orders', '4', 'd-gold'], ['Served Today', '128', 'd-green'], ['Cancelled', '2', 'd-red']].map(([l, v, c]) => (
+        {[
+          ['Active Orders', stats.active, 'd-gold'],
+          ['Served Today', stats.served, 'd-green'],
+          ['Cancelled', stats.cancelled, 'd-red']
+        ].map(([l, v, c]) => (
           <Col key={l} xs={12} sm={4}>
             <div className="d-stat-card">
               <div className={`d-stat-icon ${c}`} style={{ width: '42px', height: '42px', fontSize: '1.1rem' }}>
@@ -103,46 +171,71 @@ export default function Orders() {
                 <th>Amount</th>
                 <th>Status</th>
                 <th>Time</th>
-                <th style={{ width: '50px' }}></th>
+                <th style={{ width: '100px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(o => (
-                <tr key={o.id}>
-                  <td><strong>{o.id}</strong></td>
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                      {o.type === 'Cafe' ? <MdLocalCafe className="text-success" /> : <MdLocalBar className="text-primary" />}
-                      <span>{o.table}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                      <MdPerson style={{ color: 'var(--d-text-light)' }} />
-                      <span>{o.waiter}</span>
-                    </div>
-                  </td>
-                  <td title={o.items}>
-                    {o.items}
-                  </td>
-                  <td><strong>{o.amount}</strong></td>
-                  <td><span className={`d-chip ${STATUS_MAP[o.status]}`}>{o.status}</span></td>
-                  <td>
-                    <div className="d-flex align-items-center gap-1" style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }}>
-                      <MdAccessTime /> {o.time}
-                    </div>
-                  </td>
-                  <td>
-                    <button className="d-navbar-icon-btn" onClick={() => handleOrderAction(o.id)}>
-                      <MdMoreVert />
-                    </button>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="8" className="text-center py-5">Loading orders...</td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map(o => (
+                  <tr key={o._id}>
+                    <td><strong>{o.id}</strong></td>
+                    <td>
+                      <div className="d-flex align-items-center gap-2">
+                        {o.type === 'Cafe' ? <MdLocalCafe className="text-success" /> : <MdLocalBar className="text-primary" />}
+                        <span>{o.table}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="d-flex align-items-center gap-2">
+                        <MdPerson style={{ color: 'var(--d-text-light)' }} />
+                        <span>{o.waiter}</span>
+                      </div>
+                    </td>
+                    <td title={o.items}>{o.items}</td>
+                    <td><strong>{o.amount}</strong></td>
+                    <td><span className={`d-chip ${STATUS_MAP[o.status]}`}>{o.status}</span></td>
+                    <td>
+                      <div className="d-flex align-items-center gap-1" style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }}>
+                        <MdAccessTime /> {o.time}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="d-flex gap-1">
+                        <button className="d-navbar-icon-btn" onClick={() => openEdit(o)}>
+                          <MdEdit />
+                        </button>
+                        <button className="d-navbar-icon-btn" onClick={() => openDelete(o)}>
+                          <MdDelete />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      <FormModal
+        show={showForm}
+        onHide={() => setShowForm(false)}
+        onSave={handleSave}
+        title={currentItem ? 'Edit Order' : 'New KOT'}
+        initialData={currentItem || {}}
+        fields={formFields}
+      />
+
+      <DeleteModal
+        show={showDelete}
+        onHide={() => setShowDelete(false)}
+        onDelete={handleDelete}
+        itemName={currentItem?.id}
+      />
     </>
   );
 }

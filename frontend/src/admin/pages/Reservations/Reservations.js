@@ -1,19 +1,106 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'react-bootstrap';
-import { 
-  MdAdd, MdPhone, MdPeople, MdEventSeat, 
-  MdCheckCircle, MdPendingActions, MdCancel, MdMoreVert 
+import {
+  MdAdd, MdPhone, MdPeople, MdEventSeat,
+  MdCheckCircle, MdPendingActions, MdCancel, MdEdit, MdDelete
 } from 'react-icons/md';
-
-const RESERVATIONS = [
-  { id: 'R-001', name: 'Arjun Mehta',    time: '7:00 PM', guests: 4, table: 'Table 3', phone: '+91 98765 43210', status: 'Confirmed' },
-  { id: 'R-002', name: 'Sneha Patel',    time: '7:30 PM', guests: 2, table: 'Table 6', phone: '+91 91234 56789', status: 'Confirmed' },
-  { id: 'R-003', name: 'Corporate Grp.', time: '8:00 PM', guests: 12,table: 'Tables 1+2', phone: '+91 98001 11222', status: 'Pending' },
-  { id: 'R-004', name: 'Riya Sharma',    time: '8:30 PM', guests: 3, table: 'Table 8', phone: '+91 77654 32109', status: 'Confirmed' },
-  { id: 'R-005', name: 'Dev Kapoor',     time: '9:00 PM', guests: 6, table: 'Table 5', phone: '+91 88001 99882', status: 'Cancelled' },
-];
+import { reservationsAPI, tablesAPI } from '../../../api';
+import FormModal from '../../components/FormModal';
+import DeleteModal from '../../components/DeleteModal';
 
 export default function Reservations() {
+  const [reservations, setReservations] = useState([]);
+  const [tables, setTables] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = async () => {
+    try {
+      const [resRes, tablesRes] = await Promise.all([
+        reservationsAPI.getAll(),
+        tablesAPI.getAll()
+      ]);
+      setReservations(resRes.data);
+      setTables(tablesRes.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleSave = async (formData) => {
+    try {
+      if (currentItem) {
+        await reservationsAPI.update(currentItem._id, formData);
+      } else {
+        await reservationsAPI.create(formData);
+      }
+      loadData();
+      setShowForm(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await reservationsAPI.delete(currentItem._id);
+      loadData();
+      setShowDelete(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const openEdit = (item) => {
+    setCurrentItem(item);
+    setShowForm(true);
+  };
+
+  const openDelete = (item) => {
+    setCurrentItem(item);
+    setShowDelete(true);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Confirmed': return 'd-chip-green';
+      case 'Pending': return 'd-chip-gold';
+      case 'Cancelled': return 'd-chip-red';
+      default: return '';
+    }
+  };
+
+  const stats = {
+    Confirmed: reservations.filter(r => r.status === 'Confirmed').length,
+    Pending: reservations.filter(r => r.status === 'Pending').length,
+    Cancelled: reservations.filter(r => r.status === 'Cancelled').length
+  };
+
+  const formFields = [
+    { name: 'customerName', label: 'Guest Name', type: 'text', required: true, col: 12 },
+    { name: 'phone', label: 'Phone', type: 'text', required: true, col: 6 },
+    { name: 'email', label: 'Email', type: 'email', col: 6 },
+    { name: 'date', label: 'Date', type: 'date', required: true, col: 6 },
+    { name: 'time', label: 'Time', type: 'time', required: true, col: 6 },
+    { name: 'guests', label: 'Guests', type: 'number', required: true, col: 6 },
+    { name: 'tableNumber', label: 'Table', type: 'select', required: true, col: 6, options: tables.filter(t => t.status === 'Free').map(t => ({ label: t.displayId || (t.type === 'Bar' ? 'B-' : 'C-') + String(t.number).padStart(2, '0'), value: t.number })) },
+    { name: 'status', label: 'Status', type: 'select', required: true, col: 12, options: [
+      { label: 'Pending', value: 'Pending' },
+      { label: 'Confirmed', value: 'Confirmed' },
+      { label: 'Cancelled', value: 'Cancelled' }
+    ] },
+  ];
+
+  if (loading) return <div>Loading...</div>;
+
   return (
     <>
       <div className="d-page-header">
@@ -24,16 +111,17 @@ export default function Reservations() {
           <div className="d-page-sub">Manage guest bookings and table assignments</div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline d-hide-mobile">View Floor Plan</button>
-          <button className="d-btn-gold"><MdAdd /> New Booking</button>
+          <button className="d-btn-gold" onClick={() => { setCurrentItem(null); setShowForm(true); }}>
+            <MdAdd /> New Booking
+          </button>
         </div>
       </div>
 
       <Row className="g-3 mb-4">
         {[
-          { label: 'Confirmed', value: '3', icon: <MdCheckCircle />, color: 'd-green' },
-          { label: 'Pending', value: '1', icon: <MdPendingActions />, color: 'd-gold' },
-          { label: 'Cancelled', value: '1', icon: <MdCancel />, color: 'd-red' }
+          { label: 'Confirmed', value: stats.Confirmed, icon: <MdCheckCircle />, color: 'd-green' },
+          { label: 'Pending', value: stats.Pending, icon: <MdPendingActions />, color: 'd-gold' },
+          { label: 'Cancelled', value: stats.Cancelled, icon: <MdCancel />, color: 'd-red' }
         ].map((s) => (
           <Col key={s.label} xs={12} sm={4}>
             <div className="d-stat-card">
@@ -58,23 +146,27 @@ export default function Reservations() {
                 <th>Guest Name</th>
                 <th>Schedule</th>
                 <th>Party Size</th>
-                <th>Assignment</th>
+                <th>Table</th>
                 <th>Contact</th>
                 <th>Status</th>
-                <th style={{ width: '50px' }}></th>
+                <th style={{ width: '100px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {RESERVATIONS.map(r => (
-                <tr key={r.id}>
-                  <td style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }} title={r.id}>{r.id}</td>
-                  <td title={r.name}>
-                    <div style={{ fontWeight: 700, color: 'var(--d-primary)' }}>{r.name}</div>
+              {reservations.map((r, index) => (
+                <tr key={r._id}>
+                  <td style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }} title={r._id}>
+                    R-{String(index + 1).padStart(3, '0')}
                   </td>
-                  <td title={r.time}>
+                  <td title={r.customerName}>
+                    <div style={{ fontWeight: 700, color: 'var(--d-primary)' }}>{r.customerName}</div>
+                  </td>
+                  <td title={`${new Date(r.date).toLocaleDateString()} ${r.time}`}>
                     <div className="d-flex align-items-center gap-2">
                       <MdPendingActions className="text-muted" />
-                      <span style={{ fontWeight: 600 }}>{r.time}</span>
+                      <span style={{ fontWeight: 600 }}>
+                        {new Date(r.date).toLocaleDateString()} {r.time}
+                      </span>
                     </div>
                   </td>
                   <td title={`${r.guests} Guests`}>
@@ -83,10 +175,15 @@ export default function Reservations() {
                       <span>{r.guests} Guests</span>
                     </div>
                   </td>
-                  <td title={r.table}>
+                  <td>
                     <div className="d-flex align-items-center gap-1">
                       <MdEventSeat style={{ color: 'var(--d-gold)' }} />
-                      <span>{r.table}</span>
+                      <span>
+                        {(() => {
+                          const table = tables.find(t => t.number === r.tableNumber);
+                          return table ? (table.displayId || (table.type === 'Bar' ? 'B-' : 'C-') + String(table.number).padStart(2, '0')) : `Table ${r.tableNumber}`;
+                        })()}
+                      </span>
                     </div>
                   </td>
                   <td title={r.phone}>
@@ -95,14 +192,19 @@ export default function Reservations() {
                     </div>
                   </td>
                   <td title={r.status}>
-                    <span className={`d-chip ${r.status === 'Confirmed' ? 'd-chip-green' : r.status === 'Pending' ? 'd-chip-gold' : 'd-chip-red'}`}>
+                    <span className={`d-chip ${getStatusColor(r.status)}`}>
                       {r.status}
                     </span>
                   </td>
                   <td>
-                    <button className="d-navbar-icon-btn">
-                      <MdMoreVert />
-                    </button>
+                    <div className="d-flex gap-1">
+                      <button className="d-navbar-icon-btn" onClick={() => openEdit(r)}>
+                        <MdEdit />
+                      </button>
+                      <button className="d-navbar-icon-btn" onClick={() => openDelete(r)}>
+                        <MdDelete />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -110,6 +212,22 @@ export default function Reservations() {
           </table>
         </div>
       </div>
+
+      <FormModal
+        show={showForm}
+        onHide={() => setShowForm(false)}
+        onSave={handleSave}
+        title={currentItem ? "Edit Booking" : "New Booking"}
+        initialData={currentItem || {}}
+        fields={formFields}
+      />
+
+      <DeleteModal
+        show={showDelete}
+        onHide={() => setShowDelete(false)}
+        onDelete={handleDelete}
+        itemName={`Booking for ${currentItem?.customerName}`}
+      />
     </>
   );
 }

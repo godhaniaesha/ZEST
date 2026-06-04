@@ -2,7 +2,8 @@ import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { MdDeleteForever, MdClose } from 'react-icons/md';
 
-const DeleteModal = ({ show, onHide, onConfirm, itemName, title = "Confirm Delete" }) => {
+const DeleteModal = ({ show, onHide, onConfirm, onDelete, itemName, title = "Confirm Delete" }) => {
+  const handleDelete = onDelete || onConfirm;
   return (
     <Modal show={show} onHide={onHide} centered className="d-modal">
       <Modal.Header closeButton className="border-0 pb-0">
@@ -21,7 +22,7 @@ const DeleteModal = ({ show, onHide, onConfirm, itemName, title = "Confirm Delet
         <button className="d-btn-outline" onClick={onHide}>
           <MdClose /> Cancel
         </button>
-        <button className="d-btn-primary" style={{ background: 'var(--d-danger)' }} onClick={onConfirm}>
+        <button className="d-btn-primary" style={{ background: 'var(--d-danger)' }} onClick={handleDelete}>
           <MdDeleteForever /> Delete Now
         </button>
       </Modal.Footer>
