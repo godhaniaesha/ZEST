@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col } from 'react-bootstrap';
+import { Row, Col, Form } from 'react-bootstrap';
 import {
   MdLocalBar, MdAdd, MdSearch, MdFilterList,
   MdWineBar, MdSportsBar, MdWineBar as MdWine, MdEdit, MdDelete
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
+import { menuAPI } from '../../../api';
 
 const DRINKS = [
   { id: 1, name: 'Classic Mojito', cat: 'Cocktail', price: '320', available: true,  img: <MdLocalBar />, color: '#2ecc71', description: 'Refreshing mint and lime cocktail with white rum', ingredients: 'White rum, mint, lime, sugar, soda water', alcoholContent: '12%', prepTime: 5 },
@@ -24,7 +25,7 @@ const itemHasType = (item, target) => {
   return types.includes(target);
 };
 
-export default function Bar() {
+export default function Bar({ userRole = 'bartender' }) {
   const [drinks, setDrinks] = useState([]);
   const [active, setActive] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,8 +87,7 @@ export default function Bar() {
     setShowDelete(true);
   };
 
-  const handleSave = () => {
-    // Validation
+  const handleSave = async () => {
     if (!formData.name || !formData.price || !formData.cat) {
       alert('Please fill in all required fields (Name, Price, Category)');
       return;
@@ -96,12 +96,30 @@ export default function Bar() {
       alert('Price must be greater than 0');
       return;
     }
+    const data = new FormData();
+    data.append('name', formData.name);
+    data.append('category', formData.cat);
+    data.append('price', formData.price);
+    data.append('status', formData.available ? 'Available' : 'Sold Out');
+    data.append('type', 'Bar');
+    data.append('cuisine', 'International');
+    data.append('description', formData.description || '');
+    data.append('ingredients', formData.ingredients || '');
+    data.append('alcoholContent', formData.alcoholContent || '');
+    data.append('prepTime', formData.prepTime || 5);
 
-    if (currentItem) {
-      setDrinks(drinks.map(d => d.id === currentItem.id ? { ...d, ...formData } : d));
-    } else {
-      const newId = drinks.length + 1;
-      setDrinks([...drinks, { id: newId, ...formData, img: <MdLocalBar />, color: '#2ecc71' }]);
+    try {
+      if (currentItem) {
+        await menuAPI.update(currentItem._id, data);
+      } else {
+        data.append('color', '#2ecc71');
+        await menuAPI.create(data);
+      }
+      await loadData();
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving drink:', error);
+      alert('Failed to save drink');
     }
   };
 
@@ -379,13 +397,6 @@ export default function Bar() {
           </Col>
         </Row>
       </FormModal>
-
-      <DeleteModal 
-        show={showDelete} 
-        onHide={() => setShowDelete(false)} 
-        onConfirm={confirmDelete}
-        itemName={currentItem?.name}
-      />
 
       <DeleteModal
         show={showDelete}

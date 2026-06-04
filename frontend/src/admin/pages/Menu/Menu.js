@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col } from 'react-bootstrap';
+import { Row, Col, Form } from 'react-bootstrap';
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdFilterList,
   MdLocalCafe, MdRestaurant, MdLocalBar, MdIcecream
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
+import { menuAPI } from '../../../api';
 
 const MENU_ITEMS = [
   { id: 1, name: 'Truffle Risotto', category: 'Mains', price: '680', status: 'Available', type: 'Cafe', cuisine: 'Italian', img: <MdRestaurant />, color: '#2ecc71', description: 'Creamy arborio rice with fresh truffle oil and parmesan', prepTime: 25, ingredients: 'Arborio rice, truffle oil, parmesan, vegetable broth, mushrooms' },
@@ -46,7 +47,7 @@ const CUISINES = [
   'South Indian',
 ];
 
-export default function Menu() {
+export default function Menu({ userRole = 'chef' }) {
   const [items, setItems] = useState([]);
   const [active, setActive] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -109,7 +110,7 @@ export default function Menu() {
     setShowDelete(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (_, fileData) => {
     try {
       // Validation
       if (!formData.name || !formData.price || !formData.category) {

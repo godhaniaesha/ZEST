@@ -8,6 +8,7 @@ import {
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
+import { staffAPI } from '../../../api';
 
 const STAFF = [
   { id: 1, name: 'Rajesh Kumar', role: 'Head Chef', shift: 'Morning', status: 'On Duty', initials: 'RK', color: '#C9A84C', phone: '+91 98765 43210', email: 'rajesh@breva.com', salary: '45000', leavesTaken: 2, leavesTotal: 15, joiningDate: '2023-01-10' },
@@ -30,6 +31,23 @@ export default function Staff() {
   const [formData, setFormData] = useState({ name: '', role: '', shift: 'Morning', status: 'On Duty', phone: '', email: '', salary: '', leavesTaken: 0, leavesTotal: 12, joiningDate: '' });
 
   const filtered = staffList.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.role.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const response = await staffAPI.getAll();
+      setStaffList(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Error fetching staff:', error);
+      setStaffList(STAFF);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleAdd = () => {
     setCurrentItem(null);

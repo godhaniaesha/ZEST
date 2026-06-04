@@ -18,6 +18,11 @@ const INITIAL_RESERVATIONS = [
 
 const TABLES = ['Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5', 'Table 6', 'Table 7', 'Table 8', 'Tables 1+2', 'Tables 3+4', 'Bar Counter'];
 const TIME_SLOTS = ['12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM'];
+const STATUS_CLASS = {
+  Confirmed: 'd-chip-green',
+  Pending: 'd-chip-gold',
+  Cancelled: 'd-chip-red',
+};
 
 export default function Reservations() {
   const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
@@ -159,12 +164,7 @@ export default function Reservations() {
                   <td>
                     <div className="d-flex align-items-center gap-1">
                       <MdEventSeat style={{ color: 'var(--d-gold)' }} />
-                      <span>
-                        {(() => {
-                          const table = tables.find(t => t.number === r.tableNumber);
-                          return table ? (table.displayId || (table.type === 'Bar' ? 'B-' : 'C-') + String(table.number).padStart(2, '0')) : `Table ${r.tableNumber}`;
-                        })()}
-                      </span>
+                      <span>{r.table}</span>
                     </div>
                   </td>
                   <td title={r.phone}>
@@ -174,7 +174,7 @@ export default function Reservations() {
                     </div>
                   </td>
                   <td title={r.status}>
-                    <span className={`d-chip ${getStatusColor(r.status)}`}>
+                    <span className={`d-chip ${STATUS_CLASS[r.status] || 'd-chip-gray'}`}>
                       {r.status}
                     </span>
                   </td>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Row, Col } from 'react-bootstrap';
 import { MdSave, MdClose } from 'react-icons/md';
 
-const FormModal = ({ show, onHide, title, initialData = {}, fields, onSave, loading }) => {
+const FormModal = ({ show, onHide, title, initialData = {}, fields, onSave, onSubmit, loading, children }) => {
   const [formData, setFormData] = useState({});
   const [fileData, setFileData] = useState(null);
 
@@ -29,8 +29,10 @@ const FormModal = ({ show, onHide, title, initialData = {}, fields, onSave, load
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // If there's a file, pass both formData and fileData
-    onSave(formData, fileData);
+    const submitHandler = onSubmit || onSave;
+    if (submitHandler) {
+      submitHandler(formData, fileData);
+    }
   };
 
   return (
@@ -40,8 +42,9 @@ const FormModal = ({ show, onHide, title, initialData = {}, fields, onSave, load
       </Modal.Header>
       <Modal.Body className="px-4">
         <Form onSubmit={handleSubmit}>
+          {children || (
           <Row className="g-3">
-            {fields && fields.map((field, index) => (
+            {fields?.map((field, index) => (
               <Col key={index} xs={12} md={field.col || 6}>
                 <Form.Group>
                   <Form.Label className="small fw-bold">{field.label}</Form.Label>
@@ -105,6 +108,7 @@ const FormModal = ({ show, onHide, title, initialData = {}, fields, onSave, load
               </Col>
             ))}
           </Row>
+          )}
 
           <div className="d-flex justify-content-end gap-2 mt-4 mb-2">
             <button type="button" className="d-btn-outline" onClick={onHide}>

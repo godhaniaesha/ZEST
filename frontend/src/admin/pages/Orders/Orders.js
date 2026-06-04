@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import {
   MdMoreVert, MdRefresh, MdLocalCafe, MdLocalBar,
-  MdAccessTime, MdPerson, MdReceipt
+  MdAccessTime, MdPerson, MdReceipt, MdEdit, MdDelete
 } from 'react-icons/md';
 import Pagination from '../../components/Pagination';
+import DeleteModal from '../../components/DeleteModal';
+import FormModal from '../../components/FormModal';
+import { ordersAPI } from '../../../api';
 
 const ORDERS = [
   { id: '#T-1021', table: 'Table 4', waiter: 'Raj', items: 'Pasta, Wine x2', type: 'Bar', amount: '₹1,250', status: 'Served', time: '2 min ago' },
@@ -40,9 +43,14 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
   const itemsPerPage = 10;
   const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Cancelled'];
-  const filtered = filter === 'All' ? ORDERS : ORDERS.filter(o => o.status === filter);
+  const orderData = orders.length > 0 ? orders : ORDERS;
+  const filtered = filter === 'All' ? orderData : orderData.filter(o => o.status === filter);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const currentData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 

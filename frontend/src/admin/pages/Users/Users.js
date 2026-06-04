@@ -71,16 +71,12 @@ export default function Users() {
       const newId = users.length + 1;
       setUsers([...users, { id: newId, ...formData, password: undefined, confirmPassword: undefined }]);
     }
+    setShowForm(false);
   };
 
-  const confirmDelete = async () => {
-    try {
-      await usersAPI.delete(currentItem._id);
-      loadData();
-      setShowDelete(false);
-    } catch (error) {
-      console.error('Error deleting user:', error);
-    }
+  const confirmDelete = () => {
+    setUsers(users.filter(user => user.id !== currentItem.id));
+    setShowDelete(false);
   };
 
   const formFields = [

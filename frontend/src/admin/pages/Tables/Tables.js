@@ -65,9 +65,8 @@ export default function Tables() {
     setShowDelete(true);
   };
 
-  const handleSave = () => {
-    // Validation
-    if (!formData.name) {
+  const handleSave = async (formData) => {
+    if (!formData.number || !formData.capacity || !formData.type || !formData.location || !formData.status) {
       alert('Please fill in all required fields');
       return;
     }
@@ -75,16 +74,17 @@ export default function Tables() {
       alert('Capacity must be between 1 and 50');
       return;
     }
-
-    if (currentTable) {
-      // Edit
-      setTables(tables.map(t => t.id === currentTable.id ? { ...t, ...formData } : t));
-    } else {
-      // Add
-      const prefix = formData.type === 'Bar' ? 'B' : 'T';
-      const maxId = tables.filter(t => t.type === formData.type).length + 1;
-      const newId = `${prefix}-${maxId}`;
-      setTables([...tables, { id: newId, ...formData }]);
+    try {
+      if (currentItem) {
+        await tablesAPI.update(currentItem._id, formData);
+      } else {
+        await tablesAPI.create(formData);
+      }
+      await loadData();
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving table:', error);
+      alert('Failed to save table');
     }
   };
 
