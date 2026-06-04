@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Award,
 } from "lucide-react";
+import "../styles/profile.css";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -135,61 +136,66 @@ const Profile = () => {
 
   return (
     <main className="x_profile_page">
+      {/* Background Elements */}
+      <div className="x_profile_glow" />
+      
       {/* Hero Section */}
       <section className="x_profile_hero">
         <div className="x_profile_hero_content">
-          <h1>Your Account</h1>
-          <p>Manage your profile, bookings, and preferences</p>
+          <span className="x_profile_hero_label">Member Dashboard</span>
+          <h1 className="x_profile_headline">Your <span>Account</span></h1>
+          <p className="x_profile_hero_sub">Manage your profile, bookings, and preferences with ease.</p>
         </div>
       </section>
 
       {/* Main Content */}
       <section className="x_profile_container">
-        {/* Sidebar */}
-        <aside className="x_profile_sidebar">
-          <div className="x_profile_menu">
-            <button
-              className={`x_profile_menu_item ${activeTab === "profile" ? "x_active" : ""
-                }`}
-              onClick={() => setActiveTab("profile")}
-            >
-              <User size={20} />
-              <span>User Profile</span>
-              {activeTab === "profile" && <ChevronRight size={18} />}
-            </button>
+        <div className="x_profile_inner_wrap">
+          {/* Sidebar */}
+          <aside className="x_profile_sidebar">
+            <div className="x_profile_menu">
+              <button
+                className={`x_profile_menu_item ${activeTab === "profile" ? "x_active" : ""
+                  }`}
+                onClick={() => setActiveTab("profile")}
+              >
+                <User size={20} />
+                <span>User Profile</span>
+                {activeTab === "profile" && <ChevronRight size={18} />}
+              </button>
 
-            <button
-              className={`x_profile_menu_item ${activeTab === "bookings" ? "x_active" : ""
-                }`}
-              onClick={() => setActiveTab("bookings")}
-            >
-              <CalendarDays size={20} />
-              <span>My Bookings</span>
-              {activeTab === "bookings" && <ChevronRight size={18} />}
-            </button>
+              <button
+                className={`x_profile_menu_item ${activeTab === "bookings" ? "x_active" : ""
+                  }`}
+                onClick={() => setActiveTab("bookings")}
+              >
+                <CalendarDays size={20} />
+                <span>My Bookings</span>
+                {activeTab === "bookings" && <ChevronRight size={18} />}
+              </button>
 
-            <button
-              className={`x_profile_menu_item ${activeTab === "changepassword" ? "x_active" : ""
-                }`}
-              onClick={() => setActiveTab("changepassword")}
-            >
-              <Lock size={20} />
-              <span>Change Password</span>
-              {activeTab === "changepassword" && <ChevronRight size={18} />}
-            </button>
+              <button
+                className={`x_profile_menu_item ${activeTab === "changepassword" ? "x_active" : ""
+                  }`}
+                onClick={() => setActiveTab("changepassword")}
+              >
+                <Lock size={20} />
+                <span>Change Password</span>
+                {activeTab === "changepassword" && <ChevronRight size={18} />}
+              </button>
 
-            <button
-              className="x_profile_menu_item x_logout_btn"
-              onClick={handleLogout}
-            >
-              <LogOut size={20} />
-              <span>Logout</span>
-            </button>
-          </div>
-        </aside>
+              <button
+                className="x_profile_menu_item x_logout_btn"
+                onClick={handleLogout}
+              >
+                <LogOut size={20} />
+                <span>Logout</span>
+              </button>
+            </div>
+          </aside>
 
-        {/* Content Area */}
-        <div className="x_profile_content">
+          {/* Content Area */}
+          <div className="x_profile_content">
           {/* User Profile Tab */}
           {activeTab === "profile" && (
             <div className="x_profile_tab">
@@ -402,11 +408,13 @@ const Profile = () => {
                 </div>
               ) : (
                 <div className="x_empty_state">
-                  <CalendarDays size={48} />
+                  <div className="x_empty_icon_wrap">
+                    <CalendarDays size={64} />
+                  </div>
                   <h3>No Reservations Yet</h3>
-                  <p>Start your journey by making your first reservation</p>
+                  <p>Experience the finest dining ZEST has to offer. Start your journey by making your first reservation today.</p>
                   <button className="x_new_booking_btn">
-                    Make a Reservation
+                    Reserve a Table
                   </button>
                 </div>
               )}
@@ -435,42 +443,37 @@ const Profile = () => {
                       value={passwordData.currentPassword}
                       onChange={handlePasswordChange}
                       className="x_password_input"
-                      placeholder="Enter your current password"
-                    />
-                  </div>
+                      placeholder="current password"
+                  />
+                </div>
 
-                  <div></div>
-                  <div className="row">
-                    <div className="col-12 col-md-6 mb-3">
-                      <div className="x_change_password_group">
-                        <label>New Password</label>
-                        <input
-                          type="password"
-                          name="newPassword"
-                          value={passwordData.newPassword}
-                          onChange={handlePasswordChange}
-                          className="x_password_input"
-                          placeholder="Enter your new password"
-                        />
-                        <p className="x_password_hint">
-                          Use at least 8 characters with uppercase, lowercase,
-                          and numbers
-                        </p>
-                      </div>
+                <div className="x_change_password_grid">
+                    <div className="x_change_password_group">
+                      <label>New Password</label>
+                      <input
+                        type="password"
+                        name="newPassword"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordChange}
+                        className="x_password_input"
+                        placeholder="new password"
+                      />
+                      <p className="x_password_hint">
+                        Use at least 8 characters with uppercase, lowercase,
+                        and numbers
+                      </p>
                     </div>
 
-                    <div className="col-12 col-md-6 mb-3">
-                      <div className="x_change_password_group">
-                        <label>Confirm New Password</label>
-                        <input
-                          type="password"
-                          name="confirmPassword"
-                          value={passwordData.confirmPassword}
-                          onChange={handlePasswordChange}
-                          className="x_password_input"
-                          placeholder="Confirm your new password"
-                        />
-                      </div>
+                    <div className="x_change_password_group">
+                      <label>Confirm New Password</label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        value={passwordData.confirmPassword}
+                        onChange={handlePasswordChange}
+                        className="x_password_input"
+                        placeholder="Confirm new password"
+                      />
                     </div>
                   </div>
 
@@ -500,6 +503,7 @@ const Profile = () => {
               </div>
             </div>
           )}
+          </div>
         </div>
       </section>
 
@@ -586,28 +590,30 @@ const Profile = () => {
             className="x_modal_content x_logout_modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="x_logout_modal_icon">
-              <LogOut size={48} />
-            </div>
-            <h3>Sign Out of Your Account?</h3>
-            <p>
-              Are you sure you want to logout? You'll need to sign in again to
-              access your profile and bookings.
-            </p>
+            <div className="x_modal_body">
+              <div className="x_logout_modal_icon">
+                <LogOut size={48} />
+              </div>
+              <h3>Sign Out?</h3>
+              <p>
+                Are you sure you want to logout? You'll need to sign in again to
+                access your premium profile and reservations.
+              </p>
 
-            <div className="x_logout_modal_actions">
-              <button
-                className="x_logout_modal_btn_cancel"
-                onClick={() => setShowLogoutConfirm(false)}
-              >
-                Stay Logged In
-              </button>
-              <button
-                className="x_logout_modal_btn_confirm"
-                onClick={handleConfirmLogout}
-              >
-                Yes, Logout
-              </button>
+              <div className="x_logout_modal_actions">
+                <button
+                  className="x_logout_modal_btn_confirm"
+                  onClick={handleConfirmLogout}
+                >
+                  Yes, Sign Out
+                </button>
+                <button
+                  className="x_logout_modal_btn_cancel"
+                  onClick={() => setShowLogoutConfirm(false)}
+                >
+                  Stay Logged In
+                </button>
+              </div>
             </div>
           </div>
         </div>

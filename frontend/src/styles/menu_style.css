@@ -134,13 +134,11 @@
 .x_menu_headline em {
   /* display: block; */
   font-style: italic;
-  background: linear-gradient(
-    120deg,
-    var(--d-gold-dark),
-    var(--d-gold-light),
-    var(--d-gold),
-    var(--d-gold-light)
-  );
+  background: linear-gradient(120deg,
+      var(--d-gold-dark),
+      var(--d-gold-light),
+      var(--d-gold),
+      var(--d-gold-light));
   background-size: 300% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -171,6 +169,20 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
+}
+
+.x_menu_stats_item::after {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: 20%;
+  width: 1px;
+  height: 60%;
+  background: var(--d-text-muted);
+}
+.x_menu_stats_item:last-child::after {
+  display: none;
 }
 
 .x_menu_stats_item strong {
@@ -190,20 +202,106 @@
   color: var(--d-text-muted);
 }
 
+/* ── SIMPLE ELEGANT SHOWCASE DESIGN ── */
 .x_menu_hero_right {
   position: relative;
-  height: 50vh;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: var(--d-shadow-lg);
-  animation: scaleIn 1s ease-out 0.3s both;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-.x_menu_hero_right img {
+.x_menu_simple_showcase {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.x_simple_frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: visible;
+  animation: simpleFloat 8s ease-in-out infinite;
+}
+
+.x_simple_main_img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.8);
+  border-radius: 4px;
+  position: relative;
+  z-index: 2;
+}
+
+.x_simple_frame_border {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: -20px;
+  bottom: -20px;
+  border: 1px solid var(--d-gold);
+  border-radius: 4px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.x_simple_label {
+  position: absolute;
+  bottom: -15px;
+  right: -10px;
+  background: var(--d-primary);
+  padding: 20px 30px;
+  border-radius: 2px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  animation: fadeUp 1s ease-out 0.5s both;
+}
+
+.x_simple_tag {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--d-gold-light);
+  margin-bottom: 6px;
+}
+
+.x_simple_title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--d-white);
+  margin: 0;
+}
+
+@keyframes simpleFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .x_menu_hero_right {
+    display: none;
+  }
+
+  .x_menu_simple_showcase {
+    max-width: 400px;
+  }
 }
 
 /* ── CONTROLS (SEARCH, SORT, FILTERS) ── */
@@ -595,61 +693,66 @@
   .x_menu_grid {
     grid-template-columns: repeat(3, 1fr);
   }
+
   .x_menu_hero {
     grid-template-columns: 1fr;
     text-align: center;
   }
+
   .x_menu_hero_left {
     padding-right: 0;
     align-items: center;
   }
+
   .x_menu_hero_sub {
     margin-left: auto;
     margin-right: auto;
   }
+
   .x_menu_stats {
     justify-content: center;
   }
-  .x_menu_hero_right {
-    height: 40vh;
-    margin-top: 40px;
-  }
-  .x_menu_hero_right {
-    display: none;
-  }
+
   .x_menu_page {
     padding-top: 0;
   }
+
   .x_gallery_section_head {
     padding: 0 0 32px !important;
   }
 }
 
 @media (max-width: 768px) {
-  .x_menu_top_controls {
-    grid-template-columns: 1fr;
-  }
   .x_menu_inner {
     padding: 0 20px;
   }
+
   .x_menu_headline {
     font-size: 3rem;
   }
+
   .x_menu_grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 640px) {
+  .x_menu_top_controls {
+    grid-template-columns: 1fr;
+  }
+
   .x_menu_grid {
     grid-template-columns: 1fr;
   }
+
   .x_menu_stats {
-    gap: 24px;
+    gap: 32px;
   }
+
   .x_menu_stats_item strong {
     font-size: 1.8rem;
   }
+
   .x_menu_headline {
     font-size: 38px;
   }
@@ -1017,7 +1120,7 @@
   color: var(--d-gold);
 }
 
-.menu_detail_rating > span {
+.menu_detail_rating>span {
   font-family: "Cormorant Garamond", serif;
   font-size: 18px;
   font-weight: 600;
@@ -1414,6 +1517,7 @@
 }
 
 @media (max-width: 1024px) {
+
   .menu_detail_page,
   .menu_container {
     padding-top: 0;

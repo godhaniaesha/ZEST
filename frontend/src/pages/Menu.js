@@ -256,30 +256,15 @@ const Menu = () => {
           </div>
 
           <div className="x_menu_hero_right">
-            <div className="x_menu_showcase">
-              {/* Main Plate with unique mask */}
-              <div className="x_menu_plate_wrap">
-                <img src={menuItems[7]?.image} alt="Signature Dish" className="x_menu_main_plate" />
-                <div className="x_menu_plate_ring" />
-              </div>
-
-              {/* Floating accent elements */}
-              <div className="x_menu_accent x_accent_1">
-                <img src={menuItems[1]?.image} alt="Dessert" />
-              </div>
-              <div className="x_menu_accent x_accent_2">
-                <img src={menuItems[2]?.image} alt="Cocktail" />
-              </div>
-
-              {/* Decorative text/badges */}
-              <div className="x_menu_badge_float">
-                <Star size={12} fill="currentColor" />
-                <span>Chef's Choice</span>
+            <div className="x_menu_simple_showcase">
+              <div className="x_simple_frame">
+                <img src={menuItems[7]?.image} alt="Featured Dish" className="x_simple_main_img" />
+                <div className="x_simple_frame_border" />
               </div>
               
-              <div className="x_menu_experience_badge">
-                <strong>100%</strong>
-                <span>Fresh</span>
+              <div className="x_simple_label">
+                <span className="x_simple_tag">Featured Choice</span>
+                <h3 className="x_simple_title">{menuItems[7]?.name}</h3>
               </div>
             </div>
           </div>
