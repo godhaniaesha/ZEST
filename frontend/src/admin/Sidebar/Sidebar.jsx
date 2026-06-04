@@ -1,11 +1,12 @@
 import React from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   MdDashboard, MdRestaurantMenu, MdReceiptLong, MdEventSeat,
   MdInventory2, MdPeople, MdBarChart, MdSettings, MdLogout,
   MdLocalBar, MdStar, MdKitchen, MdCountertops, MdTableRestaurant,
   MdLocalAtm, MdAdminPanelSettings, MdHistory, MdNotificationsActive
 } from 'react-icons/md';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Available Roles in your system:
 // 'superadmin', 'manager', 'chef', 'waiter'
@@ -18,7 +19,7 @@ const NAV_GROUPS = [
         to: '/admin/dashboard', 
         icon: <MdDashboard />, 
         label: 'Dashboard',
-        roles: ['superadmin', 'manager', 'chef', 'waiter'] // Accessible by everyone
+        roles: ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender'] // Accessible by everyone
       }
     ]
   },
@@ -33,9 +34,9 @@ const NAV_GROUPS = [
   {
     label: 'Management (Manager)',
     items: [
-      { to: '/admin/pos', icon: <MdLocalAtm />, label: 'POS & Billing', roles: ['manager', 'superadmin'] },
-      { to: '/admin/orders', icon: <MdReceiptLong />, label: 'Orders', badge: '8', roles: ['manager', 'superadmin'] },
-      { to: '/admin/reservations', icon: <MdEventSeat />, label: 'Reservations', badge: '3', roles: ['manager', 'superadmin'] },
+      { to: '/admin/pos', icon: <MdLocalAtm />, label: 'POS & Billing', roles: ['manager', 'superadmin', 'cashier'] },
+      { to: '/admin/orders', icon: <MdReceiptLong />, label: 'Orders', badge: '8', roles: ['manager', 'superadmin', 'cashier', 'waiter', 'chef', 'bartender'] },
+      { to: '/admin/reservations', icon: <MdEventSeat />, label: 'Reservations', badge: '3', roles: ['manager', 'superadmin', 'waiter'] },
       { to: '/admin/staff', icon: <MdPeople />, label: 'Staff Attendance', roles: ['manager', 'superadmin'] },
       { to: '/admin/reports', icon: <MdBarChart />, label: 'Reports & Analytics', roles: ['manager', 'superadmin'] }
     ]
@@ -44,9 +45,14 @@ const NAV_GROUPS = [
     label: 'Kitchen (Chef)',
     items: [
       { to: '/admin/kitchen-display', icon: <MdKitchen />, label: 'Live Orders (KOT)', badge: '5', roles: ['chef', 'manager', 'superadmin'] },
-      { to: '/admin/menu', icon: <MdRestaurantMenu />, label: 'Menu Items', badge: null, roles: ['chef', 'manager', 'superadmin'] },
-      { to: '/admin/bar', icon: <MdLocalBar />, label: 'Bar & Drinks', badge: null, roles: ['chef', 'manager', 'superadmin'] }, // Bartender/Chef roles
-      { to: '/admin/inventory', icon: <MdInventory2 />, label: 'Kitchen Stock', roles: ['chef', 'manager', 'superadmin'] }
+      { to: '/admin/menu', icon: <MdRestaurantMenu />, label: 'Menu Items', badge: null, roles: ['chef', 'manager', 'superadmin', 'bartender'] },
+      { to: '/admin/inventory', icon: <MdInventory2 />, label: 'Kitchen Stock', roles: ['chef', 'manager', 'superadmin', 'bartender'] }
+    ]
+  },
+  {
+    label: 'Bar (Bartender)',
+    items: [
+      { to: '/admin/bar', icon: <MdLocalBar />, label: 'Bar & Drinks', badge: null, roles: ['bartender', 'chef', 'manager', 'superadmin'] },
     ]
   },
   {
@@ -68,6 +74,14 @@ const NAV_GROUPS = [
 // Added `currentUserRole` prop (Defaulted to 'superadmin' so you can see everything right now)
 export default function Sidebar({ collapsed, mobileOpen, onClose, currentUserRole = 'superadmin' }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    onClose();
+    navigate('/auth');
+  };
 
   const sidebarClass = [
     'd-sidebar',
@@ -136,7 +150,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose, currentUserRol
 
         {/* Footer */}
         <div className="d-sidebar-footer">
-          <div className="d-nav-item">
+          <div className="d-nav-item" onClick={handleLogout} style={{ cursor: 'pointer' }}>
             <span className="d-nav-icon"><MdLogout /></span>
             <span className="d-nav-label">Logout</span>
             <span className="d-tooltip">Logout</span>

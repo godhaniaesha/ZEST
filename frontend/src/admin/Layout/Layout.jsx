@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useOutletContext } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 992);
-  const [userRole, setUserRole] = useState('superadmin'); // Default to superadmin for demo
+  const { user, loading } = useAuth();
+  const userRole = user?.role || 'superadmin';
 
   const handleToggle = () => {
     if (isMobile) {
@@ -30,6 +32,10 @@ export default function Layout() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  if (loading) {
+    return <div className="d-shell d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>Loading...</div>;
+  }
+
   const mainClass = [
     'd-main-content',
     collapsed ? 'd-sidebar-collapsed' : ''
@@ -50,11 +56,10 @@ export default function Layout() {
           sidebarOpen={isMobile ? mobileOpen : !collapsed}
           onToggleSidebar={handleToggle}
           userRole={userRole}
-          setUserRole={setUserRole}
         />
 
         <main className="d-page-body">
-          <Outlet context={{ userRole, setUserRole }} />
+          <Outlet context={{ userRole }} />
         </main>
       </div>
     </div>

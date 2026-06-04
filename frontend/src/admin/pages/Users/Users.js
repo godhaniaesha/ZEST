@@ -1,34 +1,39 @@
-import React, { useState } from 'react';
-import { Row, Col, Form } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Row, Col } from 'react-bootstrap';
 import { MdAdminPanelSettings, MdPeople, MdPersonAdd, MdEdit, MdDelete } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-
-const USERS_LIST = [
-  { id: 1, name: 'Admin User', role: 'superadmin', status: 'Active', email: 'admin@breva.com' },
-  { id: 2, name: 'Manager John', role: 'manager', status: 'Active', email: 'john@breva.com' },
-  { id: 3, name: 'Chef Marco', role: 'chef', status: 'On Duty', email: 'marco@breva.com' },
-  { id: 4, name: 'Waiter Sam', role: 'waiter', status: 'Active', email: 'sam@breva.com' },
-];
+import { usersAPI } from '../../../api';
 
 export default function Users() {
-  const [users, setUsers] = useState(USERS_LIST);
-  
-  // Modal States
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', role: 'waiter', status: 'Active', email: '' });
+
+  const loadData = async () => {
+    try {
+      const res = await usersAPI.getAll();
+      setUsers(res.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleAdd = () => {
     setCurrentItem(null);
-    setFormData({ name: '', role: 'waiter', status: 'Active', email: '' });
     setShowForm(true);
   };
 
   const handleEdit = (user) => {
     setCurrentItem(user);
-    setFormData({ name: user.name, role: user.role, status: user.status, email: user.email });
     setShowForm(true);
   };
 
@@ -37,20 +42,52 @@ export default function Users() {
     setShowDelete(true);
   };
 
-  const handleSave = () => {
-    if (currentItem) {
-      setUsers(users.map(u => u.id === currentItem.id ? { ...u, ...formData } : u));
-    } else {
-      const newId = users.length + 1;
-      setUsers([...users, { id: newId, ...formData }]);
+  const handleSave = async (formData) => {
+    try {
+      if (currentItem) {
+        const dataToSend = { ...formData };
+        if (!dataToSend.password) delete dataToSend.password;
+        await usersAPI.update(currentItem._id, dataToSend);
+      } else {
+        await usersAPI.create(formData);
+      }
+      loadData();
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving user:', error);
     }
-    setShowForm(false);
   };
 
-  const confirmDelete = () => {
-    setUsers(users.filter(u => u.id !== currentItem.id));
-    setShowDelete(false);
+  const confirmDelete = async () => {
+    try {
+      await usersAPI.delete(currentItem._id);
+      loadData();
+      setShowDelete(false);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
   };
+
+  const formFields = [
+    { name: 'name', label: 'Full Name', type: 'text', required: true },
+    { name: 'email', label: 'Email Address', type: 'email', required: true },
+    { name: 'password', label: currentItem ? 'Password (leave empty to keep current)' : 'Password', type: 'password', required: !currentItem },
+    { name: 'image', label: 'Image URL', type: 'text' },
+    { name: 'role', label: 'Role', type: 'select', required: true, options: [
+      { label: 'Super Admin', value: 'superadmin' },
+      { label: 'Manager', value: 'manager' },
+      { label: 'Chef', value: 'chef' },
+      { label: 'Waiter', value: 'waiter' },
+      { label: 'Cashier', value: 'cashier' },
+      { label: 'Bartender', value: 'bartender' },
+      { label: 'Customer', value: 'customer' }
+    ] },
+    { name: 'status', label: 'Status', type: 'select', required: true, options: [
+      { label: 'Active', value: 'Active' },
+      { label: 'Inactive', value: 'Inactive' },
+      { label: 'On Duty', value: 'On Duty' }
+    ] }
+  ];
 
   return (
     <>
@@ -66,7 +103,7 @@ export default function Users() {
 
       <div className="d-card">
         <div className="d-section-title">Staff Members</div>
-        <div className="d-section-sub">Total {users.length} registered users</div>
+        <div className="d-section-sub">Total {loading ? '...' : users.length} registered users</div>
         
         <div className="d-table-wrap mt-4">
           <table className="d-table">
@@ -80,12 +117,14 @@ export default function Users() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user, i) => (
-                <tr key={i}>
+              {loading ? (
+                <tr><td colSpan={5} className="text-center py-5">Loading...</td></tr>
+              ) : users.map((user) => (
+                <tr key={user._id}>
                   <td title={user.name}><strong>{user.name}</strong></td>
                   <td title={user.role}><span className="text-capitalize">{user.role}</span></td>
                   <td style={{ color: 'var(--d-text-muted)' }} title={user.email}>{user.email}</td>
-                  <td title={user.status}><span className={`d-chip ${user.status === 'Active' || user.status === 'On Duty' ? 'd-chip-green' : 'd-chip-gold'}`}>{user.status}</span></td>
+                  <td title={user.status}><span className="text-capitalize">{user.status}</span></td>
                   <td>
                     <div className="d-flex gap-2">
                       <button className="d-navbar-icon-btn" onClick={() => handleEdit(user)} style={{ width: '28px', height: '28px', fontSize: '1rem' }}><MdEdit /></button>
@@ -99,72 +138,19 @@ export default function Users() {
         </div>
       </div>
 
-      {/* Modals */}
-      <FormModal 
-        show={showForm} 
-        onHide={() => setShowForm(false)} 
+      <FormModal
+        show={showForm}
+        onHide={() => setShowForm(false)}
+        onSave={handleSave}
         title={currentItem ? "Edit User" : "Add New User"}
-        onSubmit={handleSave}
-      >
-        <Row className="g-3">
-          <Col xs={12}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Full Name</Form.Label>
-              <Form.Control 
-                type="text" 
-                placeholder="e.g. Sam D'Souza"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Email Address</Form.Label>
-              <Form.Control 
-                type="email" 
-                placeholder="sam@breva.com"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Role</Form.Label>
-              <Form.Select 
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-              >
-                <option value="superadmin">Super Admin</option>
-                <option value="manager">Manager</option>
-                <option value="chef">Chef</option>
-                <option value="waiter">Waiter</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Status</Form.Label>
-              <Form.Select 
-                value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value})}
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="On Duty">On Duty</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-        </Row>
-      </FormModal>
+        initialData={currentItem || {}}
+        fields={formFields}
+      />
 
       <DeleteModal 
         show={showDelete} 
         onHide={() => setShowDelete(false)} 
-        onConfirm={confirmDelete}
+        onDelete={confirmDelete}
         itemName={currentItem?.name}
       />
     </>

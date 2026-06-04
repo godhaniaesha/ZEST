@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Badge } from 'react-bootstrap';
 import { 
   MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant, 
@@ -6,50 +6,60 @@ import {
   MdReceipt, MdShoppingCart
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
-
-const CAFE_MENU = [
-  { id: 1, name: 'Cappuccino', price: 180, category: 'Coffee', image: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&q=80' },
-  { id: 2, name: 'Iced Latte', price: 220, category: 'Coffee', image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&q=80' },
-  { id: 3, name: 'Butter Croissant', price: 150, category: 'Snacks', image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&q=80' },
-  { id: 4, name: 'Avocado Toast', price: 350, category: 'Snacks', image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80' },
-  { id: 5, name: 'Blueberry Muffin', price: 120, category: 'Snacks', image: 'https://images.unsplash.com/photo-1558401391-7899b4bd5bbf?w=400&q=80' },
-  { id: 6, name: 'Cold Brew', price: 200, category: 'Coffee', image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80' },
-];
-
-const BAR_MENU = [
-  { id: 101, name: 'Old Fashioned', price: 550, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&q=80' },
-  { id: 102, name: 'Classic Mojito', price: 450, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1513558161293-cdaf7658991f?w=400&q=80' },
-  { id: 103, name: 'Draft Beer (Pint)', price: 350, category: 'Beer', image: 'https://images.unsplash.com/photo-1538944744996-504c68882381?w=400&q=80' },
-  { id: 104, name: 'Red Wine (Glass)', price: 650, category: 'Wine', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&q=80' },
-  { id: 105, name: 'Signature Gin Tonic', price: 500, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?w=400&q=80' },
-  { id: 106, name: 'Whiskey Sour', price: 520, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=400&q=80' },
-];
+import { menuAPI } from '../../../api';
 
 export default function TakeOrder() {
   const [activeTab, setActiveTab] = useState('cafe'); // 'cafe' or 'bar'
   const [selectedTable, setSelectedTable] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const menuItems = activeTab === 'cafe' ? CAFE_MENU : BAR_MENU;
-  const filteredItems = menuItems.filter(item => 
+  const itemHasType = (item, target) => {
+    const types = Array.isArray(item?.type) ? item.type : item?.type ? [item.type] : [];
+    return types.includes(target);
+  };
+
+  useEffect(() => {
+    const loadMenu = async () => {
+      try {
+        const response = await menuAPI.getAll();
+        const data = Array.isArray(response.data) ? response.data : [];
+        setMenuItems(data);
+      } catch (error) {
+        console.error('Error loading menu:', error);
+        setMenuItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadMenu();
+  }, []);
+
+  const filteredMenuItems = menuItems.filter(item => 
+    itemHasType(item, activeTab === 'cafe' ? 'Cafe' : 'Bar') &&
+    item.status === 'Available'
+  );
+  
+  const filteredItems = filteredMenuItems.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const addToCart = (item) => {
     setCart(prev => {
-      const existing = prev.find(i => i.id === item.id);
+      const existing = prev.find(i => i._id === item._id);
       if (existing) {
-        return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+        return prev.map(i => i._id === item._id ? { ...i, qty: i.qty + 1 } : i);
       }
       return [...prev, { ...item, qty: 1 }];
     });
   };
 
-  const updateQty = (id, delta) => {
+  const updateQty = (_id, delta) => {
     setCart(prev => prev.map(item => {
-      if (item.id === id) {
+      if (item._id === _id) {
         const newQty = Math.max(0, item.qty + delta);
         return newQty === 0 ? null : { ...item, qty: newQty };
       }
@@ -57,8 +67,8 @@ export default function TakeOrder() {
     }).filter(Boolean));
   };
 
-  const removeFromCart = (id) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+  const removeFromCart = (_id) => {
+    setCart(prev => prev.filter(item => item._id !== _id));
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -126,16 +136,39 @@ export default function TakeOrder() {
           </div>
 
           <div className="d-pos-menu-grid">
-            {filteredItems.map((item) => (
-              <div key={item.id} className="d-pos-card" onClick={() => addToCart(item)}>
-                <div className="d-pos-card-img-wrapper">
-                  <img src={item.image} alt={item.name} className="d-pos-card-img" />
-                </div>
-                <div className="d-pos-card-name">{item.name}</div>
-                <div className="d-pos-card-price">₹{item.price}</div>
-                <button className="d-pos-add-btn"><MdAdd /></button>
+            {loading ? (
+              <div className="text-center py-5 w-100">Loading menu items...</div>
+            ) : filteredItems.length === 0 ? (
+              <div className="text-center py-5 w-100" style={{ color: 'var(--d-text-muted)' }}>
+                No menu items available
               </div>
-            ))}
+            ) : (
+              filteredItems.map((item) => (
+                <div key={item._id} className="d-pos-card" onClick={() => addToCart(item)}>
+                  <div className="d-pos-card-img-wrapper">
+                    {item.img ? (
+                      <img src={item.img} alt={item.name} className="d-pos-card-img" />
+                    ) : (
+                      <div style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        background: `${item.color || '#2ecc71'}15`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '2.5rem', 
+                        color: item.color || '#2ecc71' 
+                      }}>
+                        {activeTab === 'cafe' ? '🍽️' : '🍸'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="d-pos-card-name">{item.name}</div>
+                  <div className="d-pos-card-price">₹{item.price}</div>
+                  <button className="d-pos-add-btn"><MdAdd /></button>
+                </div>
+              ))
+            )}
           </div>
         </Col>
 
@@ -162,20 +195,20 @@ export default function TakeOrder() {
                 </div>
               ) : (
                 cart.map((item) => (
-                  <div key={item.id} className="d-pos-cart-item">
+                  <div key={item._id} className="d-pos-cart-item">
                     <div className="d-pos-item-info">
                       <div className="d-pos-item-name">{item.name}</div>
                       <div className="d-pos-item-price">₹{item.price}</div>
                     </div>
                     <div className="d-flex align-items-center gap-3">
                       <div className="d-pos-qty-controls">
-                        <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1); }}><MdRemove /></button>
+                        <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item._id, -1); }}><MdRemove /></button>
                         <span className="d-pos-qty-val">{item.qty}</span>
-                        <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1); }}><MdAdd /></button>
+                        <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item._id, 1); }}><MdAdd /></button>
                       </div>
                       <button 
                         className="d-pos-delete-btn" 
-                        onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }}
+                        onClick={(e) => { e.stopPropagation(); removeFromCart(item._id); }}
                       >
                         <MdDeleteOutline fontSize="1rem" />
                       </button>

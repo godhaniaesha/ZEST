@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 /* ── Password strength helper ── */
 const pwStrength = (pw) => {
@@ -37,6 +39,9 @@ export default function Auth() {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [resetForm, setResetForm] = useState({ password: "", confirm: "" });
 
+  const { login, register, user } = useAuth();
+  const navigate = useNavigate();
+
   const toast = (msg) => {
     const id = Date.now();
     setToasts(p => [...p, { id, msg }]);
@@ -61,25 +66,40 @@ export default function Auth() {
   };
 
   /* ── Handlers ── */
-  const doLogin = (e) => {
+  const doLogin = async (e) => {
     e.preventDefault();
     setAlert(null);
     if (!loginForm.email || !loginForm.password) return setAlert({ type: "error", msg: "Please fill all fields." });
     setLoading(true);
-    setTimeout(() => { setLoading(false); toast("Welcome to the ZEST experience."); }, 1500);
+    const result = await login(loginForm.email, loginForm.password);
+    setLoading(false);
+    if (result.success) {
+      toast("Welcome to the ZEST experience.");
+      navigate('/');
+    } else {
+      setAlert({ type: "error", msg: result.message });
+    }
   };
 
-  const doSignup = (e) => {
+  const doSignup = async (e) => {
     e.preventDefault();
     setAlert(null);
-    if (!signupForm.email || !signupForm.password || !signupForm.phone || !signupForm.confirm) {
+    const fullName = `${signupForm.firstName} ${signupForm.lastName}`.trim();
+    if (!fullName || !signupForm.email || !signupForm.password || !signupForm.confirm) {
       return setAlert({ type: "error", msg: "All fields are required." });
     }
     if (signupForm.password !== signupForm.confirm) {
       return setAlert({ type: "error", msg: "Passwords do not match." });
     }
     setLoading(true);
-    setTimeout(() => { setLoading(false); setAlert({ type: "success", msg: "Membership initiated! Check your email." }); }, 1800);
+    const result = await register(fullName, signupForm.email, signupForm.password);
+    setLoading(false);
+    if (result.success) {
+      setAlert({ type: "success", msg: "Membership initiated!" });
+      navigate('/');
+    } else {
+      setAlert({ type: "error", msg: result.message });
+    }
   };
 
   const doForgot = (e) => {
