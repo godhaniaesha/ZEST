@@ -15,7 +15,7 @@ const galleryItems = [
     category: 'food',
     tag: 'Mains',
     description: 'Handmade pappardelle tossed in wild mushroom cream with truffle shavings.',
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=800&q=75',
+    image: 'https://i.pinimg.com/736x/a6/08/96/a60896911e4267f8984ab2012b4d897d.jpg',
     featured: true,
   },
   {
