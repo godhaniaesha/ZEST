@@ -4605,7 +4605,9 @@ body {
    FOOTER
    ═══════════════════════════════════════════════════════════ */
 .x_footer {
-  background: var(--page-bg);
+  background: linear-gradient(180deg,
+    rgba(14, 31, 28, 0.98) 0%,
+    rgba(14, 31, 28, 0.95) 100%);
   border-top: 1px solid var(--border-gold);
   position: relative;
   overflow: hidden;
