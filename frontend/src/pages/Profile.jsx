@@ -1,104 +1,151 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import {
-  User,
-  LogOut,
-  CalendarDays,
-  Mail,
-  Phone,
-  Edit,
-  MapPin,
-  Lock,
-  ChevronRight,
   Award,
+  CalendarDays,
+  Camera,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  Edit,
+  Lock,
+  LogOut,
+  Mail,
+  MapPin,
+  Phone,
+  Settings,
+  ShieldCheck,
+  Star,
+  User,
 } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
+import AOS from "aos";
+import "aos/dist/aos.css";
 import { reservationsAPI } from "../api";
+import { useAuth } from "../contexts/AuthContext";
 import "../styles/profile.css";
+
+const defaultPreferences = {
+  newsletter: true,
+  notifications: true,
+  tableLocation: "Window",
+};
+
+const formatDate = (date, options) => {
+  if (!date) return "";
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleDateString("en-US", options);
+};
+
+const mapBooking = (booking) => {
+  const date = formatDate(booking.date, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const status = booking.status?.toLowerCase() || "pending";
+
+  return {
+    id: booking._id,
+    date,
+    month: date ? date.split(" ")[0].slice(0, 3) : "TBD",
+    day: date ? date.split(" ")[1]?.replace(",", "") : "--",
+    time: booking.time || "TBD",
+    guests: booking.guests || 1,
+    status,
+    table: booking.tableNumber ? `Table ${booking.tableNumber}` : "Table pending",
+    type: status === "confirmed" ? "Confirmed Dining" : "Dining Reservation",
+  };
+};
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, loading, logout, updateProfile, updateProfileImage, changePassword } = useAuth();
+  const {
+    user,
+    loading,
+    logout,
+    updateProfile,
+    updateProfileImage,
+    changePassword,
+  } = useAuth();
+
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-
   const [userData, setUserData] = useState({
     name: "",
     email: "",
     phone: "",
     address: "",
     joinDate: "",
+    tier: "ZEST Member",
+    preferences: defaultPreferences,
   });
 
-  const [bookings, setBookings] = useState([]);
-  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const firstName = useMemo(
+    () => userData.name.trim().split(/\s+/)[0] || "Guest",
+    [userData.name]
+  );
 
-  const mapBooking = (booking) => ({
-    id: booking._id,
-    date: new Date(booking.date).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }),
-    time: booking.time,
-    guests: booking.guests,
-    status: booking.status?.toLowerCase() || "pending",
-    table: `Table ${booking.tableNumber}`,
-  });
+  const rewardPoints = bookings.length * 100;
 
   const loadBookings = useCallback(async () => {
     if (!user) return;
     try {
       setBookingsLoading(true);
       const res = await reservationsAPI.getMy();
-      const next = (res.data || []).map(mapBooking);
-      setBookings((prev) => {
-        const prevKey = prev.map((b) => `${b.id}:${b.status}`).join("|");
-        const nextKey = next.map((b) => `${b.id}:${b.status}`).join("|");
-        if (prevKey === nextKey) return prev;
-        return next;
-      });
+      setBookings((res.data || []).map(mapBooking));
     } catch (error) {
-      console.error("Failed to load bookings:", error);
+      console.error("Failed to load reservations:", error);
     } finally {
       setBookingsLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
+    AOS.init({
+      duration: 700,
+      once: true,
+      easing: "ease-out-cubic",
+    });
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
-    setUserData({
+    setUserData((prev) => ({
+      ...prev,
       name: user.name || "",
       email: user.email || "",
       phone: user.phone || "",
       address: user.address || "",
-      joinDate: user.createdAt
-        ? new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
-        : "",
-    });
-    if (user.image) setAvatarPreview(user.image);
+      joinDate:
+        formatDate(user.createdAt, { month: "long", year: "numeric" }) ||
+        "Recently",
+      tier: user.role === "customer" ? "ZEST Member" : user.role || "ZEST Member",
+    }));
+    setAvatarPreview(user.image || null);
+    setAvatarFile(null);
   }, [user]);
 
   useEffect(() => {
-    if (activeTab !== "bookings" || !user) return undefined;
+    if (!user) return undefined;
     loadBookings();
+    if (activeTab !== "bookings") return undefined;
+
     const interval = setInterval(loadBookings, 20000);
     return () => clearInterval(interval);
   }, [activeTab, user, loadBookings]);
 
-  const handleLogout = () => {
-    // Show logout confirmation modal
-    setShowLogoutConfirm(true);
-  };
+  const handleLogout = () => setShowLogoutConfirm(true);
 
   const handleConfirmLogout = () => {
     logout();
@@ -107,38 +154,44 @@ const Profile = () => {
   };
 
   const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-    setAvatarPreview(null);
+    setIsEditing((prev) => !prev);
+    setAvatarFile(null);
+    setAvatarPreview(user?.image || null);
   };
 
   const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setAvatarPreview(reader.result);
-      reader.readAsDataURL(file);
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
-    setPasswordData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSavePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New passwords do not match!");
+    if (!passwordData.currentPassword || !passwordData.newPassword) {
+      alert("Please enter current and new password.");
       return;
     }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("New passwords do not match.");
+      return;
+    }
+
     try {
       await changePassword(passwordData.currentPassword, passwordData.newPassword);
       alert("Password updated successfully!");
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      setShowChangePassword(false);
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (error) {
       alert(error.response?.data?.message || "Could not update password.");
     }
@@ -146,22 +199,35 @@ const Profile = () => {
 
   const handleUserDataChange = (e) => {
     const { name, value } = e.target;
+    setUserData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePreferenceChange = (key) => {
     setUserData((prev) => ({
       ...prev,
-      [name]: value,
+      preferences: {
+        ...prev.preferences,
+        [key]: !prev.preferences[key],
+      },
     }));
   };
 
   const handleSaveProfile = async () => {
     try {
+      if (!userData.name.trim()) {
+        alert("Name is required.");
+        return;
+      }
+
       if (avatarFile) {
         const formData = new FormData();
-        formData.append("name", userData.name);
+        formData.append("name", userData.name.trim());
         formData.append("image", avatarFile);
         await updateProfileImage(formData);
       } else {
-        await updateProfile({ name: userData.name });
+        await updateProfile({ name: userData.name.trim() });
       }
+
       setIsEditing(false);
       setAvatarFile(null);
       alert("Profile updated successfully!");
@@ -196,486 +262,355 @@ const Profile = () => {
 
   return (
     <main className="x_profile_page">
-      {/* Background Elements */}
-      <div className="x_profile_glow" />
-      
-      {/* Hero Section */}
-      <section className="x_profile_hero">
+      <section className="x_profile_hero" data-aos="fade-down">
         <div className="x_profile_hero_content">
-          <span className="x_profile_hero_label">Member Dashboard</span>
-          <h1 className="x_profile_headline">Your <span>Account</span></h1>
-          <p className="x_profile_hero_sub">Manage your profile, bookings, and preferences with ease.</p>
+          <div className="x_badge_container" data-aos="zoom-in" data-aos-delay="200">
+            <span className="x_profile_hero_label">Exclusive Access</span>
+            <div className="x_tier_badge">
+              <Star size={14} fill="currentColor" />
+              <span>{userData.tier}</span>
+            </div>
+          </div>
+          <h1 className="x_profile_headline">
+            Welcome back, <br />
+            <span>{firstName}</span>
+          </h1>
+          <p className="x_profile_hero_sub">
+            Manage your ZEST account, reservations, and security from one polished dashboard.
+          </p>
         </div>
       </section>
 
-      {/* Main Content */}
+      <section className="x_profile_stats_bar" data-aos="fade-up" data-aos-delay="400">
+        <div className="x_stat_item">
+          <div className="x_stat_icon"><Award size={24} /></div>
+          <div className="x_stat_info">
+            <span className="x_stat_label">Member Since</span>
+            <span className="x_stat_value">{userData.joinDate}</span>
+          </div>
+        </div>
+        <div className="x_stat_divider" />
+        <div className="x_stat_item">
+          <div className="x_stat_icon"><ShieldCheck size={24} /></div>
+          <div className="x_stat_info">
+            <span className="x_stat_label">Reward Points</span>
+            <span className="x_stat_value">{rewardPoints} pts</span>
+          </div>
+        </div>
+        <div className="x_stat_divider" />
+        <div className="x_stat_item">
+          <div className="x_stat_icon"><Clock size={24} /></div>
+          <div className="x_stat_info">
+            <span className="x_stat_label">Total Bookings</span>
+            <span className="x_stat_value">{bookings.length}</span>
+          </div>
+        </div>
+      </section>
+
       <section className="x_profile_container">
         <div className="x_profile_inner_wrap">
-          {/* Sidebar */}
-          <aside className="x_profile_sidebar">
+          <aside className="x_profile_sidebar" data-aos="fade-right" data-aos-delay="600">
             <div className="x_profile_menu">
-              <button
-                className={`x_profile_menu_item ${activeTab === "profile" ? "x_active" : ""
-                  }`}
-                onClick={() => setActiveTab("profile")}
-              >
-                <User size={20} />
-                <span>User Profile</span>
-                {activeTab === "profile" && <ChevronRight size={18} />}
+              <button className={`x_profile_menu_item ${activeTab === "profile" ? "x_active" : ""}`} onClick={() => setActiveTab("profile")}>
+                <div className="x_menu_icon_wrap"><User size={20} /></div>
+                <span>Account Details</span>
+                <ChevronRight className="x_arrow" size={18} />
               </button>
-
-              <button
-                className={`x_profile_menu_item ${activeTab === "bookings" ? "x_active" : ""
-                  }`}
-                onClick={() => setActiveTab("bookings")}
-              >
-                <CalendarDays size={20} />
-                <span>My Bookings</span>
-                {activeTab === "bookings" && <ChevronRight size={18} />}
+              <button className={`x_profile_menu_item ${activeTab === "bookings" ? "x_active" : ""}`} onClick={() => setActiveTab("bookings")}>
+                <div className="x_menu_icon_wrap"><CalendarDays size={20} /></div>
+                <span>Reservations</span>
+                <ChevronRight className="x_arrow" size={18} />
               </button>
-
-              <button
-                className={`x_profile_menu_item ${activeTab === "changepassword" ? "x_active" : ""
-                  }`}
-                onClick={() => setActiveTab("changepassword")}
-              >
-                <Lock size={20} />
-                <span>Change Password</span>
-                {activeTab === "changepassword" && <ChevronRight size={18} />}
+              <button className={`x_profile_menu_item ${activeTab === "changepassword" ? "x_active" : ""}`} onClick={() => setActiveTab("changepassword")}>
+                <div className="x_menu_icon_wrap"><Lock size={20} /></div>
+                <span>Security</span>
+                <ChevronRight className="x_arrow" size={18} />
               </button>
-
-              <button
-                className="x_profile_menu_item x_logout_btn"
-                onClick={handleLogout}
-              >
-                <LogOut size={20} />
-                <span>Logout</span>
+              <button className={`x_profile_menu_item ${activeTab === "settings" ? "x_active" : ""}`} onClick={() => setActiveTab("settings")}>
+                <div className="x_menu_icon_wrap"><Settings size={20} /></div>
+                <span>Preferences</span>
+                <ChevronRight className="x_arrow" size={18} />
+              </button>
+              <div className="x_menu_separator" />
+              <button className="x_profile_menu_item x_logout_btn" onClick={handleLogout}>
+                <div className="x_menu_icon_wrap"><LogOut size={20} /></div>
+                <span>Sign Out</span>
               </button>
             </div>
           </aside>
 
-          {/* Content Area */}
-          <div className="x_profile_content">
-          {/* User Profile Tab */}
-          {activeTab === "profile" && (
-            <div className="x_profile_tab">
-              <div className="x_profile_header">
-                <div className="x_profile_avatar_container">
-                  <div className="x_profile_avatar">
-                    {avatarPreview ? (
-                      <img src={avatarPreview} alt="Profile Avatar" />
-                    ) : (
-                      <User size={40} />
+          <div className="x_profile_content" data-aos="fade-left" data-aos-delay="800">
+            {activeTab === "profile" && (
+              <div className="x_profile_tab">
+                <div className="x_tab_header_premium">
+                  <div className="x_profile_avatar_wrapper">
+                    <div className="x_avatar_main">
+                      {avatarPreview ? <img src={avatarPreview} alt="Profile" /> : <User size={48} />}
+                      <div className="x_avatar_status_dot" />
+                    </div>
+                    {isEditing && (
+                      <label className="x_avatar_upload_btn">
+                        <Camera size={16} />
+                        <input type="file" accept="image/*" onChange={handleAvatarChange} />
+                      </label>
                     )}
                   </div>
-                  {isEditing && (
-                    <label className="x_avatar_edit_label">
-                      <Edit size={16} />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        style={{ display: "none" }}
-                      />
-                    </label>
-                  )}
-                </div>
-                <div className="x_profile_header_info">
-                  <h2>{userData.name}</h2>
-                  <p>Member since {userData.joinDate}</p>
-                </div>
-                <button
-                  className="x_profile_edit_btn"
-                  onClick={handleEditToggle}
-                >
-                  <Edit size={18} />
-                  {isEditing ? "Cancel" : "Edit Profile"}
-                </button>
-              </div>
 
-              <div className="x_profile_form_section">
-                {isEditing ? (
-                  <>
-                    <h3>Edit Your Profile</h3>
-                    <form className="x_profile_form">
-                      <div className="x_profile_form_group">
-                        <label>Full Name</label>
-                        <input
-                          type="text"
-                          name="name"
-                          value={userData.name}
-                          onChange={handleUserDataChange}
-                          className="x_profile_input"
-                        />
-                      </div>
-
-                      <div className="x_profile_form_row">
-                        <div className="x_profile_form_group">
-                          <label>Email Address</label>
-                          <input
-                            type="email"
-                            name="email"
-                            value={userData.email}
-                            onChange={handleUserDataChange}
-                            className="x_profile_input"
-                          />
-                        </div>
-
-                        <div className="x_profile_form_group">
-                          <label>Phone Number</label>
-                          <input
-                            type="tel"
-                            name="phone"
-                            value={userData.phone}
-                            onChange={handleUserDataChange}
-                            className="x_profile_input"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="x_profile_form_group">
-                        <label>Address</label>
-                        <input
-                          type="text"
-                          name="address"
-                          value={userData.address}
-                          onChange={handleUserDataChange}
-                          className="x_profile_input"
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        className="x_profile_save_btn"
-                        onClick={handleSaveProfile}
-                      >
-                        Save Changes
-                      </button>
-                    </form>
-                  </>
-                ) : (
-                  <>
-                    <div className="x_profile_info_section">
-                      <h3>Personal Information</h3>
-                      <div className="x_profile_info_grid">
-                        <div className="x_profile_info_card_new">
-                          <div className="x_info_card_icon">
-                            <Mail size={24} />
-                          </div>
-                          <div className="x_info_card_content">
-                            <p className="x_profile_label">Email Address</p>
-                            <p className="x_profile_value">{userData.email}</p>
-                          </div>
-                        </div>
-
-                        <div className="x_profile_info_card_new">
-                          <div className="x_info_card_icon">
-                            <Phone size={24} />
-                          </div>
-                          <div className="x_info_card_content">
-                            <p className="x_profile_label">Phone Number</p>
-                            <p className="x_profile_value">{userData.phone}</p>
-                          </div>
-                        </div>
-
-                        <div className="x_profile_info_card_new">
-                          <div className="x_info_card_icon">
-                            <MapPin size={24} />
-                          </div>
-                          <div className="x_info_card_content">
-                            <p className="x_profile_label">Address</p>
-                            <p className="x_profile_value">
-                              {userData.address}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="x_profile_info_card_new">
-                          <div className="x_info_card_icon">
-                            <Award size={24} />
-                          </div>
-                          <div className="x_info_card_content">
-                            <p className="x_profile_label">Member Since</p>
-                            <p className="x_profile_value">
-                              {userData.joinDate}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                  <div className="x_header_text_group">
+                    <h2>{userData.name}</h2>
+                    <div className="x_user_meta">
+                      <span className="x_meta_item"><Mail size={14} /> {userData.email}</span>
+                      <span className="x_meta_divider" />
+                      <span className="x_meta_item"><Award size={14} /> {userData.tier}</span>
                     </div>
-
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* My Bookings Tab */}
-          {activeTab === "bookings" && (
-            <div className="x_profile_tab">
-              <div className="x_profile_tab_header">
-                <h2>My Reservations</h2>
-                <p>View and manage your dining reservations</p>
-              </div>
-
-              {bookingsLoading && bookings.length === 0 ? (
-                <p className="text-muted">Loading reservations...</p>
-              ) : bookings.length > 0 ? (
-                <div className="x_bookings_list">
-                  {bookings.map((booking) => (
-                    <div
-                      key={booking.id}
-                      className={`x_booking_card ${booking.status}`}
-                    >
-                      <div className="x_booking_header">
-                        <div className="x_booking_date">
-                          <CalendarDays size={24} />
-                          <div>
-                            <p className="x_booking_date_text">
-                              {booking.date}
-                            </p>
-                            <p className="x_booking_time">{booking.time}</p>
-                          </div>
-                        </div>
-
-                        <div className="x_booking_status">
-                          <span className={`x_status_badge ${booking.status}`}>
-                            {booking.status.charAt(0).toUpperCase() +
-                              booking.status.slice(1)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="x_booking_details">
-                        <p>
-                          <strong>Guests:</strong> {booking.guests} people
-                        </p>
-                        <p>
-                          <strong>Table:</strong> {booking.table}
-                        </p>
-                      </div>
-
-                      <div className="x_booking_actions">
-                        {booking.status === "pending" && (
-                          <button
-                            className="x_booking_cancel_btn"
-                            onClick={() => handleCancelBooking(booking.id)}
-                          >
-                            Cancel
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="x_empty_state">
-                  <div className="x_empty_icon_wrap">
-                    <CalendarDays size={64} />
                   </div>
-                  <h3>No Reservations Yet</h3>
-                  <p>Experience the finest dining ZEST has to offer. Start your journey by making your first reservation today.</p>
-                  <button className="x_new_booking_btn">
-                    Reserve a Table
+
+                  <button className={`x_edit_action_btn ${isEditing ? "x_cancel" : ""}`} onClick={handleEditToggle}>
+                    {isEditing ? <Lock size={18} /> : <Edit size={18} />}
+                    <span>{isEditing ? "Cancel" : "Edit Profile"}</span>
                   </button>
                 </div>
-              )}
 
-            </div>
-          )}
-
-          {/* Change Password Tab */}
-          {activeTab === "changepassword" && (
-            <div className="x_profile_tab">
-              <div className="x_profile_tab_header">
-                <h2>Change Your Password</h2>
-                <p>
-                  Keep your account secure by updating your password regularly
-                </p>
+                <div className="x_profile_body_content">
+                  {isEditing ? (
+                    <div className="x_form_container_premium" data-aos="fade-up">
+                      <h3 className="x_section_title">Modify Your Details</h3>
+                      <form className="x_premium_form">
+                        <div className="x_input_group_premium">
+                          <label>Full Name</label>
+                          <div className="x_input_wrapper">
+                            <User size={18} className="x_input_icon" />
+                            <input type="text" name="name" value={userData.name} onChange={handleUserDataChange} placeholder="Enter your full name" />
+                          </div>
+                        </div>
+                        <div className="x_input_group_premium">
+                          <label>Email Address</label>
+                          <div className="x_input_wrapper">
+                            <Mail size={18} className="x_input_icon" />
+                            <input type="email" value={userData.email} disabled />
+                          </div>
+                        </div>
+                        <div className="x_form_actions_premium">
+                          <button type="button" className="x_btn_primary_premium" onClick={handleSaveProfile}>
+                            Save Changes
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="x_info_grid_premium">
+                      <div className="x_info_card_premium" data-aos="fade-up" data-aos-delay="100">
+                        <div className="x_card_icon_premium"><Mail size={22} /></div>
+                        <div className="x_card_data">
+                          <span className="x_card_label">Email Address</span>
+                          <span className="x_card_value">{userData.email}</span>
+                        </div>
+                      </div>
+                      <div className="x_info_card_premium" data-aos="fade-up" data-aos-delay="200">
+                        <div className="x_card_icon_premium"><Phone size={22} /></div>
+                        <div className="x_card_data">
+                          <span className="x_card_label">Phone Number</span>
+                          <span className="x_card_value">{userData.phone || "Not added"}</span>
+                        </div>
+                      </div>
+                      <div className="x_info_card_premium" data-aos="fade-up" data-aos-delay="300">
+                        <div className="x_card_icon_premium"><MapPin size={22} /></div>
+                        <div className="x_card_data">
+                          <span className="x_card_label">Current Address</span>
+                          <span className="x_card_value">{userData.address || "Not added"}</span>
+                        </div>
+                      </div>
+                      <div className="x_info_card_premium" data-aos="fade-up" data-aos-delay="400">
+                        <div className="x_card_icon_premium"><CreditCard size={22} /></div>
+                        <div className="x_card_data">
+                          <span className="x_card_label">Membership Tier</span>
+                          <span className="x_card_value">{userData.tier}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
 
-              <div className="x_change_password_section">
-                <h3>Update Password</h3>
-                <form className="x_change_password_form">
-                  <div className="x_change_password_group">
-                    <label>Current Password</label>
-                    <input
-                      type="password"
-                      name="currentPassword"
-                      value={passwordData.currentPassword}
-                      onChange={handlePasswordChange}
-                      className="x_password_input"
-                      placeholder="current password"
-                  />
+            {activeTab === "settings" && (
+              <div className="x_profile_tab">
+                <div className="x_tab_header_simple">
+                  <h2>Preferences</h2>
+                  <p>Customize your ZEST experience on this device.</p>
+                </div>
+                <div className="x_preferences_container_premium" data-aos="fade-up">
+                  <div className="x_pref_group_premium">
+                    <h3 className="x_section_title">Communications</h3>
+                    <div className="x_pref_item_premium">
+                      <div className="x_pref_info">
+                        <h4>Newsletter</h4>
+                        <p>Receive updates about new seasonal menus and events.</p>
+                      </div>
+                      <button className={`x_pref_toggle ${userData.preferences.newsletter ? "x_active" : ""}`} onClick={() => handlePreferenceChange("newsletter")} aria-label="Toggle newsletter">
+                        <div className="x_toggle_dot" />
+                      </button>
+                    </div>
+                    <div className="x_pref_item_premium">
+                      <div className="x_pref_info">
+                        <h4>Booking Notifications</h4>
+                        <p>Get instant alerts for your table reservations.</p>
+                      </div>
+                      <button className={`x_pref_toggle ${userData.preferences.notifications ? "x_active" : ""}`} onClick={() => handlePreferenceChange("notifications")} aria-label="Toggle booking notifications">
+                        <div className="x_toggle_dot" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="x_pref_group_premium">
+                    <h3 className="x_section_title">Dining Preferences</h3>
+                    <div className="x_input_group_premium">
+                      <label>Preferred Table Location</label>
+                      <div className="x_input_wrapper">
+                        <MapPin size={18} className="x_input_icon" />
+                        <select
+                          className="x_premium_select"
+                          value={userData.preferences.tableLocation}
+                          onChange={(e) =>
+                            setUserData((prev) => ({
+                              ...prev,
+                              preferences: {
+                                ...prev.preferences,
+                                tableLocation: e.target.value,
+                              },
+                            }))
+                          }
+                        >
+                          <option value="Window">Window View</option>
+                          <option value="Booth">Private Booth</option>
+                          <option value="Outdoor">Outdoor Terrace</option>
+                          <option value="Bar">Near the Bar</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "bookings" && (
+              <div className="x_profile_tab">
+                <div className="x_tab_header_simple">
+                  <h2>Your Reservations</h2>
+                  <p>View and manage your dining reservations.</p>
                 </div>
 
-                <div className="x_change_password_grid">
-                    <div className="x_change_password_group">
-                      <label>New Password</label>
-                      <input
-                        type="password"
-                        name="newPassword"
-                        value={passwordData.newPassword}
-                        onChange={handlePasswordChange}
-                        className="x_password_input"
-                        placeholder="new password"
-                      />
-                      <p className="x_password_hint">
-                        Use at least 8 characters with uppercase, lowercase,
-                        and numbers
-                      </p>
-                    </div>
-
-                    <div className="x_change_password_group">
-                      <label>Confirm New Password</label>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={passwordData.confirmPassword}
-                        onChange={handlePasswordChange}
-                        className="x_password_input"
-                        placeholder="Confirm new password"
-                      />
-                    </div>
+                {bookingsLoading && bookings.length === 0 ? (
+                  <div className="x_empty_premium">
+                    <div className="x_empty_art"><CalendarDays size={80} /></div>
+                    <h3>Loading Reservations</h3>
+                    <p>Please wait while we fetch your latest bookings.</p>
                   </div>
-
-                  <div className="x_change_password_actions">
-                    <button
-                      type="button"
-                      className="x_password_btn_reset"
-                      onClick={() =>
-                        setPasswordData({
-                          currentPassword: "",
-                          newPassword: "",
-                          confirmPassword: "",
-                        })
-                      }
-                    >
-                      Reset
-                    </button>
-                    <button
-                      type="button"
-                      className="x_password_btn_save"
-                      onClick={handleSavePassword}
-                    >
-                      Update Password
+                ) : bookings.length > 0 ? (
+                  <div className="x_bookings_container_premium">
+                    {bookings.map((booking, index) => (
+                      <div key={booking.id} className={`x_reservation_card ${booking.status}`} data-aos="fade-up" data-aos-delay={index * 100}>
+                        <div className="x_res_top">
+                          <div className="x_res_type_badge">{booking.type}</div>
+                          <div className={`x_res_status_tag ${booking.status}`}>{booking.status}</div>
+                        </div>
+                        <div className="x_res_main">
+                          <div className="x_res_date_box">
+                            <span className="x_res_month">{booking.month}</span>
+                            <span className="x_res_day">{booking.day}</span>
+                          </div>
+                          <div className="x_res_info">
+                            <h4>{booking.table}</h4>
+                            <div className="x_res_meta_row">
+                              <span><Clock size={14} /> {booking.time}</span>
+                              <span className="x_res_dot" />
+                              <span><User size={14} /> {booking.guests} Guests</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="x_res_footer">
+                          {booking.status === "pending" ? (
+                            <button className="x_res_cancel_link" onClick={() => handleCancelBooking(booking.id)}>
+                              Cancel Reservation
+                            </button>
+                          ) : (
+                            <span className="x_res_confirmed_msg">
+                              {booking.status === "cancelled" ? "Reservation Cancelled" : "Reservation Confirmed"}
+                            </span>
+                          )}
+                          <span className="x_res_details_btn">{booking.date}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="x_empty_premium" data-aos="zoom-in">
+                    <div className="x_empty_art"><CalendarDays size={80} /></div>
+                    <h3>No Active Reservations</h3>
+                    <p>You have not booked a table yet. Reserve your next ZEST dining experience anytime.</p>
+                    <button className="x_btn_primary_premium" onClick={() => navigate("/reservations")}>
+                      Book A Table Now
                     </button>
                   </div>
-                </form>
+                )}
               </div>
-            </div>
-          )}
+            )}
+
+            {activeTab === "changepassword" && (
+              <div className="x_profile_tab">
+                <div className="x_tab_header_simple">
+                  <h2>Security Settings</h2>
+                  <p>Protect your account with a strong password.</p>
+                </div>
+                <div className="x_security_container_premium" data-aos="fade-up">
+                  <form className="x_premium_form">
+                    <div className="x_input_group_premium">
+                      <label>Current Password</label>
+                      <div className="x_input_wrapper">
+                        <Lock size={18} className="x_input_icon" />
+                        <input type="password" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChange} placeholder="Current password" />
+                      </div>
+                    </div>
+                    <div className="x_input_row_premium">
+                      <div className="x_input_group_premium">
+                        <label>New Password</label>
+                        <div className="x_input_wrapper">
+                          <ShieldCheck size={18} className="x_input_icon" />
+                          <input type="password" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChange} placeholder="New password" />
+                        </div>
+                      </div>
+                      <div className="x_input_group_premium">
+                        <label>Confirm Password</label>
+                        <div className="x_input_wrapper">
+                          <ShieldCheck size={18} className="x_input_icon" />
+                          <input type="password" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChange} placeholder="Confirm password" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="x_form_actions_premium">
+                      <button type="button" className="x_btn_secondary_premium" onClick={() => setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })}>
+                        Reset Fields
+                      </button>
+                      <button type="button" className="x_btn_primary_premium" onClick={handleSavePassword}>
+                        Update Security
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Change Password Modal */}
-      {showChangePassword && (
-        <div
-          className="x_modal_overlay"
-          onClick={() => setShowChangePassword(false)}
-        >
-          <div
-            className="x_modal_content x_change_modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="x_modal_header">
-              <h3>Change Your Password</h3>
-              <button
-                className="x_modal_close"
-                onClick={() => setShowChangePassword(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="x_modal_body">
-              <div className="x_form_group">
-                <label>Current Password</label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  className="x_form_input"
-                  placeholder="Enter your current password"
-                />
-              </div>
-
-              <div className="x_form_group">
-                <label>New Password</label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  className="x_form_input"
-                  placeholder="Enter your new password"
-                />
-              </div>
-
-              <div className="x_form_group">
-                <label>Confirm New Password</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  className="x_form_input"
-                  placeholder="Confirm your new password"
-                />
-              </div>
-            </div>
-
-            <div className="x_modal_footer">
-              <button
-                className="x_modal_btn_cancel"
-                onClick={() => setShowChangePassword(false)}
-              >
-                Cancel
-              </button>
-              <button className="x_modal_btn_save" onClick={handleSavePassword}>
-                Save Password
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div
-          className="x_modal_overlay"
-          onClick={() => setShowLogoutConfirm(false)}
-        >
-          <div
-            className="x_modal_content x_logout_modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="x_modal_body">
-              <div className="x_logout_modal_icon">
-                <LogOut size={48} />
-              </div>
-              <h3>Sign Out?</h3>
-              <p>
-                Are you sure you want to logout? You'll need to sign in again to
-                access your premium profile and reservations.
-              </p>
-
-              <div className="x_logout_modal_actions">
-                <button
-                  className="x_logout_modal_btn_confirm"
-                  onClick={handleConfirmLogout}
-                >
-                  Yes, Sign Out
-                </button>
-                <button
-                  className="x_logout_modal_btn_cancel"
-                  onClick={() => setShowLogoutConfirm(false)}
-                >
-                  Stay Logged In
-                </button>
-              </div>
+        <div className="x_premium_modal_overlay">
+          <div className="x_premium_modal_box" data-aos="zoom-in" data-aos-duration="400">
+            <div className="x_modal_icon_premium x_logout_icon"><LogOut size={40} /></div>
+            <h3>Confirm Sign Out</h3>
+            <p>Are you sure you want to end your current session?</p>
+            <div className="x_modal_actions_premium">
+              <button className="x_btn_cancel_premium" onClick={() => setShowLogoutConfirm(false)}>Stay Here</button>
+              <button className="x_btn_confirm_premium" onClick={handleConfirmLogout}>Sign Out</button>
             </div>
           </div>
         </div>
@@ -683,4 +618,5 @@ const Profile = () => {
     </main>
   );
 };
+
 export default Profile;

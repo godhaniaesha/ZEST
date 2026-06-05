@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   FaCoffee,
   FaGlassCheers,
@@ -21,10 +21,10 @@ import {
 } from "react-icons/fa";
 import { FaArrowRightLong } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Pagination, Autoplay, EffectFade } from "swiper/modules";
 import "swiper/css";
-import "swiper/css/navigation";
 import "swiper/css/pagination";
+import "swiper/css/effect-fade";
 
 /* ─────────────────────────────────────────────
    ROOT TOKENS  (mirrors your :root exactly)
@@ -140,17 +140,48 @@ body {
   position: absolute;
   right: 0;
   top: 0;
-  width: 54%;
+  width: 50%;
   height: 100%;
   overflow: hidden;
+  clip-path: polygon(10% 0, 100% 0, 100% 100%, 0% 100%);
+}
+
+.d_hero_image_side .d_hero_swiper,
+.d_hero_image_side .swiper,
+.d_hero_image_side .swiper-wrapper,
+.d_hero_image_side .swiper-slide {
+  width: 100%;
+  height: 100%;
 }
 
 .d_hero_image_side img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.48;
-  filter: saturate(0.72) contrast(1.08);
+  opacity: 1;
+  filter: saturate(0.85) contrast(1.05) brightness(0.95);
+}
+
+.d_hero_swiper .swiper-pagination {
+  bottom: 28px;
+  right: 28px;
+  left: auto;
+  width: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.d_hero_swiper .swiper-pagination-bullet {
+  width: 8px;
+  height: 8px;
+  background: rgba(201,168,76,0.35);
+  opacity: 1;
+  transition: var(--d-transition);
+}
+
+.d_hero_swiper .swiper-pagination-bullet-active {
+  background: var(--d-gold);
+  transform: scale(1.15);
 }
 
 .d_hero_image_side::before {
@@ -158,8 +189,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to right, var(--d-primary) 0%, rgba(22,48,43,0.93) 30%, rgba(22,48,43,0.55) 52%, transparent 72%),
-    linear-gradient(to top, rgba(14,31,28,0.65) 0%, transparent 44%);
+    linear-gradient(to right, rgba(22,48,43,0.15) 0%, transparent 40%),
+    linear-gradient(to top, rgba(14,31,28,0.5) 0%, transparent 44%);
   z-index: 1;
 }
 
@@ -465,6 +496,75 @@ body {
   text-transform: uppercase;
   color: rgba(224,224,224,0.45);
   font-family: 'DM Sans', sans-serif;
+}
+
+/* ── LIGHT SECTION BG DECOR ── */
+.d_light_section {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.d_light_section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 55% 45% at 8% 18%, rgba(201,168,76,0.07) 0%, transparent 68%),
+    radial-gradient(ellipse 45% 40% at 92% 78%, rgba(22,48,43,0.05) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.d_light_section_decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.d_light_section > .d_section,
+.d_light_section > div:not(.d_light_section_decor) {
+  position: relative;
+  z-index: 1;
+}
+
+.d_decor_icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--d-primary);
+  opacity: 0.055;
+  line-height: 1;
+  --decor-rotate: 0deg;
+  animation: d_decor_float 14s ease-in-out infinite;
+}
+
+.d_decor_icon.d_decor_sm { font-size: clamp(48px, 6vw, 72px); }
+.d_decor_icon.d_decor_md { font-size: clamp(64px, 8vw, 96px); }
+.d_decor_icon.d_decor_lg { font-size: clamp(80px, 10vw, 120px); }
+
+.d_decor_icon:nth-child(2) { animation-delay: -3s; }
+.d_decor_icon:nth-child(3) { animation-delay: -6s; }
+.d_decor_icon:nth-child(4) { animation-delay: -9s; }
+.d_decor_icon:nth-child(5) { animation-delay: -11s; }
+.d_decor_icon:nth-child(6) { animation-delay: -2s; }
+
+@keyframes d_decor_float {
+  0%, 100% { transform: rotate(var(--decor-rotate)) translateY(0); }
+  50% { transform: rotate(var(--decor-rotate)) translateY(-12px); }
+}
+
+.d_light_section_dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(22,48,43,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ── SECTION COMMON ── */
@@ -1646,6 +1746,71 @@ const TESTIMONIALS = [
   { text: "I've dined at many upscale venues, but the combination of coffee culture and bar here is truly unique. The Jazz Nights are unmissable events.", name: "Kavya Nair", role: "Food Critic", initials: "KN" },
 ];
 
+const HERO_SLIDES = [
+  { img: "https://imgmediagumlet.lbb.in/media/2026/01/695dd3702fc23c297f46882e_1767756656264.jpg", alt: "Café ambiance" },
+  { img: "https://thepatriot.in/wp-content/uploads/2022/10/Cafe-Gumbad-2.jpg", alt: "Lounge interior" },
+  { img: "https://ansainteriors.com/wp-content/uploads/2019/11/cafe-interior-design.jpg", alt: "Evening bar" },
+  { img: "https://static.vecteezy.com/system/resources/thumbnails/052/183/531/small/cozy-coffee-shop-with-warm-lighting-and-big-window-creating-serene-atmosphere-photo.jpeg", alt: "Specialty coffee" },
+];
+
+const LIGHT_SECTION_DECOR = {
+  about: [
+    { Icon: FaCoffee, top: "6%", left: "4%", size: "d_decor_lg", rotate: -12 },
+    { Icon: FaLeaf, top: "72%", left: "8%", size: "d_decor_md", rotate: 8 },
+    { Icon: FaCocktail, top: "18%", right: "6%", size: "d_decor_md", rotate: 15 },
+    { Icon: FaMusic, top: "58%", right: "4%", size: "d_decor_sm", rotate: -6 },
+    { Icon: FaBirthdayCake, bottom: "8%", right: "12%", size: "d_decor_sm", rotate: 10 },
+  ],
+  order: [
+    { Icon: FaBolt, top: "10%", right: "5%", size: "d_decor_lg", rotate: -8 },
+    { Icon: FaMobileAlt, top: "55%", left: "3%", size: "d_decor_md", rotate: 12 },
+    { Icon: FaCreditCard, bottom: "12%", right: "8%", size: "d_decor_sm", rotate: -14 },
+    { Icon: FaCoffee, top: "28%", left: "6%", size: "d_decor_sm", rotate: 6 },
+  ],
+  blog: [
+    { Icon: FaPenNib, top: "8%", left: "5%", size: "d_decor_md", rotate: -10 },
+    { Icon: FaCoffee, top: "42%", right: "4%", size: "d_decor_lg", rotate: 8 },
+    { Icon: FaCocktail, bottom: "10%", left: "7%", size: "d_decor_sm", rotate: 14 },
+    { Icon: FaLeaf, top: "20%", right: "10%", size: "d_decor_sm", rotate: -5 },
+  ],
+  gallery: [
+    { Icon: FaGlassCheers, top: "6%", right: "6%", size: "d_decor_lg", rotate: 12 },
+    { Icon: FaCoffee, bottom: "14%", left: "5%", size: "d_decor_md", rotate: -8 },
+    { Icon: FaStar, top: "38%", left: "4%", size: "d_decor_sm", rotate: 6 },
+    { Icon: FaCocktail, top: "12%", left: "10%", size: "d_decor_sm", rotate: -12 },
+    { Icon: FaMusic, bottom: "8%", right: "5%", size: "d_decor_md", rotate: 4 },
+  ],
+};
+
+function LightSectionDecor({ variant = "about" }) {
+  const items = LIGHT_SECTION_DECOR[variant] || LIGHT_SECTION_DECOR.about;
+  return (
+    <>
+      <div className="d_light_section_dots" aria-hidden="true" />
+      <div className="d_light_section_decor" aria-hidden="true">
+        {items.map((item, i) => {
+          const { Icon, top, left, right, bottom, size, rotate } = item;
+          return (
+            <span
+              key={i}
+              className={`d_decor_icon ${size}`}
+              style={{
+                top,
+                left,
+                right,
+                bottom,
+                "--decor-rotate": `${rotate}deg`,
+              }}
+            >
+              <Icon />
+            </span>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 /* ─── COMPONENT ─────────────────────── */
 export default function Home() {
   const [activeTab, setActiveTab] = useState("food");
@@ -1675,7 +1840,22 @@ export default function Home() {
         <div className="d_hero_bg_pattern" />
         <div className="d_hero_lines" />
         <div className="d_hero_image_side">
-          <img src="https://images.unsplash.com/photo-1514190051997-0f6f39ca5cde?w=1200&q=85" alt="Café ambiance" />
+          <Swiper
+            className="d_hero_swiper"
+            modules={[Autoplay, Pagination, EffectFade]}
+            effect="fade"
+            fadeEffect={{ crossFade: true }}
+            loop
+            speed={900}
+            autoplay={{ delay: 5200, disableOnInteraction: false }}
+            pagination={{ clickable: true }}
+          >
+            {HERO_SLIDES.map((slide) => (
+              <SwiperSlide key={slide.alt}>
+                <img src={slide.img} alt={slide.alt} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
         <div className="d_hero_container">
           <div className="d_hero_content_wrap">
@@ -1741,7 +1921,8 @@ export default function Home() {
       </div>
 
       {/* ── 3. ABOUT / STORY ── */}
-      <section style={{ background: "var(--d-bg)", padding: "0" }}>
+      <section className="d_light_section" style={{ background: "var(--d-bg)", padding: "0" }}>
+        <LightSectionDecor variant="about" />
         <div className="d_section">
           <div className="d_about_grid">
             <div className="d_about_images">
@@ -1847,7 +2028,8 @@ export default function Home() {
       </section>
 
       {/* ── 5. ONLINE ORDER CTA ── */}
-      <section style={{ background: "var(--d-bg)", padding: "80px 5%" }}>
+      <section className="d_light_section" style={{ background: "var(--d-bg)", padding: "80px 5%" }}>
+        <LightSectionDecor variant="order" />
         <div className="d_order_cta">
           <div className="d_order_cta_left">
             <div className="d_section_tag" style={{ color: "var(--d-gold)", marginBottom: 20 }}>Online Ordering</div>
@@ -2036,7 +2218,8 @@ export default function Home() {
       </section> */}
 
       {/* ── 8a. BLOGS ── */}
-      <section style={{ background: "var(--d-bg)" }}>
+      <section className="d_light_section" style={{ background: "var(--d-bg)" }}>
+        <LightSectionDecor variant="blog" />
         <div className="d_section">
           <div
             style={{
@@ -2168,7 +2351,8 @@ export default function Home() {
       </section>
 
       {/* ── GALLERY ── */}
-      <section style={{ background: "var(--d-bg)", padding: "80px 5%" }}>
+      <section className="d_light_section" style={{ background: "var(--d-bg)", padding: "80px 5%" }}>
+        <LightSectionDecor variant="gallery" />
         <div style={{ maxWidth: 1300, margin: "0 auto" }}>
           <div style={{ marginBottom: 40, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 20 }}>
             <div>
