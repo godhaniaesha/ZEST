@@ -360,7 +360,7 @@ const Menu = () => {
                     <p className="x_menu_card_desc">{item.description}</p>
 
                     <div className="x_menu_card_footer">
-                      <div className="x_menu_card_price_group">
+                      <div className="x_menu_.card_price_group">
                         <span className="x_menu_card_price">₹{item.price}</span>
                         {item.originalPrice && (
                           <span className="x_menu_card_orig_price">₹{item.originalPrice}</span>

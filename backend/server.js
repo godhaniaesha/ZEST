@@ -3,6 +3,11 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
+const crypto = require("crypto");
+
+if (!global.crypto) {
+  global.crypto = crypto;
+}
 
 const menuRoutes = require('./routes/menu');
 const orderRoutes = require('./routes/orders');
