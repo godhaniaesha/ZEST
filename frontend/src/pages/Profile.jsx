@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
 import {
   User,
   LogOut,
@@ -11,14 +12,19 @@ import {
   ChevronRight,
   Award,
 } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { reservationsAPI } from "../api";
 import "../styles/profile.css";
 
 const Profile = () => {
+  const navigate = useNavigate();
+  const { user, loading, logout, updateProfile, updateProfileImage, changePassword } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -26,39 +32,68 @@ const Profile = () => {
   });
 
   const [userData, setUserData] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main Street, City Center",
-    joinDate: "January 2024",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    joinDate: "",
   });
 
-  const [bookings, setBookings] = useState([
-    {
-      id: 1,
-      date: "June 15, 2024",
-      time: "7:00 PM",
-      guests: 4,
-      status: "confirmed",
-      table: "Table 5",
-    },
-    {
-      id: 2,
-      date: "June 22, 2024",
-      time: "8:30 PM",
-      guests: 2,
-      status: "confirmed",
-      table: "Table 2",
-    },
-    {
-      id: 3,
-      date: "June 28, 2024",
-      time: "6:00 PM",
-      guests: 6,
-      status: "pending",
-      table: "TBD",
-    },
-  ]);
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+
+  const mapBooking = (booking) => ({
+    id: booking._id,
+    date: new Date(booking.date).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }),
+    time: booking.time,
+    guests: booking.guests,
+    status: booking.status?.toLowerCase() || "pending",
+    table: `Table ${booking.tableNumber}`,
+  });
+
+  const loadBookings = useCallback(async () => {
+    if (!user) return;
+    try {
+      setBookingsLoading(true);
+      const res = await reservationsAPI.getMy();
+      const next = (res.data || []).map(mapBooking);
+      setBookings((prev) => {
+        const prevKey = prev.map((b) => `${b.id}:${b.status}`).join("|");
+        const nextKey = next.map((b) => `${b.id}:${b.status}`).join("|");
+        if (prevKey === nextKey) return prev;
+        return next;
+      });
+    } catch (error) {
+      console.error("Failed to load bookings:", error);
+    } finally {
+      setBookingsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    setUserData({
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      address: user.address || "",
+      joinDate: user.createdAt
+        ? new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+        : "",
+    });
+    if (user.image) setAvatarPreview(user.image);
+  }, [user]);
+
+  useEffect(() => {
+    if (activeTab !== "bookings" || !user) return undefined;
+    loadBookings();
+    const interval = setInterval(loadBookings, 20000);
+    return () => clearInterval(interval);
+  }, [activeTab, user, loadBookings]);
 
   const handleLogout = () => {
     // Show logout confirmation modal
@@ -66,9 +101,9 @@ const Profile = () => {
   };
 
   const handleConfirmLogout = () => {
-    console.log("Logging out...");
+    logout();
     setShowLogoutConfirm(false);
-    alert("Logged out successfully!");
+    navigate("/auth");
   };
 
   const handleEditToggle = () => {
@@ -78,14 +113,10 @@ const Profile = () => {
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
-
     if (file) {
+      setAvatarFile(file);
       const reader = new FileReader();
-
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-      };
-
+      reader.onloadend = () => setAvatarPreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
@@ -98,18 +129,19 @@ const Profile = () => {
     }));
   };
 
-  const handleSavePassword = () => {
+  const handleSavePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("New passwords do not match!");
       return;
     }
-    alert("Password updated successfully!");
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-    setShowChangePassword(false);
+    try {
+      await changePassword(passwordData.currentPassword, passwordData.newPassword);
+      alert("Password updated successfully!");
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setShowChangePassword(false);
+    } catch (error) {
+      alert(error.response?.data?.message || "Could not update password.");
+    }
   };
 
   const handleUserDataChange = (e) => {
@@ -120,19 +152,47 @@ const Profile = () => {
     }));
   };
 
-  const handleSaveProfile = () => {
-    setIsEditing(false);
-    alert("Profile updated successfully!");
+  const handleSaveProfile = async () => {
+    try {
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append("name", userData.name);
+        formData.append("image", avatarFile);
+        await updateProfileImage(formData);
+      } else {
+        await updateProfile({ name: userData.name });
+      }
+      setIsEditing(false);
+      setAvatarFile(null);
+      alert("Profile updated successfully!");
+    } catch (error) {
+      alert(error.response?.data?.message || "Could not update profile.");
+    }
   };
 
-  const handleCancelBooking = (id) => {
-    setBookings((prev) =>
-      prev.map((booking) =>
-        booking.id === id ? { ...booking, status: "cancelled" } : booking,
-      ),
-    );
-    alert("Booking cancelled successfully!");
+  const handleCancelBooking = async (id) => {
+    try {
+      await reservationsAPI.cancelMy(id);
+      await loadBookings();
+      alert("Booking cancelled successfully!");
+    } catch (error) {
+      alert(error.response?.data?.message || "Could not cancel booking.");
+    }
   };
+
+  if (loading) {
+    return (
+      <main className="x_profile_page">
+        <section className="x_profile_container">
+          <p>Loading profile...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <main className="x_profile_page">
@@ -358,7 +418,9 @@ const Profile = () => {
                 <p>View and manage your dining reservations</p>
               </div>
 
-              {bookings.length > 0 ? (
+              {bookingsLoading && bookings.length === 0 ? (
+                <p className="text-muted">Loading reservations...</p>
+              ) : bookings.length > 0 ? (
                 <div className="x_bookings_list">
                   {bookings.map((booking) => (
                     <div

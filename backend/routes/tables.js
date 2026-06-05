@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Table = require('../models/Table');
 
-router.get('/', async (req, res) => {
-  try {
+router.get('/', async (req, res) => {  try {
     const tables = await Table.find();
     res.json(tables);
   } catch (err) {

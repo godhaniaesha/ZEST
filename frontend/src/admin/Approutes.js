@@ -25,22 +25,24 @@ import ServiceRequests from './pages/ServiceRequests/ServiceRequests';
 import Profile from './pages/Profile/Profile';
 import Categories from './pages/Categories/Categories';
 
-// Wrapper component to pass userRole to pages
 function PageWrapper({ Component }) {
   const { user } = useAuth();
-  return <Component userRole={user?.role || 'customer'} />;
+  return <Component userRole={user?.role} />;
 }
 
+const ADMIN_ROLES = ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender'];
+
 export default function AppRoutes() {
-  const adminRoles = ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender'];
-  
   return (
     <Routes>
-
-      <Route path="/" element={<Layout />}>
-
+      <Route
+        element={
+          <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="dashboard" replace />} />
-
         <Route path="dashboard" element={<PageWrapper Component={Dashboard} />} />
         <Route path="menu" element={<PageWrapper Component={Menu} />} />
         <Route path="orders" element={<PageWrapper Component={Orders} />} />
@@ -60,9 +62,7 @@ export default function AppRoutes() {
         <Route path="service-requests" element={<PageWrapper Component={ServiceRequests} />} />
         <Route path="profile" element={<PageWrapper Component={Profile} />} />
         <Route path="categories" element={<PageWrapper Component={Categories} />} />
-
       </Route>
-
     </Routes>
   );
 }

@@ -29,7 +29,7 @@ const TOP_ITEMS = [
   { name: 'Cold Brew Coffee', sales: 45, progress: 85, color: 'success', category: 'Cafe' },
   { name: 'Signature Cocktail', sales: 38, progress: 70, color: 'warning', category: 'Bar' },
   { name: 'Classic Mojito', sales: 32, progress: 60, color: 'info', category: 'Bar' },
-  { name: 'Avocado Toast', sales: 28, progress: 50, color: 'primary', category: 'Cafe' },
+  // { name: 'Avocado Toast', sales: 28, progress: 50, color: 'primary', category: 'Cafe' },
 ];
 
 const INVENTORY_ALERTS = [

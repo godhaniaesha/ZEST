@@ -1,50 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Form, Tab, Tabs } from 'react-bootstrap';
-import { MdAdd, MdEdit, MdDelete, MdRestaurantMenu, MdLocalBar, MdLocalDining, MdFastfood, MdRestaurant } from 'react-icons/md';
+import {
+  MdAdd, MdEdit, MdDelete, MdRestaurantMenu, MdLocalBar,
+  MdLocalDining, MdFastfood, MdRestaurant,
+} from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
+import { menuAPI } from '../../../api';
 
-// Initial Data
-const INITIAL_MENU_CATEGORIES = [
-  { id: 1, name: 'Starters', type: 'Cafe', icon: <MdFastfood /> },
-  { id: 2, name: 'Mains', type: 'Cafe', icon: <MdRestaurant /> },
-  { id: 3, name: 'Desserts', type: 'Cafe', icon: <MdLocalDining /> },
-];
+const EMPTY_CATEGORY = { name: '', type: 'Cafe', img: '' };
+const EMPTY_CUISINE = { name: '', type: 'Cafe', img: '' };
 
-const INITIAL_BAR_CATEGORIES = [
-  { id: 1, name: 'Cocktail', type: 'Bar', icon: <MdLocalBar /> },
-  { id: 2, name: 'Beer', type: 'Bar', icon: <MdLocalBar /> },
-  { id: 3, name: 'Wine', type: 'Bar', icon: <MdLocalBar /> },
-  { id: 4, name: 'Spirits', type: 'Bar', icon: <MdLocalBar /> },
-];
-
-const INITIAL_CUISINES = [
-  { id: 1, name: 'Indian', icon: <MdRestaurant /> },
-  { id: 2, name: 'Italian', icon: <MdRestaurant /> },
-  { id: 3, name: 'Continental', icon: <MdRestaurant /> },
-  { id: 4, name: 'Chinese', icon: <MdRestaurant /> },
-  { id: 5, name: 'Mexican', icon: <MdRestaurant /> },
-  { id: 6, name: 'International', icon: <MdRestaurant /> },
-  { id: 7, name: 'Gujarati', icon: <MdRestaurant /> },
-  { id: 8, name: 'Punjabi', icon: <MdRestaurant /> },
-  { id: 9, name: 'South Indian', icon: <MdRestaurant /> },
-];
+const getCategoryIcon = (name) => {
+  const n = (name || '').toLowerCase();
+  if (n.includes('dessert')) return <MdLocalDining />;
+  if (n.includes('starter')) return <MdFastfood />;
+  if (['cocktail', 'beer', 'wine', 'spirit'].some((k) => n.includes(k))) return <MdLocalBar />;
+  return <MdRestaurant />;
+};
 
 export default function Categories({ userRole = 'chef' }) {
-  const [menuCategories, setMenuCategories] = useState(INITIAL_MENU_CATEGORIES);
-  const [barCategories, setBarCategories] = useState(INITIAL_BAR_CATEGORIES);
-  const [cuisines, setCuisines] = useState(INITIAL_CUISINES);
+  const [menuCategories, setMenuCategories] = useState([]);
+  const [barCategories, setBarCategories] = useState([]);
+  const [cuisines, setCuisines] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('menu');
 
-  // Modal States
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formType, setFormType] = useState(null); // 'menu', 'bar', 'cuisine'
-  const [formData, setFormData] = useState({ name: '' });
+  const [formType, setFormType] = useState(null);
+  const [formData, setFormData] = useState(EMPTY_CATEGORY);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
-  // Role-based permissions
-  const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
+  const canAddEditDelete =
+    userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [cafeCatRes, barCatRes, cuisineRes] = await Promise.all([
+        menuAPI.getCategories({ type: 'Cafe' }),
+        menuAPI.getCategories({ type: 'Bar' }),
+        menuAPI.getCuisines(),
+      ]);
+      setMenuCategories(Array.isArray(cafeCatRes.data) ? cafeCatRes.data : []);
+      setBarCategories(Array.isArray(barCatRes.data) ? barCatRes.data : []);
+      setCuisines(Array.isArray(cuisineRes.data) ? cuisineRes.data : []);
+    } catch (err) {
+      console.error('Error loading categories/cuisines:', err);
+      setMenuCategories([]);
+      setBarCategories([]);
+      setCuisines([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const resetImageState = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   const handleAdd = (type) => {
     if (!canAddEditDelete) {
@@ -53,7 +81,12 @@ export default function Categories({ userRole = 'chef' }) {
     }
     setFormType(type);
     setCurrentItem(null);
-    setFormData({ name: '' });
+    resetImageState();
+    if (type === 'cuisine') {
+      setFormData({ ...EMPTY_CUISINE, type: 'Cafe' });
+    } else {
+      setFormData({ ...EMPTY_CATEGORY, type: type === 'bar' ? 'Bar' : 'Cafe' });
+    }
     setShowForm(true);
   };
 
@@ -64,7 +97,9 @@ export default function Categories({ userRole = 'chef' }) {
     }
     setFormType(type);
     setCurrentItem(item);
-    setFormData({ name: item.name });
+    setFormData({ name: item.name, type: item.type, img: item.img || '' });
+    resetImageState();
+    setImagePreview(item.img || null);
     setShowForm(true);
   };
 
@@ -78,55 +113,154 @@ export default function Categories({ userRole = 'chef' }) {
     setShowDelete(true);
   };
 
-  const handleSave = () => {
-    if (!formData.name) {
+  const handleSave = async () => {
+    if (!formData.name?.trim()) {
       alert('Please fill in the name');
       return;
     }
 
-    const defaultIcon = formType === 'bar' ? <MdLocalBar /> : <MdRestaurant />;
+    const data = new FormData();
+    data.append('name', formData.name.trim());
+    data.append('type', formData.type);
+    if (imageFile) data.append('img', imageFile);
 
-    if (formType === 'menu') {
+    try {
+      const isCuisine = formType === 'cuisine';
       if (currentItem) {
-        setMenuCategories(menuCategories.map(c => c.id === currentItem.id ? { ...c, ...formData } : c));
+        if (isCuisine) await menuAPI.updateCuisine(currentItem._id, data);
+        else await menuAPI.updateCategory(currentItem._id, data);
+      } else if (isCuisine) {
+        await menuAPI.createCuisine(data);
       } else {
-        const newId = menuCategories.length + 1;
-        setMenuCategories([...menuCategories, { id: newId, name: formData.name, type: 'Cafe', icon: <MdRestaurant /> }]);
+        await menuAPI.createCategory(data);
       }
-    } else if (formType === 'bar') {
-      if (currentItem) {
-        setBarCategories(barCategories.map(c => c.id === currentItem.id ? { ...c, ...formData } : c));
-      } else {
-        const newId = barCategories.length + 1;
-        setBarCategories([...barCategories, { id: newId, name: formData.name, type: 'Bar', icon: <MdLocalBar /> }]);
-      }
-    } else if (formType === 'cuisine') {
-      if (currentItem) {
-        setCuisines(cuisines.map(c => c.id === currentItem.id ? { ...c, ...formData } : c));
-      } else {
-        const newId = cuisines.length + 1;
-        setCuisines([...cuisines, { id: newId, name: formData.name, icon: <MdRestaurant /> }]);
-      }
+      await loadData();
+      setShowForm(false);
+      resetImageState();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to save');
     }
-
-    setShowForm(false);
   };
 
-  const confirmDelete = () => {
-    if (formType === 'menu') {
-      setMenuCategories(menuCategories.filter(c => c.id !== currentItem.id));
-    } else if (formType === 'bar') {
-      setBarCategories(barCategories.filter(c => c.id !== currentItem.id));
-    } else if (formType === 'cuisine') {
-      setCuisines(cuisines.filter(c => c.id !== currentItem.id));
+  const confirmDelete = async () => {
+    try {
+      if (formType === 'cuisine') {
+        await menuAPI.deleteCuisine(currentItem._id);
+      } else {
+        await menuAPI.deleteCategory(currentItem._id);
+      }
+      await loadData();
+      setShowDelete(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete');
     }
-    setShowDelete(false);
   };
 
-  // Helper to get color based on type
-  const getCategoryColor = (type) => {
-    return type === 'Bar' ? '#3498db' : '#2ecc71';
-  };
+  const getCategoryColor = (type) => (type === 'Bar' ? '#3498db' : '#2ecc71');
+
+  const renderCategoryCard = (cat, typeKey) => (
+    <Col key={cat._id} xs={12} sm={6} md={4} lg={3}>
+      <div className="d-category-card h-100">
+        <div className="d-flex align-items-center gap-3">
+          {cat.img ? (
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 'var(--d-radius-md)',
+                overflow: 'hidden',
+                flexShrink: 0,
+              }}
+            >
+              <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          ) : (
+            <div
+              className="d-category-icon"
+              style={{
+                background: `${getCategoryColor(cat.type)}15`,
+                color: getCategoryColor(cat.type),
+              }}
+            >
+              {getCategoryIcon(cat.name)}
+            </div>
+          )}
+          <div className="flex-grow-1">
+            <h5 className="d-section-title mb-0">{cat.name}</h5>
+            <div className="d-page-sub">Type: {cat.type}</div>
+          </div>
+        </div>
+        {canAddEditDelete && (
+          <div className="d-flex gap-1 mt-3 pt-3 border-top border-light">
+            <button className="d-navbar-icon-btn flex-grow-1" type="button" onClick={() => handleEdit(cat, typeKey)}>
+              <MdEdit /> Edit
+            </button>
+            <button
+              className="d-navbar-icon-btn text-danger flex-grow-1"
+              type="button"
+              onClick={() => handleDeleteClick(cat, typeKey)}
+            >
+              <MdDelete /> Delete
+            </button>
+          </div>
+        )}
+      </div>
+    </Col>
+  );
+
+  const renderCuisineCard = (cuisine) => (
+    <Col key={cuisine._id} xs={12} sm={6} md={4} lg={3}>
+      <div className="d-category-card h-100">
+        <div className="d-flex align-items-center gap-3">
+          {cuisine.img ? (
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 'var(--d-radius-md)',
+                overflow: 'hidden',
+                flexShrink: 0,
+              }}
+            >
+              <img src={cuisine.img} alt={cuisine.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          ) : (
+            <div className="d-category-icon" style={{ background: '#f39c1215', color: '#f39c12' }}>
+              <MdRestaurant />
+            </div>
+          )}
+          <div className="flex-grow-1">
+            <h5 className="d-section-title mb-0">{cuisine.name}</h5>
+            <div className="d-page-sub">Type: {cuisine.type}</div>
+          </div>
+        </div>
+        {canAddEditDelete && (
+          <div className="d-flex gap-1 mt-3 pt-3 border-top border-light">
+            <button className="d-navbar-icon-btn flex-grow-1" type="button" onClick={() => handleEdit(cuisine, 'cuisine')}>
+              <MdEdit /> Edit
+            </button>
+            <button
+              className="d-navbar-icon-btn text-danger flex-grow-1"
+              type="button"
+              onClick={() => handleDeleteClick(cuisine, 'cuisine')}
+            >
+              <MdDelete /> Delete
+            </button>
+          </div>
+        )}
+      </div>
+    </Col>
+  );
+
+  const formTitle = currentItem
+    ? 'Edit Item'
+    : formType === 'menu'
+      ? 'Add Menu Category'
+      : formType === 'bar'
+        ? 'Add Bar Category'
+        : 'Add Cuisine';
+
+  if (loading) return <div>Loading categories & cuisines...</div>;
 
   return (
     <>
@@ -135,166 +269,96 @@ export default function Categories({ userRole = 'chef' }) {
           <div className="d-page-heading d-flex align-items-center gap-2">
             <MdLocalDining /> Categories & Cuisines
           </div>
-          <div className="d-page-sub">Manage your menu categories, bar categories, and cuisines</div>
+          <div className="d-page-sub">Manage menu categories, bar categories, and cuisines</div>
         </div>
       </div>
 
       <div className="d-custom-tabs">
-        <Tabs
-          activeKey={activeTab}
-          onSelect={(k) => setActiveTab(k)}
-        >
+        <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
           <Tab eventKey="menu" title={<><MdRestaurantMenu /> Menu Categories</>}>
             <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
-              <div className="d-section-sub">{menuCategories.length} menu categories</div>
+              <div className="d-section-sub">{menuCategories.length} cafe categories</div>
               {canAddEditDelete && (
-                <button className="d-btn-gold" onClick={() => handleAdd('menu')}>
+                <button type="button" className="d-btn-gold" onClick={() => handleAdd('menu')}>
                   <MdAdd /> Add Menu Category
                 </button>
               )}
             </div>
-            <Row className="g-4">
-              {menuCategories.map((cat) => (
-                <Col key={cat.id} xs={12} sm={6} md={4} lg={3}>
-                  <div className="d-category-card h-100">
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="d-category-icon" style={{ background: `${getCategoryColor(cat.type)}15`, color: getCategoryColor(cat.type) }}>
-                        {cat.icon || <MdRestaurant />}
-                      </div>
-                      <div className="flex-grow-1">
-                        <h5 className="d-section-title mb-0">{cat.name}</h5>
-                        <div className="d-page-sub">Type: {cat.type}</div>
-                      </div>
-                    </div>
-                    {canAddEditDelete && (
-                      <div className="d-flex gap-1 mt-3 pt-3 border-top border-light">
-                        <button
-                          className="d-navbar-icon-btn flex-grow-1"
-                          onClick={() => handleEdit(cat, 'menu')}
-                        >
-                          <MdEdit /> Edit
-                        </button>
-                        <button
-                          className="d-navbar-icon-btn text-danger flex-grow-1"
-                          onClick={() => handleDeleteClick(cat, 'menu')}
-                        >
-                          <MdDelete /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </Col>
-              ))}
-            </Row>
+            <Row className="g-4">{menuCategories.map((cat) => renderCategoryCard(cat, 'menu'))}</Row>
           </Tab>
 
           <Tab eventKey="bar" title={<><MdLocalBar /> Bar Categories</>}>
             <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
               <div className="d-section-sub">{barCategories.length} bar categories</div>
               {canAddEditDelete && (
-                <button className="d-btn-gold" onClick={() => handleAdd('bar')}>
+                <button type="button" className="d-btn-gold" onClick={() => handleAdd('bar')}>
                   <MdAdd /> Add Bar Category
                 </button>
               )}
             </div>
-            <Row className="g-4">
-              {barCategories.map((cat) => (
-                <Col key={cat.id} xs={12} sm={6} md={4} lg={3}>
-                  <div className="d-category-card h-100">
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="d-category-icon" style={{ background: `${getCategoryColor(cat.type)}15`, color: getCategoryColor(cat.type) }}>
-                        {cat.icon || <MdLocalBar />}
-                      </div>
-                      <div className="flex-grow-1">
-                        <h5 className="d-section-title mb-0">{cat.name}</h5>
-                        <div className="d-page-sub">Type: {cat.type}</div>
-                      </div>
-                    </div>
-                    {canAddEditDelete && (
-                      <div className="d-flex gap-1 mt-3 pt-3 border-top border-light">
-                        <button
-                          className="d-navbar-icon-btn flex-grow-1"
-                          onClick={() => handleEdit(cat, 'bar')}
-                        >
-                          <MdEdit /> Edit
-                        </button>
-                        <button
-                          className="d-navbar-icon-btn text-danger flex-grow-1"
-                          onClick={() => handleDeleteClick(cat, 'bar')}
-                        >
-                          <MdDelete /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </Col>
-              ))}
-            </Row>
+            <Row className="g-4">{barCategories.map((cat) => renderCategoryCard(cat, 'bar'))}</Row>
           </Tab>
 
           <Tab eventKey="cuisine" title={<><MdLocalDining /> Cuisines</>}>
             <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
               <div className="d-section-sub">{cuisines.length} cuisines</div>
               {canAddEditDelete && (
-                <button className="d-btn-gold" onClick={() => handleAdd('cuisine')}>
+                <button type="button" className="d-btn-gold" onClick={() => handleAdd('cuisine')}>
                   <MdAdd /> Add Cuisine
                 </button>
               )}
             </div>
-            <Row className="g-4">
-              {cuisines.map((cuisine) => (
-                <Col key={cuisine.id} xs={12} sm={6} md={4} lg={3}>
-                  <div className="d-category-card h-100">
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="d-category-icon" style={{ background: '#f39c1215', color: '#f39c12' }}>
-                        {cuisine.icon || <MdRestaurant />}
-                      </div>
-                      <div className="flex-grow-1">
-                        <h5 className="d-section-title mb-0">{cuisine.name}</h5>
-                        <div className="d-page-sub">Cuisine</div>
-                      </div>
-                    </div>
-                    {canAddEditDelete && (
-                      <div className="d-flex gap-1 mt-3 pt-3 border-top border-light">
-                        <button
-                          className="d-navbar-icon-btn flex-grow-1"
-                          onClick={() => handleEdit(cuisine, 'cuisine')}
-                        >
-                          <MdEdit /> Edit
-                        </button>
-                        <button
-                          className="d-navbar-icon-btn text-danger flex-grow-1"
-                          onClick={() => handleDeleteClick(cuisine, 'cuisine')}
-                        >
-                          <MdDelete /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </Col>
-              ))}
-            </Row>
+            <Row className="g-4">{cuisines.map(renderCuisineCard)}</Row>
           </Tab>
         </Tabs>
       </div>
 
-      {/* Modals */}
-      <FormModal
-        show={showForm}
-        onHide={() => setShowForm(false)}
-        title={currentItem ? "Edit Item" : (formType === 'menu' ? "Add Menu Category" : formType === 'bar' ? "Add Bar Category" : "Add Cuisine")}
-        onSubmit={handleSave}
-      >
-        <Form.Group>
-          <Form.Label className="small fw-bold">Name *</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder={formType === 'menu' ? "e.g. Appetizers" : formType === 'bar' ? "e.g. Mocktails" : "e.g. Thai"}
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-        </Form.Group>
+      <FormModal show={showForm} onHide={() => setShowForm(false)} title={formTitle} onSubmit={handleSave}>
+        <Row className="g-3">
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Name *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder={formType === 'cuisine' ? 'e.g. Thai' : 'e.g. Appetizers'}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Type *</Form.Label>
+              <Form.Select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                disabled={formType === 'menu' || formType === 'bar'}
+              >
+                <option value="Cafe">Cafe</option>
+                <option value="Bar">Bar</option>
+              </Form.Select>
+              {(formType === 'menu' || formType === 'bar') && (
+                <Form.Text className="text-muted">Set by tab (Cafe or Bar)</Form.Text>
+              )}
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Image</Form.Label>
+              <Form.Control type="file" accept="image/*" onChange={handleImageChange} />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }}
+                  />
+                </div>
+              )}
+            </Form.Group>
+          </Col>
+        </Row>
       </FormModal>
 
       <DeleteModal

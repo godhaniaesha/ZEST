@@ -1,52 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const Reservation = require('../models/Reservation');
+const { auth, authorizeRoles } = require('../middleware/auth');
+const { STAFF_ROLES } = require('../config/roles');
+const reservationController = require('../controllers/reservationController');
 
-router.get('/', async (req, res) => {
-  try {
-    const reservations = await Reservation.find();
-    res.json(reservations);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+router.post('/public', reservationController.createPublic);
+router.get('/my', auth, reservationController.getMyReservations);
+router.put('/my/:id/cancel', auth, reservationController.cancelMyReservation);
 
-router.post('/', async (req, res) => {
-  const reservation = new Reservation({
-    customerName: req.body.customerName,
-    phone: req.body.phone,
-    email: req.body.email,
-    date: req.body.date,
-    time: req.body.time,
-    guests: req.body.guests,
-    tableNumber: req.body.tableNumber,
-    status: req.body.status
-  });
-
-  try {
-    const newReservation = await reservation.save();
-    res.status(201).json(newReservation);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-router.put('/:id', async (req, res) => {
-  try {
-    const reservation = await Reservation.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(reservation);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  try {
-    await Reservation.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Reservation deleted' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+router.get(
+  '/confirmed',
+  auth,
+  authorizeRoles(...STAFF_ROLES),
+  reservationController.getConfirmedForOrders
+);
+router.get('/', auth, authorizeRoles(...STAFF_ROLES), reservationController.getAll);
+router.post('/', auth, authorizeRoles(...STAFF_ROLES), reservationController.create);
+router.patch('/:id/status', auth, authorizeRoles(...STAFF_ROLES), reservationController.updateStatus);
+router.put('/:id', auth, authorizeRoles(...STAFF_ROLES), reservationController.update);
+router.delete('/:id', auth, authorizeRoles(...STAFF_ROLES), reservationController.remove);
 
 module.exports = router;

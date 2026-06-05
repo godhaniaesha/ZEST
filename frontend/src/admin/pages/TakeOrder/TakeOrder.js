@@ -1,32 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { Row, Col, Badge } from 'react-bootstrap';
-import { 
-  MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant, 
+import React, { useState, useEffect, useCallback } from 'react';
+import { Row, Col } from 'react-bootstrap';
+import {
+  MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant,
   MdAdd, MdRemove, MdDeleteOutline, MdSend, MdHistory,
-  MdReceipt, MdShoppingCart
+  MdReceipt, MdShoppingCart,
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
-import { menuAPI } from '../../../api';
+import { menuAPI, ordersAPI, reservationsAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function TakeOrder() {
-  const [activeTab, setActiveTab] = useState('cafe'); // 'cafe' or 'bar'
-  const [selectedTable, setSelectedTable] = useState('');
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('cafe');
+  const [selectedReservationId, setSelectedReservationId] = useState('');
+  const [confirmedTables, setConfirmedTables] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
   const itemHasType = (item, target) => {
     const types = Array.isArray(item?.type) ? item.type : item?.type ? [item.type] : [];
     return types.includes(target);
   };
 
+  const formatBookingDate = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const loadConfirmedTables = useCallback(async () => {
+    try {
+      const res = await reservationsAPI.getConfirmed();
+      const list = Array.isArray(res.data) ? res.data : [];
+      setConfirmedTables(list);
+    } catch (err) {
+      console.error('Error loading confirmed reservations:', err);
+      try {
+        const fallback = await reservationsAPI.getAll({ status: 'Confirmed' });
+        setConfirmedTables(Array.isArray(fallback.data) ? fallback.data : []);
+      } catch (fallbackErr) {
+        console.error('Fallback load failed:', fallbackErr);
+        setConfirmedTables([]);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const loadMenu = async () => {
       try {
-        const response = await menuAPI.getAll();
-        const data = Array.isArray(response.data) ? response.data : [];
+        setLoading(true);
+        const [menuRes] = await Promise.all([
+          menuAPI.getAll(),
+          loadConfirmedTables(),
+        ]);
+        const data = Array.isArray(menuRes.data) ? menuRes.data : [];
         setMenuItems(data);
       } catch (error) {
         console.error('Error loading menu:', error);
@@ -36,57 +70,108 @@ export default function TakeOrder() {
       }
     };
     loadMenu();
-  }, []);
+  }, [loadConfirmedTables]);
 
-  const filteredMenuItems = menuItems.filter(item => 
-    itemHasType(item, activeTab === 'cafe' ? 'Cafe' : 'Bar') &&
-    item.status === 'Available'
+  const selectedReservation = confirmedTables.find((r) => r._id === selectedReservationId);
+
+  const filteredMenuItems = menuItems.filter(
+    (item) =>
+      itemHasType(item, activeTab === 'cafe' ? 'Cafe' : 'Bar') &&
+      item.status === 'Available'
   );
-  
-  const filteredItems = filteredMenuItems.filter(item => 
+
+  const filteredItems = filteredMenuItems.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const addToCart = (item) => {
-    setCart(prev => {
-      const existing = prev.find(i => i._id === item._id);
+    setCart((prev) => {
+      const existing = prev.find((i) => i._id === item._id);
       if (existing) {
-        return prev.map(i => i._id === item._id ? { ...i, qty: i.qty + 1 } : i);
+        return prev.map((i) => (i._id === item._id ? { ...i, qty: i.qty + 1 } : i));
       }
       return [...prev, { ...item, qty: 1 }];
     });
   };
 
   const updateQty = (_id, delta) => {
-    setCart(prev => prev.map(item => {
-      if (item._id === _id) {
-        const newQty = Math.max(0, item.qty + delta);
-        return newQty === 0 ? null : { ...item, qty: newQty };
-      }
-      return item;
-    }).filter(Boolean));
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item._id === _id) {
+            const newQty = Math.max(0, item.qty + delta);
+            return newQty === 0 ? null : { ...item, qty: newQty };
+          }
+          return item;
+        })
+        .filter(Boolean)
+    );
   };
 
   const removeFromCart = (_id) => {
-    setCart(prev => prev.filter(item => item._id !== _id));
+    setCart((prev) => prev.filter((item) => item._id !== _id));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  const handleSendToKitchen = async () => {
+    if (!selectedReservation || cart.length === 0) return;
+
+    setSubmitting(true);
+    try {
+      const orderItems = cart.map((item) => ({
+        menuItemId: item._id,
+        name: item.name,
+        price: Number(item.price),
+        qty: item.qty,
+      }));
+
+      const itemsSummary = orderItems
+        .map((i) => `${i.name}${i.qty > 1 ? ` x${i.qty}` : ''}`)
+        .join(', ');
+
+      const payload = {
+        table: `Table ${selectedReservation.tableNumber}`,
+        tableNumber: selectedReservation.tableNumber,
+        waiter: user?.name || 'Waiter',
+        type: activeTab === 'cafe' ? 'Cafe' : 'Bar',
+        status: 'Pending',
+        orderItems,
+        items: itemsSummary,
+        amount: `₹${cartTotal.toLocaleString('en-IN')}`,
+        total: cartTotal,
+        reservationId: selectedReservation._id,
+      };
+      if (selectedReservation.userId) {
+        payload.userId = selectedReservation.userId;
+      }
+
+      await ordersAPI.create(payload);
+
+      setCart([]);
+      setSelectedReservationId('');
+      alert('Order sent to kitchen successfully!');
+      navigate('/admin/orders');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send order to kitchen.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="d-pos-container">
       <Row className="g-4">
-        {/* Left Side: Menu Selection */}
         <Col xs={12} lg={8}>
           <div className="d-page-header">
             <div>
-            <div className="d-page-heading d-flex align-items-center gap-2">
-              <MdReceipt /> New Order
+              <div className="d-page-heading d-flex align-items-center gap-2">
+                <MdReceipt /> New Order
+              </div>
+              <div className="d-page-sub">Select items for confirmed table bookings</div>
             </div>
-            <div className="d-page-sub">Select items for the customer</div>
-          </div>
             <div className="d-flex gap-2">
-              <button className="d-btn-outline" onClick={() => navigate('/admin/orders')}>
+              <button type="button" className="d-btn-outline" onClick={() => navigate('/admin/orders')}>
                 <MdHistory className="me-2" /> Recent Orders
               </button>
             </div>
@@ -95,10 +180,11 @@ export default function TakeOrder() {
           <div className="d-pos-category-bar">
             {[
               { id: 'cafe', icon: <MdLocalCafe />, label: 'Café Menu' },
-              { id: 'bar', icon: <MdLocalBar />, label: 'Bar Menu' }
-            ].map(tab => (
-              <button 
+              { id: 'bar', icon: <MdLocalBar />, label: 'Bar Menu' },
+            ].map((tab) => (
+              <button
                 key={tab.id}
+                type="button"
                 className={`d-pos-cat-btn ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
               >
@@ -111,9 +197,9 @@ export default function TakeOrder() {
             <div className="col-md-8">
               <div className="d-pos-search-wrapper">
                 <MdSearch className="text-muted" fontSize="1.2rem" />
-                <input 
-                  type="text" 
-                  placeholder={`Search in ${activeTab} menu...`} 
+                <input
+                  type="text"
+                  placeholder={`Search in ${activeTab} menu...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -122,16 +208,32 @@ export default function TakeOrder() {
             <div className="col-md-4">
               <div className="d-pos-table-select">
                 <MdTableRestaurant className="text-gold" fontSize="1.2rem" />
-                <select 
-                  value={selectedTable} 
-                  onChange={(e) => setSelectedTable(e.target.value)}
+                <select
+                  value={selectedReservationId}
+                  onChange={(e) => setSelectedReservationId(e.target.value)}
                 >
-                  <option value="">Select Table</option>
-                  {[1,2,3,4,5,6,7,8,9,10, 'Bar Counter'].map(t => (
-                    <option key={t} value={t}>{typeof t === 'number' ? `Table ${t}` : t}</option>
+                  <option value="">Select Confirmed Table</option>
+                  {confirmedTables.map((r) => (
+                    <option key={r._id} value={r._id}>
+                      Table {r.tableNumber} — {r.customerName} · {formatBookingDate(r.date)}
+                      {r.isToday ? ' (Today)' : ''} · {r.guests} guests · {r.time}
+                    </option>
                   ))}
                 </select>
               </div>
+              {confirmedTables.length === 0 && !loading && (
+                <small className="text-muted d-block mt-1">
+                  No confirmed bookings yet. In Admin → Reservations, set status to <strong>Confirmed</strong>, then click Refresh below.
+                </small>
+              )}
+              <button
+                type="button"
+                className="d-btn-outline btn-sm mt-2 w-100"
+                onClick={loadConfirmedTables}
+                disabled={loading}
+              >
+                Refresh tables
+              </button>
             </div>
           </div>
 
@@ -144,52 +246,70 @@ export default function TakeOrder() {
               </div>
             ) : (
               filteredItems.map((item) => (
-                <div key={item._id} className="d-pos-card" onClick={() => addToCart(item)}>
+                <div
+                  key={item._id}
+                  className="d-pos-card"
+                  onClick={() => addToCart(item)}
+                  onKeyDown={(e) => e.key === 'Enter' && addToCart(item)}
+                  role="button"
+                  tabIndex={0}
+                >
                   <div className="d-pos-card-img-wrapper">
                     {item.img ? (
                       <img src={item.img} alt={item.name} className="d-pos-card-img" />
                     ) : (
-                      <div style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        background: `${item.color || '#2ecc71'}15`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '2.5rem', 
-                        color: item.color || '#2ecc71' 
-                      }}>
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          background: `${item.color || '#2ecc71'}15`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '2.5rem',
+                          color: item.color || '#2ecc71',
+                        }}
+                      >
                         {activeTab === 'cafe' ? '🍽️' : '🍸'}
                       </div>
                     )}
                   </div>
                   <div className="d-pos-card-name">{item.name}</div>
                   <div className="d-pos-card-price">₹{item.price}</div>
-                  <button className="d-pos-add-btn"><MdAdd /></button>
+                  <button type="button" className="d-pos-add-btn">
+                    <MdAdd />
+                  </button>
                 </div>
               ))
             )}
           </div>
         </Col>
 
-        {/* Right Side: Order Summary / Cart */}
         <Col xs={12} lg={4}>
           <div className="d-pos-cart">
             <div className="d-pos-cart-header">
               <div className="d-section-title d-flex justify-content-between align-items-center mb-0">
                 Order Summary
-                {selectedTable && (
+                {selectedReservation && (
                   <span className="d-chip d-chip-gold" style={{ fontSize: '0.7rem' }}>
-                    {typeof selectedTable === 'number' ? `TABLE ${selectedTable}` : selectedTable.toUpperCase()}
+                    TABLE {selectedReservation.tableNumber}
                   </span>
                 )}
               </div>
+              {selectedReservation && (
+                <small className="text-muted d-block mt-1">
+                  Guest: {selectedReservation.customerName}
+                  {selectedReservation.userId ? ' · Linked account' : ''}
+                </small>
+              )}
             </div>
 
             <div className="d-pos-cart-items">
               {cart.length === 0 ? (
                 <div className="text-center mt-5" style={{ color: 'var(--d-text-muted)', opacity: 0.5 }}>
-                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}><MdShoppingCart /></div>
+                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
+                    <MdShoppingCart />
+                  </div>
                   <p style={{ fontWeight: 600 }}>Your cart is empty</p>
                   <small>Select items from the menu</small>
                 </div>
@@ -202,13 +322,35 @@ export default function TakeOrder() {
                     </div>
                     <div className="d-flex align-items-center gap-3">
                       <div className="d-pos-qty-controls">
-                        <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item._id, -1); }}><MdRemove /></button>
+                        <button
+                          type="button"
+                          className="d-pos-qty-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateQty(item._id, -1);
+                          }}
+                        >
+                          <MdRemove />
+                        </button>
                         <span className="d-pos-qty-val">{item.qty}</span>
-                        <button className="d-pos-qty-btn" onClick={(e) => { e.stopPropagation(); updateQty(item._id, 1); }}><MdAdd /></button>
+                        <button
+                          type="button"
+                          className="d-pos-qty-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateQty(item._id, 1);
+                          }}
+                        >
+                          <MdAdd />
+                        </button>
                       </div>
-                      <button 
-                        className="d-pos-delete-btn" 
-                        onClick={(e) => { e.stopPropagation(); removeFromCart(item._id); }}
+                      <button
+                        type="button"
+                        className="d-pos-delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromCart(item._id);
+                        }}
                       >
                         <MdDeleteOutline fontSize="1rem" />
                       </button>
@@ -224,32 +366,42 @@ export default function TakeOrder() {
                 <span className="fw-bold">₹{cartTotal}</span>
               </div>
               <div className="d-pos-total-row mb-4">
-                <span className="d-pos-total-label" style={{ fontSize: '1.1rem', color: 'var(--d-primary)' }}>Total Amount</span>
+                <span className="d-pos-total-label" style={{ fontSize: '1.1rem', color: 'var(--d-primary)' }}>
+                  Total Amount
+                </span>
                 <span className="d-pos-total-val">₹{cartTotal}</span>
               </div>
-              
+
               <div className="d-flex gap-2">
-                <button className="d-btn-outline flex-grow-1" style={{ height: '52px', borderRadius: '12px' }}>
-                  Hold
-                </button>
-                <button 
-                  className="d-btn-gold flex-grow-1" 
-                  style={{ height: '52px', borderRadius: '12px', fontWeight: 800 }}
-                  disabled={cart.length === 0 || !selectedTable}
+                <button
+                  type="button"
+                  className="d-btn-outline flex-grow-1"
+                  style={{ height: '52px', borderRadius: '12px' }}
+                  onClick={() => setCart([])}
                 >
-                  <MdSend className="me-2" fontSize="1.2rem" /> SEND TO KITCHEN
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  className="d-btn-gold flex-grow-1"
+                  style={{ height: '52px', borderRadius: '12px', fontWeight: 800 }}
+                  disabled={cart.length === 0 || !selectedReservationId || submitting}
+                  onClick={handleSendToKitchen}
+                >
+                  <MdSend className="me-2" fontSize="1.2rem" />
+                  {submitting ? 'Sending...' : 'SEND TO KITCHEN'}
                 </button>
               </div>
-              {!selectedTable && cart.length > 0 && (
+              {!selectedReservationId && cart.length > 0 && (
                 <div className="text-danger mt-3 text-center fw-bold" style={{ fontSize: '0.8rem' }}>
-                  <MdTableRestaurant className="me-1" /> Please select a table to proceed
+                  <MdTableRestaurant className="me-1" /> Select a confirmed table to proceed
                 </div>
               )}
             </div>
           </div>
         </Col>
       </Row>
-      <style jsx>{`
+      <style>{`
         .d-pos-delete-btn {
           width: 32px;
           height: 32px;

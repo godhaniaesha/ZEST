@@ -1,15 +1,25 @@
 import { useAuth } from '../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { isStaffRole } from '../utils/authRedirect';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="d-shell d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+        Loading...
+      </div>
+    );
+  }
 
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) {
+    return <Navigate to="/auth" replace state={{ from: location.pathname }} />;
+  }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={isStaffRole(user.role) ? '/admin/dashboard' : '/'} replace />;
   }
 
   return children;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
+import { getPostLoginPath } from "../utils/authRedirect";
 
 /* ── Password strength helper ── */
 const pwStrength = (pw) => {
@@ -29,7 +30,7 @@ const EyeIcon = ({ open }) =>
 export default function Auth() {
   const [tab, setTab] = useState("login"); // login, signup, forgot, otp, reset
   const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [alert, setAlert] = useState(null);
   const [toasts, setToasts] = useState([]);
 
@@ -39,8 +40,12 @@ export default function Auth() {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [resetForm, setResetForm] = useState({ password: "", confirm: "" });
 
-  const { login, register, user } = useAuth();
+  const { login, register, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  if (!authLoading && user) {
+    return <Navigate to={getPostLoginPath(user.role)} replace />;
+  }
 
   const toast = (msg) => {
     const id = Date.now();
@@ -70,12 +75,12 @@ export default function Auth() {
     e.preventDefault();
     setAlert(null);
     if (!loginForm.email || !loginForm.password) return setAlert({ type: "error", msg: "Please fill all fields." });
-    setLoading(true);
+    setFormLoading(true);
     const result = await login(loginForm.email, loginForm.password);
-    setLoading(false);
+    setFormLoading(false);
     if (result.success) {
       toast("Welcome to the ZEST experience.");
-      navigate('/');
+      navigate(getPostLoginPath(result.user?.role));
     } else {
       setAlert({ type: "error", msg: result.message });
     }
@@ -91,12 +96,12 @@ export default function Auth() {
     if (signupForm.password !== signupForm.confirm) {
       return setAlert({ type: "error", msg: "Passwords do not match." });
     }
-    setLoading(true);
+    setFormLoading(true);
     const result = await register(fullName, signupForm.email, signupForm.password);
-    setLoading(false);
+    setFormLoading(false);
     if (result.success) {
       setAlert({ type: "success", msg: "Membership initiated!" });
-      navigate('/');
+      navigate(getPostLoginPath(result.user?.role));
     } else {
       setAlert({ type: "error", msg: result.message });
     }
@@ -105,22 +110,22 @@ export default function Auth() {
   const doForgot = (e) => {
     e.preventDefault();
     if (!forgotEmail) return setAlert({ type: "error", msg: "Email is required." });
-    setLoading(true);
-    setTimeout(() => { setLoading(false); setTab("otp"); toast("Verification code sent."); }, 1500);
+    setFormLoading(true);
+    setTimeout(() => { setFormLoading(false); setTab("otp"); toast("Verification code sent."); }, 1500);
   };
 
   const doVerifyOtp = (e) => {
     e.preventDefault();
     if (otp.join("").length < 4) return setAlert({ type: "error", msg: "Enter the full 4-digit code." });
-    setLoading(true);
-    setTimeout(() => { setLoading(false); setTab("reset"); }, 1200);
+    setFormLoading(true);
+    setTimeout(() => { setFormLoading(false); setTab("reset"); }, 1200);
   };
 
   const doReset = (e) => {
     e.preventDefault();
     if (resetForm.password !== resetForm.confirm) return setAlert({ type: "error", msg: "Passwords don't match." });
-    setLoading(true);
-    setTimeout(() => { setLoading(false); setTab("login"); setAlert({ type: "success", msg: "Password updated successfully." }); }, 1500);
+    setFormLoading(true);
+    setTimeout(() => { setFormLoading(false); setTab("login"); setAlert({ type: "success", msg: "Password updated successfully." }); }, 1500);
   };
 
   const strength = pwStrength(signupForm.password || resetForm.password);
@@ -221,8 +226,8 @@ export default function Auth() {
               <div className="h_auth_form_meta">
                 <a href="#" className="h_auth_link_gold" onClick={() => switchTab("forgot")}>Forgot Password?</a>
               </div>
-              <button type="submit" className="h_auth_submit_btn" disabled={loading}>
-                {loading ? "AUTHENTICATING..." : "SIGN IN"}
+              <button type="submit" className="h_auth_submit_btn" disabled={formLoading}>
+                {formLoading ? "AUTHENTICATING..." : "SIGN IN"}
               </button>
             </form>
           )}
@@ -269,8 +274,8 @@ export default function Auth() {
                   <input className="h_auth_input" type="password" placeholder="••••••••" value={signupForm.confirm} onChange={e => setSignupForm({...signupForm, confirm: e.target.value})} />
                 </div>
               </div>
-              <button type="submit" className="h_auth_submit_btn" disabled={loading}>
-                {loading ? "CREATING..." : "INITIATE MEMBERSHIP"}
+              <button type="submit" className="h_auth_submit_btn" disabled={formLoading}>
+                {formLoading ? "CREATING..." : "INITIATE MEMBERSHIP"}
               </button>
             </form>
           )}
@@ -284,8 +289,8 @@ export default function Auth() {
                   <input className="h_auth_input" type="email" placeholder="Enter your email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
                 </div>
               </div>
-              <button type="submit" className="h_auth_submit_btn" disabled={loading}>
-                {loading ? "SENDING..." : "GET CODE"}
+              <button type="submit" className="h_auth_submit_btn" disabled={formLoading}>
+                {formLoading ? "SENDING..." : "GET CODE"}
               </button>
               <a href="#" className="h_auth_back_link" onClick={() => switchTab("login")}>Back to Sign In</a>
             </form>
@@ -299,8 +304,8 @@ export default function Auth() {
                   <input key={i} id={`otp-${i}`} className="h_auth_otp_input" type="text" maxLength="1" value={digit} onChange={e => handleOtp(e.target.value, i)} />
                 ))}
               </div>
-              <button type="submit" className="h_auth_submit_btn" disabled={loading}>
-                {loading ? "VERIFYING..." : "CONFIRM CODE"}
+              <button type="submit" className="h_auth_submit_btn" disabled={formLoading}>
+                {formLoading ? "VERIFYING..." : "CONFIRM CODE"}
               </button>
               <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
                 <a href="#" className="h_auth_link_gold" onClick={doForgot}>Resend OTP</a>
@@ -328,8 +333,8 @@ export default function Auth() {
                   <input className="h_auth_input" type="password" placeholder="••••••••" value={resetForm.confirm} onChange={e => setResetForm({...resetForm, confirm: e.target.value})} />
                 </div>
               </div>
-              <button type="submit" className="h_auth_submit_btn" disabled={loading}>
-                {loading ? "UPDATING..." : "UPDATE PASSWORD"}
+              <button type="submit" className="h_auth_submit_btn" disabled={formLoading}>
+                {formLoading ? "UPDATING..." : "UPDATE PASSWORD"}
               </button>
             </form>
           )}

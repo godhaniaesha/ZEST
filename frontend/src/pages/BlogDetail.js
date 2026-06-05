@@ -61,37 +61,37 @@ const BlogDetail = () => {
         <p>Great cocktails are about balance—balancing spirit, citrus, sweetness, and bitters to create harmony in a glass. This philosophy guides everything we pour at Zest.</p>
       `,
     },
-    {
-      id: 3,
-      title: 'Brunch Essentials: What Makes Perfect Avocado Toast',
-      category: 'food',
-      author: 'Emma Rodriguez',
-      authorImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80',
-      date: '2024-05-08',
-      readTime: 6,
-      image: 'https://images.unsplash.com/photo-1557804506-669714126472?auto=format&fit=crop&w=1200&q=80',
-      excerpt: 'Master the simple yet perfect brunch classic with tips from our kitchen team.',
-      content: `
-        <p>Avocado toast might seem simple, but mastering it requires attention to detail and quality ingredients.</p>
+    // {
+    //   id: 3,
+    //   title: 'Brunch Essentials: What Makes Perfect Avocado Toast',
+    //   category: 'food',
+    //   author: 'Emma Rodriguez',
+    //   authorImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80',
+    //   date: '2024-05-08',
+    //   readTime: 6,
+    //   image: 'https://images.unsplash.com/photo-1557804506-669714126472?auto=format&fit=crop&w=1200&q=80',
+    //   excerpt: 'Master the simple yet perfect brunch classic with tips from our kitchen team.',
+    //   content: `
+    //     <p>Avocado toast might seem simple, but mastering it requires attention to detail and quality ingredients.</p>
         
-        <h3>The Foundation: Quality Bread</h3>
-        <p>Start with excellent sourdough or artisan bread. Toast it until golden and crispy on the outside, with a slight give on the inside.</p>
+    //     <h3>The Foundation: Quality Bread</h3>
+    //     <p>Start with excellent sourdough or artisan bread. Toast it until golden and crispy on the outside, with a slight give on the inside.</p>
         
-        <h3>The Star: Ripe Avocado</h3>
-        <p>Choose avocados that are perfectly ripe—not too firm, not too soft. Cut and scoop gently, then mash with a fork while preserving some texture.</p>
+    //     <h3>The Star: Ripe Avocado</h3>
+    //     <p>Choose avocados that are perfectly ripe—not too firm, not too soft. Cut and scoop gently, then mash with a fork while preserving some texture.</p>
         
-        <h3>The Finishing Touches</h3>
-        <ul>
-          <li>Fresh lemon juice for brightness</li>
-          <li>Sea salt and cracked pepper</li>
-          <li>Quality olive oil</li>
-          <li>Poached or fried egg on top</li>
-          <li>Microgreens and red pepper flakes</li>
-        </ul>
+    //     <h3>The Finishing Touches</h3>
+    //     <ul>
+    //       <li>Fresh lemon juice for brightness</li>
+    //       <li>Sea salt and cracked pepper</li>
+    //       <li>Quality olive oil</li>
+    //       <li>Poached or fried egg on top</li>
+    //       <li>Microgreens and red pepper flakes</li>
+    //     </ul>
         
-        <p>Try our version at Zest—we use locally-sourced avocados and house-made sourdough for the ultimate brunch experience.</p>
-      `,
-    },
+    //     <p>Try our version at Zest—we use locally-sourced avocados and house-made sourdough for the ultimate brunch experience.</p>
+    //   `,
+    // },
     {
       id: 4,
       title: 'Creating the Perfect Cafe Atmosphere',

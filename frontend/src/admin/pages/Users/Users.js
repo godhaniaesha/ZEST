@@ -1,19 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Form } from 'react-bootstrap';
 import { MdAdminPanelSettings, MdPeople, MdPersonAdd, MdEdit, MdDelete, MdPhone } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import Pagination from '../../components/Pagination';
-
-const USERS_LIST = [
-  { id: 1, name: 'Admin User', role: 'superadmin', status: 'Active', email: 'admin@breva.com', phone: '+91 98765 43210' },
-  { id: 2, name: 'Manager John', role: 'manager', status: 'Active', email: 'john@breva.com', phone: '+91 91234 56789' },
-  { id: 3, name: 'Chef Marco', role: 'chef', status: 'On Duty', email: 'marco@breva.com', phone: '+91 98001 11222' },
-  { id: 4, name: 'Waiter Sam', role: 'waiter', status: 'Active', email: 'sam@breva.com', phone: '+91 77654 32109' },
-];
+import { usersAPI } from '../../../api';
 
 export default function Users() {
-  const [users, setUsers] = useState(USERS_LIST);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
@@ -22,7 +17,24 @@ export default function Users() {
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', role: 'waiter', status: 'Active', email: '', phone: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({ name: '', role: 'waiter', status: 'Active', email: '', password: '', confirmPassword: '' });
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const response = await usersAPI.getAll();
+      setUsers(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const filtered = users.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -31,13 +43,20 @@ export default function Users() {
 
   const handleAdd = () => {
     setCurrentItem(null);
-    setFormData({ name: '', role: 'waiter', status: 'Active', email: '', phone: '', password: '', confirmPassword: '' });
+    setFormData({ name: '', role: 'waiter', status: 'Active', email: '', password: '', confirmPassword: '' });
     setShowForm(true);
   };
 
   const handleEdit = (user) => {
     setCurrentItem(user);
-    setFormData({ name: user.name, role: user.role, status: user.status, email: user.email, phone: user.phone || '', password: '', confirmPassword: '' });
+    setFormData({
+      name: user.name,
+      role: user.role,
+      status: user.status,
+      email: user.email,
+      password: '',
+      confirmPassword: '',
+    });
     setShowForm(true);
   };
 
@@ -46,14 +65,12 @@ export default function Users() {
     setShowDelete(true);
   };
 
-  const handleSave = () => {
-    // Validation
+  const handleSave = async () => {
     if (!formData.name || !formData.email) {
       alert('Please fill in all required fields');
       return;
     }
 
-    // Password validation for new users
     if (!currentItem) {
       if (!formData.password || formData.password.length < 6) {
         alert('Please enter a password (minimum 6 characters)');
@@ -65,18 +82,35 @@ export default function Users() {
       }
     }
 
-    if (currentItem) {
-      setUsers(users.map(u => u.id === currentItem.id ? { ...u, ...formData, password: undefined, confirmPassword: undefined } : u));
-    } else {
-      const newId = users.length + 1;
-      setUsers([...users, { id: newId, ...formData, password: undefined, confirmPassword: undefined }]);
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      role: formData.role,
+      status: formData.status,
+    };
+    if (formData.password) payload.password = formData.password;
+
+    try {
+      if (currentItem?._id) {
+        await usersAPI.update(currentItem._id, payload);
+      } else {
+        await usersAPI.create(payload);
+      }
+      await loadData();
+      setShowForm(false);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Could not save user.');
     }
-    setShowForm(false);
   };
 
-  const confirmDelete = () => {
-    setUsers(users.filter(user => user.id !== currentItem.id));
-    setShowDelete(false);
+  const confirmDelete = async () => {
+    try {
+      await usersAPI.delete(currentItem._id);
+      await loadData();
+      setShowDelete(false);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Could not delete user.');
+    }
   };
 
   const formFields = [
@@ -129,7 +163,7 @@ export default function Users() {
             </thead>
             <tbody>
               {currentData.map((user, i) => (
-                <tr key={i}>
+                <tr key={user._id}>
                   <td title={user.name}><strong>{user.name}</strong></td>
                   <td title={user.role}><span className="text-capitalize">{user.role}</span></td>
                   <td style={{ color: 'var(--d-text-muted)' }}>

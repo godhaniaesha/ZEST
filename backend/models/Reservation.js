@@ -8,7 +8,8 @@ const reservationSchema = new mongoose.Schema({
   time: { type: String, required: true },
   guests: { type: Number, required: true },
   tableNumber: { type: Number, required: true },
-  status: { type: String, enum: ['Confirmed', 'Pending', 'Cancelled'], default: 'Pending' }
+  status: { type: String, enum: ['Confirmed', 'Pending', 'Cancelled'], default: 'Pending' },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Reservation', reservationSchema);

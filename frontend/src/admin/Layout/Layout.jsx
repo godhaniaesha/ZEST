@@ -9,7 +9,7 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 992);
   const { user, loading } = useAuth();
-  const userRole = user?.role || 'superadmin';
+  const userRole = user?.role;
 
   const handleToggle = () => {
     if (isMobile) {

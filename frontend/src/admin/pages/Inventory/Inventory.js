@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, ProgressBar, Form } from 'react-bootstrap';
 import {
   MdWarning, MdAdd, MdSearch, MdInventory,
@@ -7,51 +7,54 @@ import {
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import Pagination from '../../components/Pagination';
+import { inventoryAPI } from '../../../api';
 
-const STOCK = [
-  { id: 1, name: 'Arborio Rice', unit: 'kg', qty: 12, min: 5, status: 'Good' },
-  { id: 2, name: 'Beef Tenderloin', unit: 'kg', qty: 3, min: 4, status: 'Low' },
-  { id: 3, name: 'White Wine', unit: 'btl', qty: 24, min: 12, status: 'Good' },
-  { id: 4, name: 'Coffee Beans', unit: 'kg', qty: 2, min: 3, status: 'Critical' },
-  { id: 5, name: 'Cream', unit: 'L', qty: 8, min: 5, status: 'Good' },
-  { id: 6, name: 'Mint Leaves', unit: 'pkg', qty: 1, min: 3, status: 'Critical' },
-  { id: 7, name: 'Whiskey (JD)', unit: 'btl', qty: 18, min: 6, status: 'Good' },
-  { id: 8, name: 'Pasta', unit: 'kg', qty: 6, min: 4, status: 'Good' },
-  { id: 9, name: 'Tomatoes', unit: 'kg', qty: 15, min: 8, status: 'Good' },
-  { id: 10, name: 'Basil', unit: 'bunch', qty: 4, min: 3, status: 'Good' },
-  { id: 11, name: 'Olive Oil', unit: 'L', qty: 7, min: 5, status: 'Good' },
-  { id: 12, name: 'Garlic', unit: 'kg', qty: 2, min: 4, status: 'Low' },
-  { id: 13, name: 'Chicken', unit: 'kg', qty: 10, min: 8, status: 'Good' },
-  { id: 14, name: 'Salmon', unit: 'kg', qty: 5, min: 4, status: 'Good' },
-  { id: 15, name: 'Red Wine', unit: 'btl', qty: 20, min: 15, status: 'Good' },
-  { id: 16, name: 'Vodka', unit: 'btl', qty: 12, min: 8, status: 'Good' },
-  { id: 17, name: 'Sugar', unit: 'kg', qty: 3, min: 5, status: 'Low' },
-  { id: 18, name: 'Milk', unit: 'L', qty: 6, min: 4, status: 'Good' },
-  { id: 19, name: 'Eggs', unit: 'dozen', qty: 8, min: 6, status: 'Good' },
-  { id: 20, name: 'Butter', unit: 'kg', qty: 4, min: 3, status: 'Good' },
-  { id: 21, name: 'Flour', unit: 'kg', qty: 10, min: 8, status: 'Good' },
-  { id: 22, name: 'Yeast', unit: 'pkg', qty: 5, min: 4, status: 'Good' },
-  { id: 23, name: 'Lemons', unit: 'kg', qty: 3, min: 5, status: 'Low' },
-  { id: 24, name: 'Limes', unit: 'kg', qty: 2, min: 4, status: 'Critical' },
-  { id: 25, name: 'Tequila', unit: 'btl', qty: 10, min: 6, status: 'Good' },
-];
-
-const STATUS_CLASS = { Good: 'd-chip-green', Low: 'd-chip-gold', Critical: 'd-chip-red' };
+const STATUS_CLASS = {
+  'In Stock': 'd-chip-green',
+  'Low Stock': 'd-chip-gold',
+  'Out of Stock': 'd-chip-red',
+  Good: 'd-chip-green',
+  Low: 'd-chip-gold',
+  Critical: 'd-chip-red',
+};
 
 export default function Inventory() {
-  const [stockList, setStockList] = useState(STOCK);
+  const [stockList, setStockList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Modal States
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', unit: 'kg', qty: '', min: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    category: 'General',
+    unit: 'kg',
+    quantity: '',
+    status: 'In Stock',
+  });
 
-  const criticalCount = stockList.filter(s => s.status === 'Critical').length;
-  const lowCount = stockList.filter(s => s.status === 'Low').length;
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const response = await inventoryAPI.getAll();
+      setStockList(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      setStockList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const criticalCount = stockList.filter((s) => s.status === 'Out of Stock' || s.status === 'Critical').length;
+  const lowCount = stockList.filter((s) => s.status === 'Low Stock' || s.status === 'Low').length;
 
   const filtered = stockList.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -59,13 +62,19 @@ export default function Inventory() {
 
   const handleAdd = () => {
     setCurrentItem(null);
-    setFormData({ name: '', unit: 'kg', qty: '', min: '' });
+    setFormData({ name: '', category: 'General', unit: 'kg', quantity: '', status: 'In Stock' });
     setShowForm(true);
   };
 
   const handleEdit = (item) => {
     setCurrentItem(item);
-    setFormData({ name: item.name, unit: item.unit, qty: item.qty, min: item.min });
+    setFormData({
+      name: item.name,
+      category: item.category || 'General',
+      unit: item.unit,
+      quantity: item.quantity,
+      status: item.status,
+    });
     setShowForm(true);
   };
 
@@ -74,39 +83,41 @@ export default function Inventory() {
     setShowDelete(true);
   };
 
-  const handleSave = () => {
-    // Validation
-    if (!formData.name || !formData.qty || !formData.min) {
+  const handleSave = async () => {
+    if (!formData.name || formData.quantity === '') {
       alert('Please fill in all required fields');
       return;
     }
-    if (parseInt(formData.qty) < 0) {
-      alert('Quantity cannot be negative');
-      return;
-    }
-    if (parseInt(formData.min) <= 0) {
-      alert('Minimum level must be greater than 0');
-      return;
-    }
 
-    const qty = parseInt(formData.qty);
-    const min = parseInt(formData.min);
-    let status = 'Good';
-    if (qty <= min / 2) status = 'Critical';
-    else if (qty <= min) status = 'Low';
+    const payload = {
+      name: formData.name,
+      category: formData.category,
+      unit: formData.unit,
+      quantity: parseInt(formData.quantity, 10),
+      status: formData.status,
+    };
 
-    if (currentItem) {
-      setStockList(stockList.map(s => s.id === currentItem.id ? { ...s, ...formData, qty, min, status } : s));
-    } else {
-      const newId = stockList.length + 1;
-      setStockList([...stockList, { id: newId, ...formData, qty, min, status }]);
+    try {
+      if (currentItem?._id) {
+        await inventoryAPI.update(currentItem._id, payload);
+      } else {
+        await inventoryAPI.create(payload);
+      }
+      await loadData();
+      setShowForm(false);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Could not save inventory item.');
     }
-    setShowForm(false);
   };
 
-  const confirmDelete = () => {
-    setStockList(stockList.filter(s => s.id !== currentItem.id));
-    setShowDelete(false);
+  const confirmDelete = async () => {
+    try {
+      await inventoryAPI.delete(currentItem._id);
+      await loadData();
+      setShowDelete(false);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Could not delete inventory item.');
+    }
   };
 
   return (
@@ -166,30 +177,32 @@ export default function Inventory() {
             <thead>
               <tr>
                 <th>Item Name</th>
+                <th>Category</th>
                 <th>Unit</th>
-                <th>Stock Level</th>
-                <th>Min. Level</th>
+                <th>Quantity</th>
                 <th>Status</th>
                 <th style={{ width: '120px' }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {currentData.map((s, i) => (
-                <tr key={i}>
+              {loading ? (
+                <tr><td colSpan="6">Loading inventory...</td></tr>
+              ) : currentData.map((s) => (
+                <tr key={s._id}>
                   <td><strong>{s.name}</strong></td>
+                  <td style={{ color: 'var(--d-text-muted)', fontSize: '0.85rem' }}>{s.category}</td>
                   <td style={{ color: 'var(--d-text-muted)', fontSize: '0.85rem' }}>{s.unit}</td>
                   <td>
-                    <div className="d-flex align-items-center gap-3" style={{ minWidth: '150px' }}>
+                    <div className="d-flex align-items-center gap-3" style={{ minWidth: '120px' }}>
                       <ProgressBar
-                        now={Math.min((s.qty / (s.min * 2)) * 100, 100)}
-                        variant={s.status === 'Good' ? 'success' : s.status === 'Low' ? 'warning' : 'danger'}
+                        now={Math.min((s.quantity / 20) * 100, 100)}
+                        variant={s.status === 'In Stock' ? 'success' : s.status === 'Low Stock' ? 'warning' : 'danger'}
                         style={{ height: '6px', flexGrow: 1 }}
                       />
-                      <strong style={{ minWidth: '30px', textAlign: 'right' }}>{s.qty}</strong>
+                      <strong style={{ minWidth: '30px', textAlign: 'right' }}>{s.quantity}</strong>
                     </div>
                   </td>
-                  <td style={{ color: 'var(--d-text-muted)' }}>{s.min} {s.unit}</td>
-                  <td><span className={`d-chip ${STATUS_CLASS[s.status]}`}>{s.status}</span></td>
+                  <td><span className={`d-chip ${STATUS_CLASS[s.status] || 'd-chip-gold'}`}>{s.status}</span></td>
                   <td>
                     <div className="d-flex gap-1">
                       <button className="d-navbar-icon-btn" onClick={() => handleEdit(s)}><MdEdit /></button>
@@ -244,26 +257,40 @@ export default function Inventory() {
               />
             </Form.Group>
           </Col>
-          <Col xs={12} md={6}>
+          <Col xs={12} md={4}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Current Quantity</Form.Label>
+              <Form.Label className="small fw-bold">Category</Form.Label>
               <Form.Control
-                type="number"
-                value={formData.qty}
-                onChange={(e) => setFormData({ ...formData, qty: e.target.value })}
+                type="text"
+                placeholder="General, Bar, Kitchen..."
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 required
               />
             </Form.Group>
           </Col>
           <Col xs={12} md={6}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Minimum Level (Alert)</Form.Label>
+              <Form.Label className="small fw-bold">Current Quantity</Form.Label>
               <Form.Control
                 type="number"
-                value={formData.min}
-                onChange={(e) => setFormData({ ...formData, min: e.target.value })}
+                value={formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                 required
               />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Status</Form.Label>
+              <Form.Select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="In Stock">In Stock</option>
+                <option value="Low Stock">Low Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </Form.Select>
             </Form.Group>
           </Col>
         </Row>
