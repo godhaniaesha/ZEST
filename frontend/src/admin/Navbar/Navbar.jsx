@@ -4,16 +4,27 @@ import { MdNotifications, MdSearch, MdFullscreen, MdPerson, MdSettings, MdLogout
 import { useAuth } from '../../contexts/AuthContext';
 
 const PAGE_TITLES = {
-  '/':             { title: 'Dashboard',    sub: 'Welcome back, Admin' },
-  '/menu':         { title: 'Menu',         sub: 'Manage your food & drinks' },
-  '/orders':       { title: 'Orders',       sub: 'Live order tracking' },
-  '/reservations': { title: 'Reservations', sub: 'Table bookings & walk-ins' },
-  '/bar':          { title: 'Bar & Drinks', sub: 'Cocktails, spirits & more' },
-  '/inventory':    { title: 'Inventory',    sub: 'Stock & supply management' },
-  '/staff':        { title: 'Staff',        sub: 'Team management' },
-  '/reviews':      { title: 'Reviews',      sub: 'Guest feedback & ratings' },
-  '/reports':      { title: 'Reports',      sub: 'Analytics & insights' },
-  '/settings':     { title: 'Settings',     sub: 'System preferences' },
+  '/admin/dashboard':    { title: 'Dashboard',    sub: 'Welcome back, Admin' },
+  '/admin/menu':         { title: 'Menu',         sub: 'Manage your food & drinks' },
+  '/admin/orders':       { title: 'Orders',       sub: 'Live order tracking' },
+  '/admin/reservations': { title: 'Reservations', sub: 'Table bookings & walk-ins' },
+  '/admin/bar':          { title: 'Bar & Drinks', sub: 'Cocktails, spirits & more' },
+  '/admin/inventory':    { title: 'Inventory',    sub: 'Stock & supply management' },
+  '/admin/staff':        { title: 'Staff',        sub: 'Team management' },
+  '/admin/reviews':      { title: 'Reviews',      sub: 'Guest feedback & ratings' },
+  '/admin/reports':      { title: 'Reports',      sub: 'Analytics & insights' },
+  '/admin/settings':     { title: 'Settings',     sub: 'System preferences' },
+  '/admin/users':        { title: 'User Management', sub: 'Manage system users' },
+  '/admin/system-logs':  { title: 'System Logs',  sub: 'View system activity' },
+  '/admin/pos':          { title: 'POS & Billing', sub: 'Point of Sale System' },
+  '/admin/kitchen-display': { title: 'Live Orders (KOT)', sub: 'Kitchen Order Tickets' },
+  '/admin/tables':       { title: 'Table Status', sub: 'Floor management' },
+  '/admin/take-order':   { title: 'Take New Order', sub: 'Create new orders' },
+  '/admin/service-requests': { title: 'Customer Requests', sub: 'Guest service requests' },
+  '/admin/profile':      { title: 'Profile',      sub: 'Manage your account' },
+  '/admin/categories':   { title: 'Categories & Cuisines', sub: 'Menu categorization' },
+  '/admin/staff-attendance': { title: 'Attendance', sub: 'Staff attendance tracking' },
+  '/admin/leave-management': { title: 'Leave Management', sub: 'Staff leave requests' },
 };
 
 const ROLE_LABELS = {
@@ -74,7 +85,7 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
         </button>
 
         <div className="d-breadcrumb-wrap d-hide-mobile">
-          <Link to="/" className="d-breadcrumb-label">Breva Admin</Link>
+          <Link to="/admin/dashboard" className="d-breadcrumb-label">ZEST Admin</Link>
           <span className="d-page-title">{meta.title}</span>
         </div>
 

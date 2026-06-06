@@ -7,6 +7,7 @@ import {
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import { menuAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const DRINKS = [
   { id: 1, name: 'Classic Mojito', cat: 'Cocktail', price: '320', available: true,  img: <MdLocalBar />, color: '#2ecc71', description: 'Refreshing mint and lime cocktail with white rum', ingredients: 'White rum, mint, lime, sugar, soda water', alcoholContent: '12%', prepTime: 5 },
@@ -25,7 +26,7 @@ const itemHasType = (item, target) => {
   return types.includes(target);
 };
 
-export default function Bar({ userRole = 'bartender' }) {
+export default function Bar() {
   const [drinks, setDrinks] = useState([]);
   const [active, setActive] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,7 +34,14 @@ export default function Bar({ userRole = 'bartender' }) {
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', cat: 'Cocktail', price: '', available: true, description: '', ingredients: '', alcoholContent: '', prepTime: 5 });
+  const [formData, setFormData] = useState({
+    name: '', cat: '', cuisine: '', price: '', available: true,
+    description: '', ingredients: '', alcoholContent: '', prepTime: 5,
+  });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const { user } = useAuth();
+  const userRole = user?.role || 'bartender';
 
   const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin' || userRole === 'bartender';
 

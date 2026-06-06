@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useOutletContext } from 'react-router-dom';
+import { Outlet, useOutletContext, useLocation } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,7 +9,8 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 992);
   const { user, loading } = useAuth();
-  const userRole = user?.role || 'superadmin';
+  const userRole = user?.role;
+  const location = useLocation();
 
   const handleToggle = () => {
     if (isMobile) {

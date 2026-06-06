@@ -7,6 +7,7 @@ import {
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import { menuAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const MENU_ITEMS = [
   { id: 1, name: 'Truffle Risotto', category: 'Mains', price: '680', status: 'Available', type: 'Cafe', cuisine: 'Italian', img: <MdRestaurant />, color: '#2ecc71', description: 'Creamy arborio rice with fresh truffle oil and parmesan', prepTime: 25, ingredients: 'Arborio rice, truffle oil, parmesan, vegetable broth, mushrooms' },
@@ -47,7 +48,7 @@ const CUISINES = [
   'South Indian',
 ];
 
-export default function Menu({ userRole = 'chef' }) {
+export default function Menu() {
   const [items, setItems] = useState([]);
   const [active, setActive] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,7 +56,14 @@ export default function Menu({ userRole = 'chef' }) {
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', category: 'Starters', price: '', status: 'Available', type: 'Cafe', cuisine: 'Indian', description: '', prepTime: 15, ingredients: '' });
+  const [formData, setFormData] = useState({
+    name: '', category: '', price: '', status: 'Available', type: 'Cafe',
+    cuisine: '', description: '', prepTime: 15, ingredients: '',
+  });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const { user } = useAuth();
+  const userRole = user?.role || 'chef';
 
   const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
 

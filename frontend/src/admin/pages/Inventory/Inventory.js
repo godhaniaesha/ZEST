@@ -65,7 +65,14 @@ export default function Inventory() {
 
   const handleEdit = (item) => {
     setCurrentItem(item);
-    setFormData({ name: item.name, unit: item.unit, qty: item.qty, min: item.min });
+    setFormData({
+      name: item.name,
+      category: item.category || 'General',
+      unit: item.unit,
+                   
+      quantity: item.quantity,
+      status: item.status,
+    });
     setShowForm(true);
   };
 
