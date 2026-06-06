@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Row, Col, Form } from 'react-bootstrap';
 import { 
   MdAdd, MdPhone, MdPeople, MdEventSeat, 
@@ -7,9 +7,16 @@ import {
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-import { reservationsAPI } from '../../../api';
 
-const TABLE_NUMBERS = Array.from({ length: 12 }, (_, i) => i + 1);
+const INITIAL_RESERVATIONS = [
+  { id: 'R-001', name: 'Arjun Mehta',    time: '7:00 PM', date: new Date().toISOString().split('T')[0], guests: 4, table: 'Table 3', phone: '+91 98765 43210', email: 'arjun@email.com', status: 'Confirmed', notes: '' },
+  { id: 'R-002', name: 'Sneha Patel',    time: '7:30 PM', date: new Date().toISOString().split('T')[0], guests: 2, table: 'Table 6', phone: '+91 91234 56789', email: 'sneha@email.com', status: 'Confirmed', notes: 'Anniversary dinner' },
+  { id: 'R-003', name: 'Corporate Grp.', time: '8:00 PM', date: new Date().toISOString().split('T')[0], guests: 12,table: 'Tables 1+2', phone: '+91 98001 11222', email: 'corporate@email.com', status: 'Pending', notes: 'Team celebration' },
+  { id: 'R-004', name: 'Riya Sharma',    time: '8:30 PM', date: new Date().toISOString().split('T')[0], guests: 3, table: 'Table 8', phone: '+91 77654 32109', email: 'riya@email.com', status: 'Confirmed', notes: '' },
+  { id: 'R-005', name: 'Dev Kapoor',     time: '9:00 PM', date: new Date().toISOString().split('T')[0], guests: 6, table: 'Table 5', phone: '+91 88001 99882', email: 'dev@email.com', status: 'Cancelled', notes: '' },
+];
+
+const TABLES = ['Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5', 'Table 6', 'Table 7', 'Table 8', 'Tables 1+2', 'Tables 3+4', 'Bar Counter'];
 const TIME_SLOTS = ['12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM'];
 const STATUS_CLASS = {
   Confirmed: 'd-chip-green',
@@ -18,8 +25,7 @@ const STATUS_CLASS = {
 };
 
 export default function Reservations() {
-  const [reservations, setReservations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
@@ -28,40 +34,12 @@ export default function Reservations() {
     date: new Date().toISOString().split('T')[0], 
     time: '7:00 PM', 
     guests: 2, 
-    table: 1, 
+    table: 'Table 1', 
     phone: '', 
     email: '', 
     status: 'Pending', 
+    notes: '' 
   });
-
-  const mapFromApi = (item) => ({
-    _id: item._id,
-    name: item.customerName,
-    date: item.date ? new Date(item.date).toISOString().split('T')[0] : '',
-    time: item.time,
-    guests: item.guests,
-    table: item.tableNumber,
-    phone: item.phone,
-    email: item.email || '',
-    status: item.status,
-  });
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const response = await reservationsAPI.getAll();
-      setReservations((response.data || []).map(mapFromApi));
-    } catch (error) {
-      console.error('Error fetching reservations:', error);
-      setReservations([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const confirmedCount = reservations.filter(r => r.status === 'Confirmed').length;
   const pendingCount = reservations.filter(r => r.status === 'Pending').length;
@@ -74,10 +52,11 @@ export default function Reservations() {
       date: new Date().toISOString().split('T')[0], 
       time: '7:00 PM', 
       guests: 2, 
-      table: 1, 
+      table: 'Table 1', 
       phone: '', 
       email: '', 
       status: 'Pending', 
+      notes: '' 
     });
     setShowForm(true);
   };
@@ -93,54 +72,24 @@ export default function Reservations() {
     setShowDelete(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!formData.name || !formData.phone || !formData.date || !formData.time || formData.guests < 1) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const payload = {
-      customerName: formData.name,
-      phone: formData.phone,
-      email: formData.email,
-      date: formData.date,
-      time: formData.time,
-      guests: formData.guests,
-      tableNumber: parseInt(formData.table, 10),
-      status: formData.status,
-    };
-
-    try {
-      if (currentItem?._id) {
-        await reservationsAPI.update(currentItem._id, payload);
-      } else {
-        await reservationsAPI.create(payload);
-      }
-      await loadData();
-      setShowForm(false);
-    } catch (error) {
-      alert(error.response?.data?.message || 'Could not save reservation.');
+    if (currentItem) {
+      setReservations(reservations.map(r => r.id === currentItem.id ? { ...r, ...formData } : r));
+    } else {
+      const newId = `R-${String(reservations.length + 1).padStart(3, '0')}`;
+      setReservations([...reservations, { id: newId, ...formData }]);
     }
+    setShowForm(false);
   };
 
-  const handleStatusChange = async (reservation, newStatus) => {
-    if (reservation.status === newStatus) return;
-    try {
-      await reservationsAPI.updateStatus(reservation._id, newStatus);
-      await loadData();
-    } catch (error) {
-      alert(error.response?.data?.message || 'Could not update status.');
-    }
-  };
-
-  const confirmDelete = async () => {
-    try {
-      await reservationsAPI.delete(currentItem._id);
-      await loadData();
-      setShowDelete(false);
-    } catch (error) {
-      alert(error.response?.data?.message || 'Could not delete reservation.');
-    }
+  const confirmDelete = () => {
+    setReservations(reservations.filter(r => r.id !== currentItem.id));
+    setShowDelete(false);
   };
 
   return (
@@ -195,8 +144,8 @@ export default function Reservations() {
             </thead>
             <tbody>
               {reservations.map(r => (
-                <tr key={r._id}>
-                  <td style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }} title={r._id}>{r._id.slice(-6)}</td>
+                <tr key={r.id}>
+                  <td style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }} title={r.id}>{r.id}</td>
                   <td title={r.name}>
                     <div style={{ fontWeight: 700, color: 'var(--d-primary)' }}>{r.name}</div>
                   </td>
@@ -215,7 +164,7 @@ export default function Reservations() {
                   <td>
                     <div className="d-flex align-items-center gap-1">
                       <MdEventSeat style={{ color: 'var(--d-gold)' }} />
-                      <span>Table {r.table}</span>
+                      <span>{r.table}</span>
                     </div>
                   </td>
                   <td title={r.phone}>
@@ -225,16 +174,9 @@ export default function Reservations() {
                     </div>
                   </td>
                   <td title={r.status}>
-                    <Form.Select
-                      size="sm"
-                      value={r.status}
-                      onChange={(e) => handleStatusChange(r, e.target.value)}
-                      style={{ maxWidth: 140, fontWeight: 600 }}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Confirmed">Confirmed</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </Form.Select>
+                    <span className={`d-chip ${STATUS_CLASS[r.status] || 'd-chip-gray'}`}>
+                      {r.status}
+                    </span>
                   </td>
                   <td>
                     <div className="d-flex gap-1">
@@ -338,9 +280,7 @@ export default function Reservations() {
                 value={formData.table}
                 onChange={(e) => setFormData({...formData, table: e.target.value})}
               >
-                {TABLE_NUMBERS.map((t) => (
-                  <option key={t} value={t}>Table {t}</option>
-                ))}
+                {TABLES.map(t => <option key={t} value={t}>{t}</option>)}
               </Form.Select>
             </Form.Group>
           </Col>

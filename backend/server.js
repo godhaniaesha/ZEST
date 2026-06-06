@@ -26,7 +26,6 @@ const Menu = require('./models/Menu');
 const Table = require('./models/Table');
 
 const { auth, authorizeRoles } = require('./middleware/auth');
-const { STAFF_ROLES } = require('./config/roles');
 const { toMenuTypeArray } = require('./utils/menuType');
 
 const app = express();
@@ -35,10 +34,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Public routes
 app.use('/api/auth', authRoutes);
+// Temporarily make /api/menu public for testing!
 app.use('/api/menu', menuRoutes);
 app.use('/api/reservations', reservationRoutes);
 
@@ -82,6 +83,7 @@ app.use(
 );
 
 app.use('/api/inventory', auth, inventoryRoutes);
+app.use('/api/reservations', auth, reservationRoutes);
 app.use('/api/users', auth, userRoutes);
 
 // MongoDB connection

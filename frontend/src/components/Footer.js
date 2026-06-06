@@ -9,7 +9,7 @@ import {
 import { Phone, Mail, MapPin } from "lucide-react";
 import "../styles/x_style.css";
 
-   export default function Footer() {
+export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const quickLinks = [
@@ -61,18 +61,47 @@ import "../styles/x_style.css";
             Premium coffee, handcrafted cocktails, and a dining experience beyond the ordinary.
           </p>
           <div className="x_footer_socials">
-            <a href="#" className="x_footer_social_link" aria-label="Facebook">
-              <FaFacebookF size={14} />
-            </a>
-            <a href="#" className="x_footer_social_link" aria-label="Instagram">
-              <FaInstagram size={14} />
-            </a>
-            <a href="#" className="x_footer_social_link" aria-label="Twitter">
-              <FaTwitter size={14} />
-            </a>
-            <a href="#" className="x_footer_social_link" aria-label="LinkedIn">
-              <FaLinkedinIn size={14} />
-            </a>
+            <div className="x_footer_socials">
+              <a
+                href="https://www.facebook.com/yourpage"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="x_footer_social_link"
+                aria-label="Facebook"
+              >
+                <FaFacebookF size={14} />
+              </a>
+
+              <a
+                href="https://www.instagram.com/yourusername"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="x_footer_social_link"
+                aria-label="Instagram"
+              >
+                <FaInstagram size={14} />
+              </a>
+
+              <a
+                href="https://twitter.com/yourusername"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="x_footer_social_link"
+                aria-label="Twitter"
+              >
+                <FaTwitter size={14} />
+              </a>
+
+              <a
+                href="https://www.linkedin.com/in/yourusername"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="x_footer_social_link"
+                aria-label="LinkedIn"
+              >
+                <FaLinkedinIn size={14} />
+              </a>
+            </div>
           </div>
         </div>
 
@@ -97,7 +126,11 @@ import "../styles/x_style.css";
             <span className="x_footer_heading_accent" />
           </div>
 
-          <a href="tel:+911234567890" className="x_footer_contact_item">
+          <a
+            href="tel:+911234567890"
+            className="x_footer_contact_item"
+            aria-label="Call us"
+          >
             <div className="x_footer_contact_icon">
               <Phone size={13} />
             </div>
@@ -107,7 +140,11 @@ import "../styles/x_style.css";
             </div>
           </a>
 
-          <a href="mailto:support@zestcafe.com" className="x_footer_contact_item">
+          <a
+            href="mailto:support@zestcafe.com?subject=Inquiry%20from%20Website"
+            className="x_footer_contact_item"
+            aria-label="Email us"
+          >
             <div className="x_footer_contact_icon">
               <Mail size={13} />
             </div>
@@ -116,15 +153,24 @@ import "../styles/x_style.css";
               <span className="x_footer_contact_value">support@zestcafe.com</span>
             </div>
           </a>
-
           <a href="#location" className="x_footer_contact_item">
-            <div className="x_footer_contact_icon">
-              <MapPin size={13} />
-            </div>
-            <div className="x_footer_contact_text">
-              <span className="x_footer_contact_label">Location</span>
-              <span className="x_footer_contact_value">Ahmedabad, Gujarat, India</span>
-            </div>
+            <a
+              href="https://maps.google.com/?q=Ahmedabad,Gujarat,India"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="x_footer_contact_link"
+            >
+              <div className="x_footer_contact_icon">
+                <MapPin size={13} />
+              </div>
+
+              <div className="x_footer_contact_text">
+                <span className="x_footer_contact_label">Location</span>
+                <span className="x_footer_contact_value">
+                  Ahmedabad, Gujarat, India
+                </span>
+              </div>
+            </a>
           </a>
         </div>
 

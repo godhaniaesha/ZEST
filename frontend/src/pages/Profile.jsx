@@ -148,9 +148,9 @@ const Profile = () => {
   const handleLogout = () => setShowLogoutConfirm(true);
 
   const handleConfirmLogout = () => {
-    logout();
+    console.log("Logging out...");
     setShowLogoutConfirm(false);
-    navigate("/auth");
+    alert("Logged out successfully!");
   };
 
   const handleEditToggle = () => {
@@ -236,29 +236,14 @@ const Profile = () => {
     }
   };
 
-  const handleCancelBooking = async (id) => {
-    try {
-      await reservationsAPI.cancelMy(id);
-      await loadBookings();
-      alert("Booking cancelled successfully!");
-    } catch (error) {
-      alert(error.response?.data?.message || "Could not cancel booking.");
-    }
-  };
-
-  if (loading) {
-    return (
-      <main className="x_profile_page">
-        <section className="x_profile_container">
-          <p>Loading profile...</p>
-        </section>
-      </main>
+  const handleCancelBooking = (id) => {
+    setBookings((prev) =>
+      prev.map((booking) =>
+        booking.id === id ? { ...booking, status: "cancelled" } : booking,
+      ),
     );
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+    alert("Booking cancelled successfully!");
+  };
 
   return (
     <main className="x_profile_page">

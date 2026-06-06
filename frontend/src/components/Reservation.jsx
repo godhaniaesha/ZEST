@@ -1,6 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { reservationsAPI, tablesAPI } from "../api";
-import { useAuth } from "../contexts/AuthContext";
 import {
   FiChevronRight,
   FiClock,
@@ -720,13 +718,16 @@ const STEPS = [
   { id: 5, label: "Review", sub: "Final Check", icon: <FiShield /> },
 ];
 
+const TABLES = Array.from({ length: 12 }, (_, i) => ({
+  id: i + 1,
+  cap: i % 4 === 0 ? 6 : i % 2 === 0 ? 4 : 2,
+  occ: [3, 7, 10].includes(i + 1),
+}));
+
 const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 export default function ZestReservation() {
-  const { user } = useAuth();
-  const [tables, setTables] = useState([]);
-  const [tablesLoading, setTablesLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -752,43 +753,6 @@ export default function ZestReservation() {
   const [clockSize, setClockSize] = useState(240);
   const clockRef = useRef(null);
 
-  useEffect(() => {
-    const loadTables = async () => {
-      try {
-        setTablesLoading(true);
-        const res = await tablesAPI.getPublic();
-        const mapped = (res.data || []).map((t) => {
-          const status = String(t.status || "").trim();
-          const isFree = status.toLowerCase() === "free";
-          return {
-            id: t.number,
-            _id: t._id,
-            number: t.number,
-            cap: t.capacity,
-            isFree,
-            occ: !isFree,
-            status,
-            location: t.location,
-            displayId:
-              t.displayId || `C-${String(t.number).padStart(2, "0")}`,
-          };
-        });
-        console.log(
-          "[Reservation] Tables loaded from MongoDB (zest-cafe):",
-          mapped.length,
-          mapped,
-        );
-        setTables(mapped);
-      } catch (err) {
-        console.error("[Reservation] Tables API error:", err);
-        setTables([]);
-      } finally {
-        setTablesLoading(false);
-      }
-    };
-    loadTables();
-  }, []);
-
   const update = (k, v) => {
     setError("");
     setForm((p) => ({ ...p, [k]: v }));
@@ -800,7 +764,7 @@ export default function ZestReservation() {
       ...p,
       guests: s,
       table:
-        p.table && tables.find((t) => t.id === p.table && t.isFree)
+        p.table && TABLES.find((t) => t.id === p.table && t.cap >= s)
           ? p.table
           : null,
     }));
@@ -882,14 +846,12 @@ export default function ZestReservation() {
   }, [step]);
 
   useEffect(() => {
-    if (!form.table || !tables.length) return;
-    const t = tables.find((tbl) => tbl.id === form.table);
-    if (!t || !t.isFree) {
-      setForm((p) => ({ ...p, table: null }));
-    }
-  }, [form.guests, form.table, tables]);
+    if (!form.table) return;
+    const t = TABLES.find((t) => t.id === form.table);
+    if (!t || t.cap < form.guests) update("table", null);
+  }, [form.guests]);
 
-  const handleNext = async () => {
+  const handleNext = () => {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
     const phoneDigits = form.phone.replace(/\D/g, "");
     const cardDigits = form.card.replace(/\D/g, "");
@@ -914,25 +876,10 @@ export default function ZestReservation() {
 
     if (step === 5) {
       setLoading(true);
-      try {
-        await reservationsAPI.createPublic({
-          customerName: form.name.trim(),
-          phone: form.phone.replace(/\D/g, ""),
-          email: form.email.trim(),
-          date: form.date,
-          time: formattedTime,
-          guests: form.guests,
-          tableNumber: form.table,
-          status: "Pending",
-          userId: user?._id || user?.id,
-        });
-        setStep(6);
-      } catch (err) {
-        setError(err.response?.data?.message || "Could not complete reservation.");
-      } finally {
+      setTimeout(() => {
         setLoading(false);
-      }
-      return;
+        setStep(6);
+      }, 2200);
     } else setStep((p) => p + 1);
   };
 
@@ -1176,32 +1123,27 @@ export default function ZestReservation() {
             {step === 2 && (
               <div className="h_content_card">
                 <h2>Pick your Table</h2>
-                {tablesLoading ? (
-                  <p>Loading tables from database...</p>
-                ) : tables.length === 0 ? (
-                  <p>No tables available. Please try again later.</p>
-                ) : (
                 <div className="h_table_grid">
-                  {tables.map((t) => (
+                  {TABLES.map((t) => (
                     <div
-                      key={t._id || t.id}
-                      className={`h_table_node ${t.occ ? "occupied" : ""} ${form.table === t.id ? "selected" : ""}`}
-                      onClick={() => t.isFree && update("table", t.id)}
-                      title={`${t.displayId} · ${t.location} · ${t.status}`}
+                      key={t.id}
+                      className={`h_table_node ${t.occ ? "occupied" : ""} ${!t.occ && t.cap < form.guests ? "unavailable" : ""} ${form.table === t.id ? "selected" : ""}`}
+                      onClick={() =>
+                        !t.occ && t.cap >= form.guests && update("table", t.id)
+                      }
                     >
-                      <span className="t_num">{t.displayId || t.id}</span>
+                      <span className="t_num">{t.id}</span>
                       <span className="t_cap">{t.cap} pax</span>
                     </div>
                   ))}
                 </div>
-                )}
                 <div className="h_table_legend">
                   <div className="h_table_legend_item">
                     <div
                       className="h_legend_dot"
                       style={{ background: "rgba(0,0,0,0.1)" }}
                     />
-                    Free (Available)
+                    Available
                   </div>
                   <div className="h_table_legend_item">
                     <div
@@ -1215,7 +1157,17 @@ export default function ZestReservation() {
                       className="h_legend_dot"
                       style={{ background: "rgba(0,0,0,0.06)" }}
                     />
-                    Occupied / Reserved
+                    Occupied
+                  </div>
+                  <div className="h_table_legend_item">
+                    <div
+                      className="h_legend_dot"
+                      style={{
+                        background: "rgba(201,168,76,0.5)",
+                        border: "1px dashed rgba(201,168,76,0.6)",
+                      }}
+                    />
+                    Too small
                   </div>
                 </div>
               </div>

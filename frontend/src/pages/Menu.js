@@ -1,55 +1,184 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Star } from 'lucide-react';
 import { FaArrowLeftLong, FaArrowRightLong } from 'react-icons/fa6';
-import { menuAPI } from '../api';
-import { normalizeMenuItem, buildCategoryFilters } from '../utils/menuUtils';
 import '../styles/menu_style.css';
 
 const Menu = () => {
   const navigate = useNavigate();
-  const [menuItems, setMenuItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('featured');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
-  useEffect(() => {
-    const loadMenu = async () => {
-      console.log('[Menu Page] Fetching from GET /api/menu (MongoDB zest-cafe)...');
-      try {
-        setLoading(true);
-        const response = await menuAPI.getAll({ status: 'Available' });
-        const data = Array.isArray(response.data) ? response.data : [];
-        console.log('[Menu Page] Received menu items:', data.length, data);
-        setMenuItems(data.map(normalizeMenuItem));
-      } catch (error) {
-        console.error('[Menu Page] API failed:', error.response?.data || error.message);
-        setMenuItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadMenu();
-  }, []);
+  const menuItems = [
+    {
+      id: 1,
+      name: 'Mozzarella Sticks',
+      category: 'appetizers',
+      price: 129,
+      originalPrice: 149,
+      rating: 4.8,
+      reviews: 20,
+      description: 'Golden-fried mozzarella sticks served with warm, zesty marinara dipping sauce.',
+      image: 'https://i1-e.pinimg.com/736x/af/b6/de/afb6de59cd10b1c7a31653aab893a7f2.jpg',
+      features: ['Crispy exterior', 'Gooey center', 'House marinara', 'Served hot'],
+    },
+    {
+      id: 2,
+      name: 'Chocolate Lava Cake',
+      category: 'desserts',
+      price: 95,
+      originalPrice: 120,
+      rating: 4.9,
+      reviews: 45,
+      description: 'Decadent chocolate cake with a molten center, served with vanilla ice cream.',
+      image: 'https://i.pinimg.com/736x/57/e5/4d/57e54d7e755532472a4b6e043f7e1063.jpg',
+      features: ['Molten center', 'Vanilla ice cream', 'Fresh berries', 'Warm serving'],
+    },
+    {
+      id: 3,
+      name: 'Espresso Martini',
+      category: 'cocktails',
+      price: 185,
+      originalPrice: 200,
+      rating: 4.7,
+      reviews: 32,
+      description: 'Bold espresso blended with vodka, coffee liqueur, and a touch of cream.',
+      image: 'https://i.pinimg.com/236x/f0/32/fd/f032fd4462fc1b22415b3878f2ec1009.jpg',
+      features: ['Fresh espresso', 'Premium vodka', 'Silky texture', 'Coffee liqueur'],
+    },
+    {
+      id: 4,
+      name: 'Avocado Toast',
+      category: 'breakfast',
+      price: 145,
+      originalPrice: 165,
+      rating: 4.6,
+      reviews: 28,
+      description: 'Creamy avocado spread on sourdough toast, topped with poached egg and microgreens.',
+      image: 'https://i.pinimg.com/1200x/82/5b/5f/825b5fbe4b2ee16c331b85faa4e4e96d.jpg',
+      features: ['Fresh avocado', 'Poached egg', 'Sourdough', 'Microgreens'],
+    },
+    {
+      id: 5,
+      name: 'Grilled Salmon',
+      category: 'mains',
+      price: 320,
+      originalPrice: 350,
+      rating: 4.8,
+      reviews: 38,
+      description: 'Fresh Atlantic salmon grilled to perfection, served with seasonal vegetables.',
+      image: 'https://i.pinimg.com/736x/98/ac/33/98ac33e3d8a4abc19ccc51fee76815dd.jpg',
+      features: ['Wild-caught salmon', 'Seasonal veggies', 'Lemon butter sauce', 'Farm-fresh'],
+    },
+    {
+      id: 6,
+      name: 'Quinoa Buddha Bowl',
+      category: 'salads',
+      price: 135,
+      originalPrice: 160,
+      rating: 4.5,
+      reviews: 22,
+      description: 'Nutritious bowl with quinoa, roasted vegetables, and tahini dressing.',
+      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=60',
+      features: ['Organic quinoa', 'Tahini dressing', 'Roasted veggies', 'Vegan option'],
+    },
+    {
+      id: 7,
+      name: 'Garlic Herb Bruschetta',
+      category: 'appetizers',
+      price: 89,
+      originalPrice: 110,
+      rating: 4.7,
+      reviews: 30,
+      description: 'Toasted baguette topped with fresh tomatoes, garlic, and basil.',
+      image: 'https://i.pinimg.com/1200x/a6/b9/48/a6b94869d38aaa95c6b3e06f0067f294.jpg',
+      features: ['Crispy bread', 'Fresh basil', 'Ripe tomatoes', 'Extra virgin oil'],
+    },
+    {
+      id: 8,
+      name: 'Creamy Mushroom Pasta',
+      category: 'mains',
+      price: 245,
+      originalPrice: 280,
+      rating: 4.9,
+      reviews: 51,
+      description: 'Handmade pasta in a rich mushroom and cream sauce with fresh herbs.',
+      image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=500&q=60',
+      features: ['House-made pasta', 'Wild mushrooms', 'Fresh cream', 'Italian herbs'],
+    },
+    {
+      id: 9,
+      name: 'Vanilla Panna Cotta',
+      category: 'desserts',
+      price: 110,
+      originalPrice: 135,
+      rating: 4.8,
+      reviews: 35,
+      description: 'Silky smooth Italian custard dessert topped with fresh berries.',
+      image: 'https://i.pinimg.com/1200x/65/90/55/659055b6f165eae21bc7d7ae94679079.jpg',
+      features: ['Madagascar vanilla', 'Fresh berries', 'Silky texture', 'Handmade'],
+    },
+    {
+      id: 10,
+      name: 'Cold Brew Coffee',
+      category: 'beverages',
+      price: 65,
+      originalPrice: 85,
+      rating: 4.6,
+      reviews: 42,
+      description: 'Smooth, rich cold brew made with single-origin coffee beans.',
+      image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=500&q=60',
+      features: ['Single-origin', 'Cold brewed', 'Smooth taste', 'Zero acidity'],
+    },
+    {
+      id: 11,
+      name: 'Old Fashioned',
+      category: 'cocktails',
+      price: 195,
+      originalPrice: 220,
+      rating: 4.8,
+      reviews: 28,
+      description: 'Classic whiskey cocktail with bitters, sugar, and a twist of orange.',
+      image: 'https://i.pinimg.com/736x/8b/85/e1/8b85e197acf19d09663503ad760ce36a.jpg',
+      features: ['Premium whiskey', 'Aromatic bitters', 'Fresh citrus', 'Large ice'],
+    },
+    {
+      id: 12,
+      name: 'Pancakes Stack',
+      category: 'breakfast',
+      price: 155,
+      originalPrice: 185,
+      rating: 4.7,
+      reviews: 39,
+      description: 'Fluffy buttermilk pancakes stacked high, served with maple syrup and butter.',
+      image: 'https://i.pinimg.com/736x/bd/71/aa/bd71aac12befc1d2e1280f3a37dba04b.jpg',
+      features: ['Buttermilk', 'Maple syrup', 'Fresh berries', 'Whipped cream'],
+    },
+  ];
 
-  const categories = useMemo(() => buildCategoryFilters(menuItems), [menuItems]);
+  const categories = [
+    { id: 'all', label: 'All Items' },
+    { id: 'appetizers', label: 'Appetizers' },
+    { id: 'salads', label: 'Salads' },
+    { id: 'desserts', label: 'Desserts' },
+    { id: 'mains', label: 'Main Course' },
+    { id: 'beverages', label: 'Beverages' },
+    { id: 'cocktails', label: 'Cocktails' },
+    { id: 'breakfast', label: 'Breakfast' },
+  ];
 
   const categoryLabelMap = categories.reduce((labels, category) => {
     labels[category.id] = category.label;
     return labels;
   }, {});
 
-  const featuredItem = menuItems[0];
+  const featuredItem = menuItems.find((item) => item.id === 8) || menuItems[0];
 
   const filteredItems = menuItems
-    .filter((item) => {
-      if (activeCategory === 'all') return true;
-      const selected = categories.find((cat) => cat.id === activeCategory);
-      return selected?.value ? item.category === selected.value : item.categoryKey === activeCategory;
-    })
+    .filter((item) => activeCategory === 'all' || item.category === activeCategory)
     .filter((item) => {
       const query = searchQuery.trim().toLowerCase();
       if (!query) return true;
@@ -62,8 +191,8 @@ const Menu = () => {
     .sort((a, b) => {
       if (sortBy === 'price-low') return a.price - b.price;
       if (sortBy === 'price-high') return b.price - a.price;
-      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-      return String(a.name).localeCompare(String(b.name));
+      if (sortBy === 'rating') return b.rating - a.rating;
+      return a.id - b.id;
     });
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
@@ -120,7 +249,7 @@ const Menu = () => {
                 <span>Categories</span>
               </div>
               <div className="x_menu_stats_item">
-                <strong>{menuItems.length ? `₹${Math.min(...menuItems.map((i) => i.price))}` : '—'}</strong>
+                <strong>₹65</strong>
                 <span>Starts at</span>
               </div>
             </div>
@@ -129,13 +258,13 @@ const Menu = () => {
           <div className="x_menu_hero_right">
             <div className="x_menu_simple_showcase">
               <div className="x_simple_frame">
-                <img src={featuredItem?.image} alt="Featured Dish" className="x_simple_main_img" />
+                <img src={menuItems[7]?.image} alt="Featured Dish" className="x_simple_main_img" />
                 <div className="x_simple_frame_border" />
               </div>
 
               <div className="x_simple_label">
                 <span className="x_simple_tag">Featured Choice</span>
-                <h3 className="x_simple_title">{featuredItem?.name || 'Chef Special'}</h3>
+                <h3 className="x_simple_title">{menuItems[7]?.name}</h3>
               </div>
             </div>
           </div>
@@ -206,11 +335,7 @@ const Menu = () => {
         </div>
 
         {/* ══════════════════ GRID ══════════════════ */}
-        {loading ? (
-          <section className="x_menu_empty">
-            <h2>Loading menu...</h2>
-          </section>
-        ) : paginatedItems.length > 0 ? (
+        {paginatedItems.length > 0 ? (
           <section className="x_menu_grid" aria-label="Menu items">
             {paginatedItems.map((item) => {
               return (
@@ -226,13 +351,13 @@ const Menu = () => {
                   <div className="x_menu_card_img_wrap">
                     <img src={item.image} alt={item.name} loading="lazy" />
                     <div className="x_menu_card_badge">
-                      {item.category}
+                      {categoryLabelMap[item.category] || item.category}
                     </div>
                   </div>
 
                   <div className="x_menu_card_content">
                     <h3 className="x_menu_card_title">{item.name}</h3>
-                    {/* <p className="x_menu_card_desc">{item.description}</p> */}
+                    <p className="x_menu_card_desc">{item.description}</p>
 
                     <div className="x_menu_card_footer">
                       <div className="x_menu_.card_price_group">
