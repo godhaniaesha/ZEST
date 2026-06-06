@@ -242,187 +242,184 @@ export default function Staff() {
                   </div>
                   <div className="d-flex justify-content-between">
                     <span className="text-muted">Status:</span>
-                    <span className={`d-chip ${s.status === 'On Duty' ? 'd-chip-green' : 'd-chip-gray'}`} style={{ fontSize: '0.65rem' }}>
+                    <span className={`d-chip ${s.status === 'On Duty' ? 'd-chip-green' :
+                        s.status === 'On Leave' ? 'd-chip-gold' :
+                          'd-chip-gray'
+                      }`} style={{ fontSize: '0.65rem' }}>
                       {s.status}
                     </span>
                   </div>
                 </div>
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="text-muted">Status:</span>
-                  <span className={`d-chip ${s.status === 'On Duty' ? 'd-chip-green' :
-                      s.status === 'On Leave' ? 'd-chip-gold' :
-                        'd-chip-gray'
-                    }`} style={{ fontSize: '0.65rem' }}>
-                    {s.status}
-                  </span>
-                </div>
+
                 <div className="d-flex justify-content-between mb-1">
                   <span className="text-muted">Salary:</span>
                   <span style={{ fontWeight: 600 }}>₹{s.salary}</span>
                 </div>
-                <div className="d-flex justify-content-between">
+
+                <div className="d-flex justify-content-between mb-3">
                   <span className="text-muted">Leaves:</span>
                   <span style={{ fontWeight: 600 }}>{s.leavesTaken}/{s.leavesTotal}</span>
                 </div>
-              </div>
 
-              {s.joiningDate && (
-                <div className="mb-2" style={{ fontSize: '0.8rem', color: 'var(--d-text-muted)' }}>
-                  <span className="text-muted">Joining:</span> {new Date(s.joiningDate).toLocaleDateString('en-IN')}
-                </div>
-              )}
-              {s.phone && (
-                <div className="mb-1" style={{ fontSize: '0.85rem', color: 'var(--d-text-muted)' }}>
-                  <MdPhone className="me-1" /> {s.phone}
-                </div>
-              )}
-              {s.email && (
-                <div className="mb-3" style={{ fontSize: '0.85rem', color: 'var(--d-text-muted)' }}>
-                  <MdEmail className="me-1" /> {s.email}
-                </div>
-              )}
+                {s.joiningDate && (
+                  <div className="mb-2" style={{ fontSize: '0.8rem', color: 'var(--d-text-muted)' }}>
+                    <span className="text-muted">Joining:</span> {new Date(s.joiningDate).toLocaleDateString('en-IN')}
+                  </div>
+                )}
 
-              <div className="d-flex gap-2">
-                <button className="d-btn-outline flex-grow-1" style={{ padding: '6px', fontSize: '0.8rem' }}><MdPhone /> Call</button>
-                <button className="d-btn-outline flex-grow-1" style={{ padding: '6px', fontSize: '0.8rem' }}><MdEmail /> Mail</button>
+                {s.phone && (
+                  <div className="mb-1" style={{ fontSize: '0.85rem', color: 'var(--d-text-muted)' }}>
+                    <MdPhone className="me-1" /> {s.phone}
+                  </div>
+                )}
+
+                {s.email && (
+                  <div className="mb-3" style={{ fontSize: '0.85rem', color: 'var(--d-text-muted)' }}>
+                    <MdEmail className="me-1" /> {s.email}
+                  </div>
+                )}
+
+                <div className="d-flex gap-2">
+                  <button className="d-btn-outline flex-grow-1" style={{ padding: '6px', fontSize: '0.8rem' }}><MdPhone /> Call</button>
+                  <button className="d-btn-outline flex-grow-1" style={{ padding: '6px', fontSize: '0.8rem' }}><MdEmail /> Mail</button>
+                </div>
               </div>
           </Col>
         )))}
     </Row >
 
-      {/* Modals */ }
-      < FormModal
-  show = { showForm }
-  onHide = {() => setShowForm(false)
-}
-title = { currentItem? "Edit Staff Member": "Add New Staff Member" }
-onSubmit = { handleSave }
-  >
-  <Row className="g-3">
-    <Col xs={12}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Full Name *</Form.Label>
-        <Form.Control
-          type="text"
-          placeholder="e.g. Rajesh Kumar"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={6}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Role *</Form.Label>
-        <Form.Control
-          type="text"
-          placeholder="e.g. Head Chef"
-          value={formData.role}
-          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-          required
-        />
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={6}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Shift</Form.Label>
-        <Form.Select
-          value={formData.shift}
-          onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
-        >
-          <option value="Morning">Morning</option>
-          <option value="Evening">Evening</option>
-          <option value="Both">Both</option>
-        </Form.Select>
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={6}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Phone Number</Form.Label>
-        <Form.Control
-          type="tel"
-          placeholder="+91 98765 43210"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-        />
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={6}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Email</Form.Label>
-        <Form.Control
-          type="email"
-          placeholder="staff@breva.com"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        />
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={4}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Salary (₹)</Form.Label>
-        <Form.Control
-          type="number"
-          placeholder="25000"
-          value={formData.salary}
-          onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-        />
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={4}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Leaves Taken</Form.Label>
-        <Form.Control
-          type="number"
-          min="0"
-          value={formData.leavesTaken}
-          onChange={(e) => setFormData({ ...formData, leavesTaken: parseInt(e.target.value) || 0 })}
-        />
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={4}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Total Leaves</Form.Label>
-        <Form.Control
-          type="number"
-          min="0"
-          value={formData.leavesTotal}
-          onChange={(e) => setFormData({ ...formData, leavesTotal: parseInt(e.target.value) || 12 })}
-        />
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={6}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Joining Date</Form.Label>
-        <Form.Control
-          type="date"
-          value={formData.joiningDate}
-          onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-        />
-      </Form.Group>
-    </Col>
-    <Col xs={12} md={6}>
-      <Form.Group>
-        <Form.Label className="small fw-bold">Status</Form.Label>
-        <Form.Select
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-        >
-          <option value="On Duty">On Duty</option>
-          <option value="Off Duty">Off Duty</option>
-          <option value="On Leave">On Leave</option>
-        </Form.Select>
-      </Form.Group>
-    </Col>
-  </Row>
-      </FormModal >
+      {/* Modals */}
+      <FormModal
+        show={showForm}
+        onHide={() => setShowForm(false)}
+        title={currentItem ? "Edit Staff Member" : "Add New Staff Member"}
+        onSubmit={handleSave}
+      >
+        <Row className="g-3">
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Full Name *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="e.g. Rajesh Kumar"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Role *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="e.g. Head Chef"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Shift</Form.Label>
+              <Form.Select
+                value={formData.shift}
+                onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+              >
+                <option value="Morning">Morning</option>
+                <option value="Evening">Evening</option>
+                <option value="Both">Both</option>
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Phone Number</Form.Label>
+              <Form.Control
+                type="tel"
+                placeholder="+91 98765 43210"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Email</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="staff@breva.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Salary (₹)</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="25000"
+                value={formData.salary}
+                onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Leaves Taken</Form.Label>
+              <Form.Control
+                type="number"
+                min="0"
+                value={formData.leavesTaken}
+                onChange={(e) => setFormData({ ...formData, leavesTaken: parseInt(e.target.value) || 0 })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Total Leaves</Form.Label>
+              <Form.Control
+                type="number"
+                min="0"
+                value={formData.leavesTotal}
+                onChange={(e) => setFormData({ ...formData, leavesTotal: parseInt(e.target.value) || 12 })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Joining Date</Form.Label>
+              <Form.Control
+                type="date"
+                value={formData.joiningDate}
+                onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Status</Form.Label>
+              <Form.Select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="On Duty">On Duty</option>
+                <option value="Off Duty">Off Duty</option>
+                <option value="On Leave">On Leave</option>
+              </Form.Select>
+            </Form.Group>
+          </Col>
+        </Row>
+      </FormModal>
 
-  <DeleteModal
-    show={showDelete}
-    onHide={() => setShowDelete(false)}
-    onConfirm={confirmDelete}
-    itemName={currentItem?.name}
-  />
+      <DeleteModal
+        show={showDelete}
+        onHide={() => setShowDelete(false)}
+        onConfirm={confirmDelete}
+        itemName={currentItem?.name}
+      />
     </>
   );
 }

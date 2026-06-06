@@ -153,3 +153,24 @@ export const usersAPI = {
   update: (id, data) => api.put(`/users/${id}`, data, withSource('Users.update')),
   delete: (id) => api.delete(`/users/${id}`, withSource('Users.delete')),
 };
+
+export const attendanceAPI = {
+  getAll: (params) => api.get('/attendance', withSource('Attendance.getAll', { params })),
+  getByStaff: (staffId) => api.get(`/attendance/staff/${staffId}`, withSource('Attendance.getByStaff')),
+  create: (data) => api.post('/attendance', data, withSource('Attendance.create')),
+  update: (id, data) => api.put(`/attendance/${id}`, data, withSource('Attendance.update')),
+  delete: (id) => api.delete(`/attendance/${id}`, withSource('Attendance.delete')),
+  markPresent: (staffId) => api.post(`/attendance/mark-present`, { staffId }, withSource('Attendance.markPresent')),
+  markAbsent: (staffId) => api.post(`/attendance/mark-absent`, { staffId }, withSource('Attendance.markAbsent')),
+};
+
+export const leaveAPI = {
+  getAll: (params) => api.get('/leaves', withSource('Leaves.getAll', { params })),
+  getByStaff: (staffId) => api.get(`/leaves/staff/${staffId}`, withSource('Leaves.getByStaff')),
+  getMyLeaves: () => api.get('/leaves/my', withSource('Leaves.getMyLeaves')),
+  create: (data) => api.post('/leaves', data, withSource('Leaves.create')),
+  update: (id, data) => api.put(`/leaves/${id}`, data, withSource('Leaves.update')),
+  delete: (id) => api.delete(`/leaves/${id}`, withSource('Leaves.delete')),
+  approve: (id) => api.patch(`/leaves/${id}/approve`, {}, withSource('Leaves.approve')),
+  reject: (id, reason) => api.patch(`/leaves/${id}/reject`, { reason }, withSource('Leaves.reject')),
+};

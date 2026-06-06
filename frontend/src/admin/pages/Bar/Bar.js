@@ -7,13 +7,14 @@ import {
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import { menuAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const itemHasType = (item, target) => {
   const types = Array.isArray(item?.type) ? item.type : item?.type ? [item.type] : [];
   return types.includes(target);
 };
 
-export default function Bar({ userRole = 'bartender' }) {
+export default function Bar() {
   const [drinks, setDrinks] = useState([]);
   const [barCategories, setBarCategories] = useState([]);
   const [barCuisines, setBarCuisines] = useState([]);
@@ -29,6 +30,8 @@ export default function Bar({ userRole = 'bartender' }) {
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const { user } = useAuth();
+  const userRole = user?.role || 'bartender';
 
   const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin' || userRole === 'bartender';
 

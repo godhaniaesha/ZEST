@@ -7,6 +7,7 @@ import {
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import { menuAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const FORM_SKIP_KEYS = ['_id', '__v', 'createdAt', 'updatedAt', 'type'];
 
@@ -22,7 +23,7 @@ const getCategoryIcon = (name) => {
   return <MdRestaurant />;
 };
 
-export default function Menu({ userRole = 'chef' }) {
+export default function Menu() {
   const [items, setItems] = useState([]);
   const [cafeCategories, setCafeCategories] = useState([]);
   const [cafeCuisines, setCafeCuisines] = useState([]);
@@ -38,6 +39,8 @@ export default function Menu({ userRole = 'chef' }) {
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const { user } = useAuth();
+  const userRole = user?.role || 'chef';
 
   const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
 

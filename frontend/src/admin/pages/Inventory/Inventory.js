@@ -72,6 +72,7 @@ export default function Inventory() {
       name: item.name,
       category: item.category || 'General',
       unit: item.unit,
+                   
       quantity: item.quantity,
       status: item.status,
     });
