@@ -14,7 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const NAV_GROUPS = [
   {
-    label: 'Overview',
+    label: "Overview",
     items: [
       { 
         to: '/admin/dashboard', 
@@ -25,7 +25,7 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: 'Super Admin',
+    label: "Super Admin",
     items: [
       { to: '/admin/users', icon: <MdAdminPanelSettings />, label: 'User Management', roles: ['superadmin'] },
       { to: '/admin/system-logs', icon: <MdHistory />, label: 'System Logs', roles: ['superadmin'] },
@@ -33,7 +33,7 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: 'Management (Manager)',
+    label: "Management (Manager)",
     items: [
       { to: `${ADMIN_BASE}/pos`, icon: <MdLocalAtm />, label: 'POS & Billing', roles: ['manager', 'superadmin', 'cashier'] },
       { to: `${ADMIN_BASE}/orders`, icon: <MdReceiptLong />, label: 'Orders', badge: '8', roles: ['manager', 'superadmin', 'cashier', 'waiter', 'chef', 'bartender'] },
@@ -45,7 +45,7 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'Kitchen (Chef)',
+    label: "Kitchen (Chef)",
     items: [
       { to: '/admin/kitchen-display', icon: <MdKitchen />, label: 'Live Orders (KOT)', badge: '5', roles: ['chef', 'manager', 'superadmin'] },
       { to: '/admin/menu', icon: <MdRestaurantMenu />, label: 'Menu Items', badge: null, roles: ['chef', 'manager', 'superadmin'] },
@@ -55,7 +55,7 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: 'Service (Waiter)',
+    label: "Service (Waiter)",
     items: [
       { to: '/admin/tables', icon: <MdTableRestaurant />, label: 'Table Status', roles: ['waiter', 'manager', 'superadmin'] },
       { to: '/admin/take-order', icon: <MdCountertops />, label: 'Take New Order', roles: ['waiter', 'manager', 'superadmin'] },
@@ -63,7 +63,7 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: 'Feedbacks',
+    label: "Feedbacks",
     items: [
       { to: '/admin/reviews', icon: <MdStar />, label: 'Reviews & Ratings', roles: ['manager', 'superadmin'] }
     ]
@@ -79,7 +79,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose, currentUserRol
   const handleLogout = () => {
     logout();
     onClose();
-    navigate('/auth');
+    navigate("/auth");
   };
 
   const sidebarClass = [
@@ -92,7 +92,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose, currentUserRol
     <>
       {/* Mobile overlay */}
       <div
-        className={`d-overlay ${mobileOpen ? 'd-visible' : ''}`}
+        className={`d-overlay ${mobileOpen ? "d-visible" : ""}`}
         onClick={onClose}
       />
 
@@ -149,8 +149,14 @@ export default function Sidebar({ collapsed, mobileOpen, onClose, currentUserRol
 
         {/* Footer */}
         <div className="d-sidebar-footer">
-          <div className="d-nav-item" onClick={handleLogout} style={{ cursor: 'pointer' }}>
-            <span className="d-nav-icon"><MdLogout /></span>
+          <div
+            className="d-nav-item"
+            onClick={handleLogout}
+            style={{ cursor: "pointer" }}
+          >
+            <span className="d-nav-icon">
+              <MdLogout />
+            </span>
             <span className="d-nav-label">Logout</span>
             <span className="d-tooltip">Logout</span>
           </div>
