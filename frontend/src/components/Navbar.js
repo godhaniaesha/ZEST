@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import '../styles/x_style.css';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, loading } = useAuth();
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +25,34 @@ export default function Navbar() {
     document.body.style.overflow = isOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  useEffect(() => {
+    setProfileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!profileOpen) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setProfileOpen(false);
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [profileOpen]);
 
   const toggleOffcanvas = () => setIsOpen(prev => !prev);
   const closeOffcanvas = () => setIsOpen(false);
@@ -38,8 +71,37 @@ export default function Navbar() {
     { label: 'Menu', to: '/menu' },
     { label: 'Gallery', to: '/gallery' },
     { label: 'Contact', to: '/contactus' },
-    { label: 'Reservations', to: '/reservations' },
+    { label: user ? 'My Reservations' : 'Reservations', to: '/reservations' },
+    ...(user ? [{ label: 'Profile', to: '/profile' }] : [{ label: 'Sign In', to: '/auth' }]),
   ];
+
+  const userInitials = user?.name
+    ? user.name
+        .trim()
+        .split(/\s+/)
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'U';
+
+  const displayName = user?.name?.trim() || 'Account';
+  const firstName = displayName.split(/\s+/)[0];
+  const memberTier = user?.role === 'customer' ? 'ZEST Member' : user?.role || 'Member';
+
+  const renderAvatar = (className) =>
+    user?.image ? (
+      <img src={user.image} alt={displayName} className={`${className} x_has_image`} />
+    ) : (
+      <span className={className}>{userInitials}</span>
+    );
+
+  const handleLogout = () => {
+    logout();
+    setProfileOpen(false);
+    closeOffcanvas();
+    navigate('/auth');
+  };
 
   return (
     <>
@@ -72,6 +134,56 @@ export default function Navbar() {
 
           {/* Right: Reservation + Hamburger */}
           <div className="x_navbar-right">
+            {loading ? (
+              <span className="x_navbar_auth_loading" aria-label="Loading account" />
+            ) : user ? (
+              <div ref={dropdownRef} className={`x_navbar_dropdown_wrap${profileOpen ? ' x_open' : ''}`}>
+                <button
+                  type="button"
+                  className="x_navbar_dropdown_trigger"
+                  onClick={() => setProfileOpen((prev) => !prev)}
+                  aria-expanded={profileOpen}
+                  aria-haspopup="true"
+                  aria-label={`${displayName} account menu`}
+                >
+                  {renderAvatar('x_navbar_profile_icon')}
+                  <span className="x_navbar_user_name">{firstName}</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+
+                <div className={`x_navbar_dropdown${profileOpen ? ' x_show' : ''}`} role="menu">
+                  <div className="x_navbar_dropdown_header">
+                    {renderAvatar('x_navbar_dropdown_avatar')}
+                    <div className="x_navbar_dropdown_meta">
+                      <span className="x_navbar_dropdown_name">{displayName}</span>
+                      <span className="x_navbar_dropdown_email">{user.email}</span>
+                      <span className="x_navbar_dropdown_tier">{memberTier}</span>
+                    </div>
+                  </div>
+                  <div className="x_navbar_dropdown_divider" />
+                  <Link to="/profile" className="x_navbar_dropdown_item" role="menuitem" onClick={() => setProfileOpen(false)}>
+                    <span className="x_navbar_dropdown_item_dot" />
+                    My Profile
+                  </Link>
+                  <Link to="/reservations" className="x_navbar_dropdown_item" role="menuitem" onClick={() => setProfileOpen(false)}>
+                    <span className="x_navbar_dropdown_item_dot" />
+                    My Reservations
+                  </Link>
+                  <div className="x_navbar_dropdown_divider" />
+                  <button type="button" className="x_navbar_dropdown_item logout" role="menuitem" onClick={handleLogout}>
+                    <span className="x_navbar_dropdown_item_dot" />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link to="/auth" className="x_navbar_action_icon x_reservation-btn" onClick={closeOffcanvas}>
+                Sign In
+              </Link>
+            )}
+
             <Link to="/reservations" className="x_reservation-btn">
               Reserve a Table
             </Link>
@@ -112,9 +224,20 @@ export default function Navbar() {
         </div>
 
         <div className="x_offcanvas-body">
+          {user && (
+            <div className="x_offcanvas_user">
+              {renderAvatar('x_offcanvas_user_avatar')}
+              <div className="x_offcanvas_user_meta">
+                <span className="x_offcanvas_user_name">{displayName}</span>
+                <span className="x_offcanvas_user_email">{user.email}</span>
+                <span className="x_offcanvas_user_tier">{memberTier}</span>
+              </div>
+            </div>
+          )}
+
           <ul className="x_offcanvas-menu">
             {offcanvasLinks.map((link) => (
-              <li className="x_offcanvas-item" key={link.to}>
+              <li className="x_offcanvas-item" key={link.to + link.label}>
                 <Link
                   to={link.to}
                   className="x_offcanvas-link"
@@ -128,6 +251,11 @@ export default function Navbar() {
           </ul>
 
           <div className="x_offcanvas-footer">
+            {user ? (
+              <button type="button" className="x_offcanvas_logout" onClick={handleLogout}>
+                Sign Out
+              </button>
+            ) : null}
             <Link
               to="/reservations"
               className="x_offcanvas-reservation"

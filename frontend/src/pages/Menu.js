@@ -132,7 +132,7 @@ const Menu = () => {
                 <img src={featuredItem?.image} alt="Featured Dish" className="x_simple_main_img" />
                 <div className="x_simple_frame_border" />
               </div>
-              
+
               <div className="x_simple_label">
                 <span className="x_simple_tag">Featured Choice</span>
                 <h3 className="x_simple_title">{featuredItem?.name || 'Chef Special'}</h3>

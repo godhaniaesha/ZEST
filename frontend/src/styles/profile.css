@@ -3,7 +3,7 @@
    Redesigned for a Luxurious, Modern, and Animated Experience
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=DM+Sans:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=DM+Sans:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap");
 
 :root {
   /* Core Luxury Palette */
@@ -45,10 +45,13 @@
   min-height: 100vh;
   background-color: var(--p-cream);
   color: var(--p-text-main);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   position: relative;
+  z-index: 1;
+  isolation: isolate;
   overflow-x: hidden;
   padding-bottom: 100px;
+  pointer-events: auto;
 }
 
 /* ── HERO SECTION ── */
@@ -80,7 +83,7 @@
 }
 
 .x_profile_hero_label {
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.3em;
@@ -108,7 +111,7 @@
 }
 
 .x_profile_headline {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 900;
   line-height: 1.1;
@@ -190,7 +193,7 @@
   font-size: 18px;
   font-weight: 700;
   color: var(--p-emerald);
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
 }
 
 .x_stat_divider {
@@ -201,6 +204,7 @@
 
 /* ── MAIN CONTAINER ── */
 .x_profile_container {
+  width: 100%;
   max-width: 1300px;
   margin: 60px auto 0;
   padding: 0 24px;
@@ -331,7 +335,7 @@
 }
 
 .x_sidebar_promo h4 {
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   font-weight: 700;
   margin-bottom: 10px;
 }
@@ -351,7 +355,7 @@
   background: var(--p-emerald);
   color: var(--p-white);
   font-weight: 700;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   font-size: 11px;
   letter-spacing: 0.1em;
   cursor: pointer;
@@ -366,6 +370,7 @@
 
 /* ── CONTENT AREA ── */
 .x_profile_content {
+  width: 100%;
   background: var(--p-white);
   border-radius: var(--p-radius-lg);
   min-height: 600px;
@@ -460,7 +465,7 @@
 }
 
 .x_header_text_group h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: 32px;
   font-weight: 900;
   color: var(--p-emerald);
@@ -500,7 +505,7 @@
   border-radius: 50px;
   color: var(--p-emerald);
   font-weight: 700;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   font-size: 11px;
   letter-spacing: 0.1em;
   cursor: pointer;
@@ -531,7 +536,7 @@
 }
 
 .x_tab_header_simple h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: 32px;
   font-weight: 900;
   color: var(--p-emerald);
@@ -603,7 +608,7 @@
 
 /* ── PREMIUM FORMS ── */
 .x_section_title {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: 24px;
   margin-bottom: 30px;
   color: var(--p-emerald);
@@ -681,7 +686,7 @@
   color: var(--p-gold-light);
   border: none;
   border-radius: 50px;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   font-weight: 700;
   font-size: 12px;
   letter-spacing: 0.15em;
@@ -704,7 +709,7 @@
   color: var(--p-text-muted);
   border: 1px solid var(--p-silver);
   border-radius: 50px;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   font-weight: 700;
   font-size: 12px;
   cursor: pointer;
@@ -891,12 +896,12 @@
   font-size: 28px;
   font-weight: 900;
   color: var(--p-emerald);
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   line-height: 1;
 }
 
 .x_res_info h4 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: 20px;
   font-weight: 700;
   color: var(--p-emerald);
@@ -957,7 +962,7 @@
   border-radius: 50px;
   font-size: 11px;
   font-weight: 700;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   cursor: pointer;
   transition: var(--p-transition);
 }
@@ -987,7 +992,7 @@
 }
 
 .x_empty_premium h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: 28px;
   margin-bottom: 15px;
 }
@@ -1039,7 +1044,7 @@
 }
 
 .x_premium_modal_box h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: 28px;
   margin-bottom: 15px;
 }
@@ -1061,7 +1066,7 @@
   background: var(--p-cream);
   border: 1px solid var(--p-silver);
   border-radius: 50px;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   font-weight: 700;
   font-size: 11px;
   cursor: pointer;
@@ -1073,7 +1078,7 @@
   color: white;
   border: none;
   border-radius: 50px;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   font-weight: 700;
   font-size: 11px;
   cursor: pointer;
@@ -1086,11 +1091,9 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
-
   .x_profile_sidebar {
     position: static;
   }
-
   .x_profile_menu {
     display: flex;
     overflow-x: auto;
@@ -1099,15 +1102,13 @@
     gap: 10px;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch; 
+    -webkit-overflow-scrolling: touch;
     width: 100%;
     max-width: 100vw;
   }
-
   .x_profile_menu::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
-  
   .x_profile_menu_item {
     width: auto;
     white-space: nowrap;
@@ -1115,19 +1116,16 @@
     font-size: 14px;
     flex-shrink: 0; /* Prevent items from shrinking, forces overflow */
   }
-
   .x_menu_separator,
   .x_sidebar_promo,
   .x_arrow {
     display: none;
   }
-
   .x_profile_stats_bar {
     /* grid-template-columns: 1fr; */
     gap: 20px;
     padding: 25px;
   }
-
   .x_stat_item {
     justify-content: flex-start;
   }
@@ -1138,61 +1136,60 @@
     height: 450px;
     clip-path: ellipse(200% 100% at 50% 0%);
   }
-
   .x_profile_tab {
     padding: 30px 15px;
   }
-
   .x_tab_header_premium {
     flex-direction: column;
     text-align: center;
     gap: 20px;
   }
-
   .x_edit_action_btn {
     margin: 10px auto 0;
     width: 100%;
     justify-content: center;
   }
-
   .x_info_grid_premium,
   .x_input_row_premium {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-
   .x_res_main {
     flex-direction: column;
     text-align: center;
     padding: 20px;
   }
-
   .x_res_meta_row {
     justify-content: center;
     flex-wrap: wrap;
   }
-
   .x_res_footer {
     flex-direction: column;
     gap: 15px;
     padding: 20px;
   }
-
   .x_res_footer button,
   .x_res_footer span {
     width: 100%;
     text-align: center;
     justify-content: center;
   }
-
   .x_profile_stats_bar {
     grid-template-columns: 1fr;
   }
-
   .x_stat_divider {
     height: 1px;
     width: 100%;
-    background: linear-gradient(to right, transparent, var(--p-silver), transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--p-silver),
+      transparent
+    );
+  }
+  .x_profile_sidebar,
+  .x_profile_content {
+    width: 94%;
   }
 }
 
@@ -1202,66 +1199,62 @@
     padding-top: 40px;
     margin-top: -85px;
   }
-
   .x_profile_headline {
     font-size: 28px;
   }
-
   .x_profile_hero_sub {
     font-size: 14px;
   }
-
   .x_btn_primary_premium,
   .x_btn_secondary_premium {
     padding: 12px 20px;
     font-size: 11px;
     width: 100%;
   }
-
   .x_form_actions_premium {
     flex-direction: column;
     width: 100%;
   }
-
   .x_avatar_main {
     width: 90px;
     height: 90px;
   }
-
   .x_header_text_group h2 {
     font-size: 24px;
   }
-
   .x_user_meta {
     flex-direction: column;
     gap: 8px;
   }
-
   .x_meta_divider {
     display: none;
   }
-
   .x_profile_container {
     padding: 0 15px;
   }
-
   .x_premium_modal_box {
     padding: 30px 20px;
   }
-
   .x_modal_actions_premium {
     grid-template-columns: 1fr;
   }
-
   .x_profile_stats_bar {
     padding: 0;
     gap: 0px;
   }
-
   .x_profile_inner_wrap {
     display: flex !important;
     flex-direction: column !important;
     gap: 20px;
+  }
+  .x_profile_sidebar {
+    width: 99%;
+  }
+  .x_profile_content {
+    width: 100%;
+  }
+  .x_profile_container {
+    margin: 45px auto 0;
   }
 }
 
@@ -1270,43 +1263,34 @@
   .x_profile_headline {
     font-size: 24px;
   }
-
   .x_profile_hero_label {
     font-size: 9px;
     letter-spacing: 0.1em;
   }
-
   .x_stat_value {
     font-size: 16px;
   }
-
   .x_stat_icon {
     width: 44px;
     height: 44px;
   }
-
   .x_profile_tab {
     padding: 20px 10px;
   }
-
   .x_input_wrapper input {
     padding: 14px 15px 14px 45px;
     font-size: 14px;
   }
-
   .x_input_icon {
     left: 15px;
   }
-
   .x_res_date_box {
     width: 60px;
     height: 60px;
   }
-
   .x_res_day {
     font-size: 22px;
   }
-
   .x_promo_content {
     padding: 15px;
   }
@@ -1316,26 +1300,21 @@
   .x_profile_headline {
     font-size: 22px;
   }
-
   .x_tier_badge {
     padding: 3px 8px;
     font-size: 9px;
   }
-
   .x_profile_menu_item {
     padding: 8px 14px;
     font-size: 13px;
   }
-
   .x_menu_icon_wrap {
     width: 30px;
     height: 30px;
   }
-
   .x_card_value {
     font-size: 14px;
   }
-
   .x_section_title {
     font-size: 20px;
   }
