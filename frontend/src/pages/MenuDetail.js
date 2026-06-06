@@ -2,10 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
-  Star,
-  Clock,
   ChefHat,
+  Clock,
   Info,
+  Leaf,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Utensils,
 } from 'lucide-react';
 import { menuAPI } from '../api';
 import { normalizeMenuItem } from '../utils/menuUtils';
@@ -22,6 +26,7 @@ const MenuDetail = () => {
     const loadItem = async () => {
       try {
         setLoading(true);
+        setError('');
         const response = await menuAPI.getById(id);
         setItem(normalizeMenuItem(response.data));
       } catch (err) {
@@ -30,6 +35,7 @@ const MenuDetail = () => {
         setLoading(false);
       }
     };
+
     loadItem();
   }, [id]);
 
@@ -37,7 +43,10 @@ const MenuDetail = () => {
     return (
       <div className="menu_detail_page">
         <div className="menu_detail_inner">
-          <p>Loading item...</p>
+          <div className="menu_detail_state">
+            <div className="menu_detail_loader" />
+            <p>Loading item...</p>
+          </div>
         </div>
       </div>
     );
@@ -47,14 +56,21 @@ const MenuDetail = () => {
     return (
       <div className="menu_detail_page">
         <div className="menu_detail_inner">
-          <p>{error || 'Item not found.'}</p>
-          <button type="button" className="menu_detail_back_btn" onClick={() => navigate('/menu')}>
-            Back to Menu
-          </button>
+          <div className="menu_detail_state menu_detail_state_card">
+            <h1>{error || 'Item not found.'}</h1>
+            <p>The dish you are looking for is not available right now.</p>
+            <button type="button" className="menu_detail_back_btn" onClick={() => navigate('/menu')}>
+              <ArrowLeft size={16} />
+              Back to Menu
+            </button>
+          </div>
         </div>
       </div>
     );
   }
+
+  const typeLabel = Array.isArray(item.type) && item.type.length > 0 ? item.type.join(' / ') : '';
+  const isAvailable = !item.status || item.status === 'Available';
 
   return (
     <div className="menu_detail_page">
@@ -65,27 +81,41 @@ const MenuDetail = () => {
         </button>
 
         <div className="menu_detail_grid">
-          <div className="menu_detail_visual">
+          <section className="menu_detail_visual" aria-label={`${item.name} preview`}>
             <div className="menu_detail_image_wrap">
-              <img src={item.image} alt={item.name} />
+              {item.image ? (
+                <img src={item.image} alt={item.name} />
+              ) : (
+                <div className="menu_detail_image_fallback">
+                  <ChefHat size={54} />
+                </div>
+              )}
+              <span className="menu_detail_image_badge">
+                <Sparkles size={14} />
+                Signature
+              </span>
             </div>
 
             <div className="menu_detail_visual_card">
               <div className="menu_detail_visual_card_text">
                 <span>Chef Recommended</span>
                 <strong>{item.name}</strong>
-                <small>{item.category}{item.cuisine ? ` · ${item.cuisine}` : ''}</small>
+                <small>{item.category}{item.cuisine ? ` / ${item.cuisine}` : ''}</small>
               </div>
               <div className="menu_detail_visual_card_badge">
                 <ChefHat size={22} />
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="menu_detail_info">
+          <section className="menu_detail_info">
             <div className="menu_detail_topline">
               <span className="menu_detail_category">{item.category}</span>
-              {item.status && <span className="menu_detail_status">{item.status}</span>}
+              {item.status && (
+                <span className={`menu_detail_status ${isAvailable ? 'available' : 'sold_out'}`}>
+                  {item.status}
+                </span>
+              )}
             </div>
 
             <h1>{item.name}</h1>
@@ -98,10 +128,10 @@ const MenuDetail = () => {
                   {item.cuisine}
                 </div>
               )}
-              {Array.isArray(item.type) && item.type.length > 0 && (
+              {typeLabel && (
                 <div className="menu_detail_chip">
                   <Clock size={13} />
-                  {item.type.join(' · ')}
+                  {typeLabel}
                 </div>
               )}
               {item.rating && (
@@ -116,13 +146,19 @@ const MenuDetail = () => {
               <span className="menu_detail_price_main">₹{item.price}</span>
             </div>
 
+            <div className="menu_detail_service" aria-label="Dish highlights">
+              <span><Utensils size={13} /> Freshly prepared</span>
+              <span><Leaf size={13} /> Seasonal ingredients</span>
+              <span><ShieldCheck size={13} /> Quality checked</span>
+            </div>
+
             <div className="menu_detail_panels">
               <div className="menu_detail_story">
                 <h2>About this dish</h2>
                 <p className="menu_detail_description">{item.description}</p>
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>
