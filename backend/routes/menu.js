@@ -64,6 +64,21 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/:id", async (req, res) => {
+  try {
+    const menuItem = await Menu.findById(req.params.id);
+    if (!menuItem) {
+      return res.status(404).json({ message: "Menu item not found" });
+    }
+    res.json({
+      ...menuItem.toObject(),
+      type: toMenuTypeArray(menuItem.type, menuItem.category),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post(
   "/",
   upload.single("img"),

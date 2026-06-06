@@ -20,6 +20,8 @@ const INITIAL_BAR_CATEGORIES = [
   { id: 4, name: 'Spirits', type: 'Bar', icon: <MdLocalBar /> },
 ];
 
+const EMPTY_CATEGORY = { name: '' };
+
 const INITIAL_CUISINES = [
   { id: 1, name: 'Indian', icon: <MdRestaurant /> },
   { id: 2, name: 'Italian', icon: <MdRestaurant /> },

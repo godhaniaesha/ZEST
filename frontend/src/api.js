@@ -2,6 +2,8 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+const withSource = (_source, config = {}) => config;
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
 });
@@ -36,6 +38,7 @@ api.interceptors.response.use(
 
 export const menuAPI = {
   getAll: () => api.get('/menu'),
+  getById: (id) => api.get(`/menu/${id}`),
   create: (data) => api.post('/menu', data, {
     headers: {
       // Don't set Content-Type, let axios handle it for FormData

@@ -9,6 +9,8 @@ import {
 } from 'react-icons/md';
 import { useAuth } from '../../contexts/AuthContext';
 
+const ADMIN_BASE = '/admin';
+
 // Available Roles in your system:
 // 'superadmin', 'manager', 'chef', 'waiter'
 
@@ -35,13 +37,13 @@ const NAV_GROUPS = [
   {
     label: "Management (Manager)",
     items: [
-      { to: `${ADMIN_BASE}/pos`, icon: <MdLocalAtm />, label: 'POS & Billing', roles: ['manager', 'superadmin', 'cashier'] },
-      { to: `${ADMIN_BASE}/orders`, icon: <MdReceiptLong />, label: 'Orders', badge: '8', roles: ['manager', 'superadmin', 'cashier', 'waiter', 'chef', 'bartender'] },
-      { to: `${ADMIN_BASE}/reservations`, icon: <MdEventSeat />, label: 'Reservations', badge: '3', roles: ['manager', 'superadmin', 'waiter'] },
-      { to: `${ADMIN_BASE}/staff`, icon: <MdPeople />, label: 'Staff', roles: ['manager', 'superadmin'] },
-      { to: `${ADMIN_BASE}/staff-attendance`, icon: <MdAccessTime />, label: 'Attendance', roles: ['manager', 'superadmin'] },
-      { to: `${ADMIN_BASE}/leave-management`, icon: <MdEvent />, label: 'Leave Management', badge: '2', roles: ['manager', 'superadmin'] },
-      { to: `${ADMIN_BASE}/reports`, icon: <MdBarChart />, label: 'Reports & Analytics', roles: ['manager', 'superadmin'] },
+      { to: `/admin/pos`, icon: <MdLocalAtm />, label: 'POS & Billing', roles: ['manager', 'superadmin', 'cashier'] },
+      { to: `/admin/orders`, icon: <MdReceiptLong />, label: 'Orders', badge: '8', roles: ['manager', 'superadmin', 'cashier', 'waiter', 'chef', 'bartender'] },
+      { to: `/admin/reservations`, icon: <MdEventSeat />, label: 'Reservations', badge: '3', roles: ['manager', 'superadmin', 'waiter'] },
+      { to: `/admin/staff`, icon: <MdPeople />, label: 'Staff', roles: ['manager', 'superadmin'] },
+      { to: `/admin/staff-attendance`, icon: <MdAccessTime />, label: 'Attendance', roles: ['manager', 'superadmin'] },
+      { to: `/admin/leave-management`, icon: <MdEvent />, label: 'Leave Management', badge: '2', roles: ['manager', 'superadmin'] },
+      { to: `/admin/reports`, icon: <MdBarChart />, label: 'Reports & Analytics', roles: ['manager', 'superadmin'] },
     ],
   },
   {

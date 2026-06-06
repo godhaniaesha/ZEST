@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { useAuth } from '../contexts/AuthContext';
 
 import Layout from './Layout/Layout';
 
@@ -26,6 +27,8 @@ import Categories from './pages/Categories/Categories';
 import StaffAttendance from './pages/StaffAttendance/StaffAttendance';
 import LeaveManagement from './pages/LeaveManagement/LeaveManagement';
 
+const ADMIN_ROLES = ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender'];
+
 // Wrapper component to pass userRole to pages
 function PageWrapper({ Component }) {
   const { user } = useAuth();
@@ -33,8 +36,6 @@ function PageWrapper({ Component }) {
 }
 
 export default function AppRoutes() {
-  const adminRoles = ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender'];
-  
   return (
     <Routes>
      <Route
