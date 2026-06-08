@@ -28,6 +28,7 @@ import Blog from './pages/Blog';
 import Gallery from './pages/Gallery';
 import BlogDetail from './pages/BlogDetail';
 import Profile from './pages/Profile';
+import BarCafeHome from './pages/BarCafeHome';
 
 function UserLayout({ children }) {
   return (
@@ -53,6 +54,7 @@ function App() {
           {/* USER ROUTES */}
           <Route path="/" element={<UserLayout>  <Home /> </UserLayout>} />
           <Route path="/home" element={<UserLayout>  <Home /> </UserLayout>} />
+          <Route path="/cbhome" element={<UserLayout>  <BarCafeHome /> </UserLayout>} />
           <Route path="/aboutus" element={<UserLayout>  <AboutUs /> </UserLayout>} />
           <Route path="/contactus" element={<UserLayout>  <ContactUs /> </UserLayout>} />
           <Route path="/services" element={<UserLayout>  <Services /> </UserLayout>} />
