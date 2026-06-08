@@ -39,6 +39,13 @@ const buildMenuPayload = (body, file) => {
     status: body.status || "Available",
     type: toMenuTypeArray(body.type, category),
     cuisine: body.cuisine,
+    description: body.description || "",
+    rating: parseFloat(body.rating) || 4.5,
+    reviews: parseInt(body.reviews) || 0,
+    prepTime: body.prepTime || "15 MIN",
+    calories: body.calories || "",
+    dietary: body.dietary || "NONE",
+    highlights: Array.isArray(body.highlights) ? body.highlights : (body.highlights ? body.highlights.split(',').map(h => h.trim()) : []),
     color: body.color || "#2ecc71",
   };
 

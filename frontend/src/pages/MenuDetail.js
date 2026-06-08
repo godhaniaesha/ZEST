@@ -10,6 +10,7 @@ import {
   Sparkles,
   Star,
   Utensils,
+  Flame,
 } from 'lucide-react';
 import { menuAPI } from '../api';
 import { normalizeMenuItem } from '../utils/menuUtils';
@@ -77,11 +78,12 @@ const MenuDetail = () => {
       <div className="menu_detail_inner">
         <button type="button" className="menu_detail_back_btn" onClick={() => navigate('/menu')}>
           <ArrowLeft size={16} />
-          Back to Menu
+          BACK TO MENU
         </button>
 
         <div className="menu_detail_grid">
-          <section className="menu_detail_visual" aria-label={`${item.name} preview`}>
+          {/* ── LEFT VISUAL COLUMN ── */}
+          <section className="menu_detail_visual">
             <div className="menu_detail_image_wrap">
               {item.image ? (
                 <img src={item.image} alt={item.name} />
@@ -90,73 +92,102 @@ const MenuDetail = () => {
                   <ChefHat size={54} />
                 </div>
               )}
-              <span className="menu_detail_image_badge">
-                <Sparkles size={14} />
-                Signature
-              </span>
             </div>
 
             <div className="menu_detail_visual_card">
               <div className="menu_detail_visual_card_text">
-                <span>Chef Recommended</span>
-                <strong>{item.name}</strong>
-                <small>{item.category}{item.cuisine ? ` / ${item.cuisine}` : ''}</small>
+                <span className="chef_recommended_label">CHEF RECOMMENDED</span>
+                <strong className="chef_recommended_name">{item.name}</strong>
+                <div className="chef_recommended_meta">
+                  <span>{item.category}</span>
+                  <span className="meta_dot">•</span>
+                  <span>{item.rating || 4.5} ★</span>
+                </div>
               </div>
               <div className="menu_detail_visual_card_badge">
-                <ChefHat size={22} />
+                <ChefHat size={24} />
               </div>
             </div>
           </section>
 
+          {/* ── RIGHT INFO COLUMN ── */}
           <section className="menu_detail_info">
-            <div className="menu_detail_topline">
-              <span className="menu_detail_category">{item.category}</span>
-              {item.status && (
-                <span className={`menu_detail_status ${isAvailable ? 'available' : 'sold_out'}`}>
-                  {item.status}
-                </span>
-              )}
+            <div className="menu_detail_category_badge">
+              {item.category?.toUpperCase()}
             </div>
 
-            <h1>{item.name}</h1>
-            <p className="menu_detail_short">{item.description}</p>
+            <h1 className="menu_detail_title">{item.name}</h1>
+            <p className="menu_detail_tagline">
+              {item.description || 'Decadent chocolate cake with a molten center, served with vanilla ice cream.'}
+            </p>
 
-            <div className="menu_detail_meta">
-              {item.cuisine && (
-                <div className="menu_detail_chip">
-                  <Info size={13} />
-                  {item.cuisine}
-                </div>
-              )}
-              {typeLabel && (
-                <div className="menu_detail_chip">
-                  <Clock size={13} />
-                  {typeLabel}
-                </div>
-              )}
-              {item.rating && (
-                <div className="menu_detail_rating">
-                  <Star size={14} fill="currentColor" />
-                  <span>{item.rating}</span>
-                </div>
-              )}
+            <div className="menu_detail_meta_row">
+              <div className="meta_pill">
+                <Star size={14} fill="#C9A84C" stroke="#C9A84C" />
+                <span>{item.rating || 4.5}</span>
+                <span className="meta_reviews">({item.reviews || 45} reviews)</span>
+              </div>
+              <div className="meta_pill">
+                <Clock size={14} />
+                <span>{item.prepTime || '18 MIN'}</span>
+              </div>
+              <div className="meta_pill">
+                <Flame size={14} />
+                <span>{item.calories || '580 KCAL'}</span>
+              </div>
             </div>
 
-            <div className="menu_detail_price">
-              <span className="menu_detail_price_main">₹{item.price}</span>
+            <div className="menu_detail_dietary_row">
+              <div className="meta_pill dietary_pill">
+                <Leaf size={14} />
+                <span>{item.dietary || 'VEGETARIAN'}</span>
+              </div>
             </div>
 
-            <div className="menu_detail_service" aria-label="Dish highlights">
-              <span><Utensils size={13} /> Freshly prepared</span>
-              <span><Leaf size={13} /> Seasonal ingredients</span>
-              <span><ShieldCheck size={13} /> Quality checked</span>
+            <div className="menu_detail_price_tag">
+              <span className="currency">₹</span>
+              <span className="amount">{item.price}</span>
             </div>
 
             <div className="menu_detail_panels">
-              <div className="menu_detail_story">
-                <h2>About this dish</h2>
-                <p className="menu_detail_description">{item.description}</p>
+              <div className="detail_panel_card story_panel">
+                <h2 className="panel_title">THE STORY</h2>
+                <p className="panel_content">
+                  {item.description || 'A dark-chocolate batter enriched with single-origin Valrhona couverture, baked to yield a perfectly liquid core. Served warm directly from the oven, paired with artisan Madagascar-vanilla bean ice cream and a scattering of seasonal fresh berries.'}
+                </p>
               </div>
+              
+              <div className="detail_panel_card highlights_panel">
+                <h2 className="panel_title">HIGHLIGHTS</h2>
+                <div className="highlights_grid">
+                  {(item.highlights && item.highlights.length > 0 ? item.highlights : ['Molten center', 'Fresh berries', 'Vanilla ice cream', 'Warm serving']).map((h, i) => (
+                    <div key={i} className="highlight_item">
+                      <span className="highlight_dot">◆</span>
+                      {h}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="detail_panel_card freshness_panel">
+                <div className="freshness_icon_wrap">
+                  <Info size={18} />
+                </div>
+                <div className="freshness_text">
+                  <h2 className="panel_title">FRESHNESS PROMISE</h2>
+                  <p className="panel_content">
+                    All ingredients are sourced daily from local and organic farms wherever possible. 
+                    Our kitchen team prepares every dish to order so you always receive it at peak freshness.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="menu_detail_footer_tags">
+              <div className="footer_tag">MADE TO ORDER</div>
+              <div className="footer_tag">FRESH INGREDIENTS</div>
+              <div className="footer_tag">EST. {item.prepTime || '18 MIN'}</div>
+              <div className="footer_tag">CHEF CRAFTED</div>
             </div>
           </section>
         </div>

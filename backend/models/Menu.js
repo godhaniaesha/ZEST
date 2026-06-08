@@ -32,6 +32,41 @@ const menuSchema = new mongoose.Schema({
     required: true
   },
 
+  description: {
+    type: String,
+    default: ''
+  },
+
+  rating: {
+    type: Number,
+    default: 4.5
+  },
+
+  reviews: {
+    type: Number,
+    default: 0
+  },
+
+  prepTime: {
+    type: String,
+    default: '15 MIN'
+  },
+
+  calories: {
+    type: String,
+    default: ''
+  },
+
+  dietary: {
+    type: String,
+    enum: ['VEGETARIAN', 'NON-VEGETARIAN', 'VEGAN', 'GLUTEN-FREE', 'NONE'],
+    default: 'NONE'
+  },
+
+  highlights: [{
+    type: String
+  }],
+
   color: {
     type: String,
     default: '#2ecc71'
