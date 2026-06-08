@@ -232,10 +232,10 @@
 .x_simple_main_img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  background-size: cover;
+  background-position: center;
   border-radius: 4px;
   position: relative;
-  /* z-index: 2; */
 }
 
 .x_simple_frame_border {
@@ -296,11 +296,60 @@
 /* Responsive Adjustments */
 @media (max-width: 1024px) {
   .x_menu_hero_right {
-    display: none;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 1;
+    display: block;
+  }
+
+  .x_menu_hero_left {
+    z-index: 2;
+    padding: 60px 20px;
+    background: linear-gradient(to right, rgba(22, 48, 43, 0.95) 40%, transparent 100%);
+    min-height: 80vh;
   }
 
   .x_menu_simple_showcase {
-    max-width: 400px;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+  }
+
+  .x_simple_frame {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .x_simple_frame_border,
+  .x_simple_label {
+    display: none;
+  }
+
+  .x_simple_main_img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    filter: brightness(0.4);
+  }
+
+  .x_menu_headline, 
+  .x_menu_hero_sub,
+  .x_menu_hero_label_text {
+    color: var(--d-white);
+  }
+
+  .x_menu_stats_item strong {
+    color: var(--d-gold);
+  }
+
+  .x_menu_stats_item span {
+    color: var(--d-accent-muted);
   }
 }
 
@@ -383,6 +432,7 @@
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
   padding: 12px 0;
+  width: 100%;
 }
 
 .x_menu_filter_buttons {
@@ -390,6 +440,37 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .x_menu_filters_bar {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding: 15px 0;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .x_menu_filters_bar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  .x_menu_filter_buttons {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 0 20px;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .x_menu_filter_btn {
+    white-space: nowrap;
+    padding: 8px 16px;
+    flex-shrink: 0;
+  }
 }
 
 .x_menu_filter_btn {

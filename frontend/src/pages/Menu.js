@@ -258,7 +258,16 @@ const Menu = () => {
           <div className="x_menu_hero_right">
             <div className="x_menu_simple_showcase">
               <div className="x_simple_frame">
-                <img src={menuItems[7]?.image} alt="Featured Dish" className="x_simple_main_img" />
+                <div 
+                  className="x_simple_main_img" 
+                  style={{ 
+                    backgroundImage: `url(${menuItems[7]?.image})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }} 
+                  role="img" 
+                  aria-label="Featured Dish" 
+                />
                 <div className="x_simple_frame_border" />
               </div>
 

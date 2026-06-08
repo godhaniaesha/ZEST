@@ -34,9 +34,9 @@ function UserLayout({ children }) {
     <>
       <Navbar />
 
-      <div>
+      <main className="x_main_content">
         {children}
-      </div>
+      </main>
 
       <Footer />
     </>
