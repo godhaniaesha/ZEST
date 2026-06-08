@@ -168,7 +168,7 @@ const BlogDetail = () => {
       `,
     },
     {
-      id: 7,
+      id: 7,  
       title: 'Desserts That Tell a Story',
       category: 'food',
       author: 'Sophie Anderson',

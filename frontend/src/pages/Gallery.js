@@ -134,7 +134,7 @@ const Gallery = () => {
   const [activeFilter, setActiveFilter]   = useState('all');
   const [viewMode, setViewMode]           = useState('grid');
   const [lightboxIndex, setLightboxIndex] = useState(null);
-
+      
   const filtered = activeFilter === 'all'
     ? galleryItems
     : galleryItems.filter((i) => i.category === activeFilter);
