@@ -598,7 +598,7 @@ body{
 
 .z_about_card:hover .z_about_card_icon {
   background: var(--d-gold-dark);
-  transform: rotate(-4deg) scale(1.08);
+  /* transform: rotate(-4deg) scale(1.08); */
 }
 
 .z_about_card:hover .z_about_card_icon svg {

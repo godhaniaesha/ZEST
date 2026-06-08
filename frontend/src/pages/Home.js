@@ -15,10 +15,7 @@ import {
   FaMobileAlt,
   FaBirthdayCake,
 } from "react-icons/fa";
-import {
-  FaBolt,
-  FaCreditCard,
-} from "react-icons/fa";
+import { FaBolt, FaCreditCard } from "react-icons/fa";
 import { FaArrowRightLong } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay, EffectFade } from "swiper/modules";
@@ -1623,8 +1620,7 @@ body {
   .d_menu_grid { grid-template-columns: repeat(2, 1fr); }
   .d_events_grid { grid-template-columns: repeat(2, 1fr); }
   .d_testi_grid { grid-template-columns: repeat(2, 1fr); }
-  .d_about_grid { grid-template-columns: 1fr; gap: 48px; }
-  .d_about_images { max-width: 560px; }
+  .d_about_images { max-width: 100%; }
   .d_about_img_accent { right: 0; }
   .d_experience_grid { grid-template-columns: 1fr; gap: 24px; }
   .d_exp_visual_panel { max-width: 760px; margin: 0 auto; }
@@ -1645,16 +1641,18 @@ body {
       linear-gradient(90deg, rgba(22,48,43,0.65) 0%, rgba(22,48,43,0.08) 100%);
   }
   .d_hero_title { font-size: clamp(52px, 9.3vw, 78px); }
+  .d_about_img_main { aspect-ratio: 3 / 5;  }
+  
 }
 
 @media (max-width: 768px) {
+
   .d_stats_inner { grid-template-columns: repeat(2, 1fr); }
   .d_stat_item:nth-child(2) { border-right: none; }
   .d_menu_grid { grid-template-columns: 1fr; }
   .d_events_grid { grid-template-columns: 1fr; }
   .d_testi_grid { grid-template-columns: 1fr; }
   .d_res_grid { grid-template-columns: 1fr; }
-  .d_about_features { grid-template-columns: 1fr; }
   .d_hero_image_side { display: none; }
   .d_gallery_grid { grid-template-columns: repeat(2, 1fr); }
   .d_gallery_item.d_tall { grid-row: span 1; }
@@ -1672,16 +1670,25 @@ body {
   .d_exp_meta_strip { grid-template-columns: 1fr; }
   .d_exp_card { align-items: flex-start; text-align: left; }
   .d_hero { min-height: auto; }
-  .d_hero_container { padding: 88px 5% 78px; }
+  .d_hero_container { padding: 48px 5% 78px; }
   .d_hero_title { font-size: clamp(44px, 11.4vw, 66px); }
   .d_hero_title_topline { font-size: 10px; letter-spacing: 0.2em; margin-bottom: 12px; }
   .d_hero_subtitle { font-size: clamp(18px, 4.5vw, 24px); }
   .d_hero_desc { max-width: 100%; margin-bottom: 30px; }
   .d_hero_glass_stats { padding: 18px 20px; border-radius: var(--d-radius-md); }
   .d_hero_scroll_indicator { bottom: 18px; }
+  .d_section { padding: 48px 5%; }
 }
+  @media (max-width:700px){
+  .d_about_grid { grid-template-columns: 1fr; gap: 48px; }
+  .d_about_img_main { aspect-ratio: 7 / 5;  }
+    .d_about_img_accent {     width: 40%;
+    aspect-ratio: 2 / 2; }
+  }
 
 @media (max-width: 480px) {
+  .d_about_features { grid-template-columns: 1fr; }
+
   .d_section { padding: 64px 5%; }
   .d_stats_inner { grid-template-columns: repeat(2, 1fr); }
   .d_gallery_grid { grid-template-columns: 1fr; }
@@ -1705,10 +1712,11 @@ body {
   .d_hero_glass_label { font-size: 11px; }
   .d_hero_glass_value { font-size: 20px; }
   .d_hero_scroll_indicator { display: none; }
+  .d_menu_tab{ padding : 10px 15px }
 }
 
 @media (max-width: 360px) {
-  .d_hero_container { padding: 82px 5% 70px; }
+  .d_hero_container { padding: 36px 5% 70px; }
   .d_hero_title { font-size: 34px; }
   .d_hero_subtitle { font-size: 14px; }
   .d_hero_desc { font-size: 13px; }
@@ -1718,66 +1726,219 @@ body {
 /* ─── DATA ──────────────────────────── */
 const MENU_ITEMS = {
   food: [
-    { name: "Saffron Risotto", desc: "Aged parmesan, wild mushrooms, truffle oil drizzle", price: "₹680", tag: "Chef's Pick", img: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600&q=80" },
-    { name: "Grilled Paneer Steak", desc: "Smoked paneer, herb butter, roasted vegetables, mint yogurt", price: "₹980", tag: "Signature", img: "https://i.pinimg.com/736x/c2/2d/e6/c22de692e1d328790389d5e179a35168.jpg" },
-    { name: "Mezze Platter", desc: "House hummus, baba ganoush, pita, olives & pickles", price: "₹420", tag: "Sharing", img: "https://images.unsplash.com/photo-1541014741259-de529411b96a?w=600&q=80" },
+    {
+      name: "Saffron Risotto",
+      desc: "Aged parmesan, wild mushrooms, truffle oil drizzle",
+      price: "₹680",
+      tag: "Chef's Pick",
+      img: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600&q=80",
+    },
+    {
+      name: "Grilled Paneer Steak",
+      desc: "Smoked paneer, herb butter, roasted vegetables, mint yogurt",
+      price: "₹980",
+      tag: "Signature",
+      img: "https://i.pinimg.com/736x/c2/2d/e6/c22de692e1d328790389d5e179a35168.jpg",
+    },
+    {
+      name: "Mezze Platter",
+      desc: "House hummus, baba ganoush, pita, olives & pickles",
+      price: "₹420",
+      tag: "Sharing",
+      img: "https://images.unsplash.com/photo-1541014741259-de529411b96a?w=600&q=80",
+    },
   ],
   drinks: [
-    { name: "Dark & Stormy", desc: "Dark rum, ginger beer, fresh lime, bitters", price: "₹360", tag: "Classic", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80" },
-    { name: "Smoked Negroni", desc: "Gin, Campari, sweet vermouth, cedar smoke", price: "₹420", tag: "Signature", img: "https://images.unsplash.com/photo-1572096244012-63dfa5b6ae06?w=600&q=80" },
-    { name: "Gold Rush", desc: "Bourbon, honey syrup, lemon juice, egg white foam", price: "₹390", tag: "House Fav", img: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&q=80" },
+    {
+      name: "Dark & Stormy",
+      desc: "Dark rum, ginger beer, fresh lime, bitters",
+      price: "₹360",
+      tag: "Classic",
+      img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80",
+    },
+    {
+      name: "Smoked Negroni",
+      desc: "Gin, Campari, sweet vermouth, cedar smoke",
+      price: "₹420",
+      tag: "Signature",
+      img: "https://images.unsplash.com/photo-1572096244012-63dfa5b6ae06?w=600&q=80",
+    },
+    {
+      name: "Gold Rush",
+      desc: "Bourbon, honey syrup, lemon juice, egg white foam",
+      price: "₹390",
+      tag: "House Fav",
+      img: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&q=80",
+    },
   ],
   coffee: [
-    { name: "Reserve Pour-Over", desc: "Single-origin Ethiopian beans, notes of jasmine & berry", price: "₹280", tag: "Specialty", img: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80" },
-    { name: "Dalgona Cloud", desc: "Whipped espresso, vanilla cold foam, oat milk base", price: "₹220", tag: "Trending", img: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&q=80" },
-    { name: "Cardamom Latte", desc: "Double espresso, steamed milk, house cardamom blend", price: "₹240", tag: "Bestseller", img: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=80" },
+    {
+      name: "Reserve Pour-Over",
+      desc: "Single-origin Ethiopian beans, notes of jasmine & berry",
+      price: "₹280",
+      tag: "Specialty",
+      img: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80",
+    },
+    {
+      name: "Dalgona Cloud",
+      desc: "Whipped espresso, vanilla cold foam, oat milk base",
+      price: "₹220",
+      tag: "Trending",
+      img: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&q=80",
+    },
+    {
+      name: "Cardamom Latte",
+      desc: "Double espresso, steamed milk, house cardamom blend",
+      price: "₹240",
+      tag: "Bestseller",
+      img: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=80",
+    },
   ],
 };
 
 const BLOGS = [
-  { day: "14", month: "Jun", category: "Coffee Culture", title: "Top 5 Signature Coffees You Must Try", author: "Admin", readTime: "4 min read", img: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80", },
-  { day: "21", month: "Jun", category: "Mixology", title: "The Art of Craft Cocktail Making", author: "Sophia", readTime: "6 min read", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80", },
-  { day: "28", month: "Jun", category: "Healthy Dining", title: "Why Farm-Fresh Ingredients Matter", author: "Chef Marco", readTime: "5 min read", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80", },
+  {
+    day: "14",
+    month: "Jun",
+    category: "Coffee Culture",
+    title: "Top 5 Signature Coffees You Must Try",
+    author: "Admin",
+    readTime: "4 min read",
+    img: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80",
+  },
+  {
+    day: "21",
+    month: "Jun",
+    category: "Mixology",
+    title: "The Art of Craft Cocktail Making",
+    author: "Sophia",
+    readTime: "6 min read",
+    img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80",
+  },
+  {
+    day: "28",
+    month: "Jun",
+    category: "Healthy Dining",
+    title: "Why Farm-Fresh Ingredients Matter",
+    author: "Chef Marco",
+    readTime: "5 min read",
+    img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80",
+  },
 ];
 
 const TESTIMONIALS = [
-  { text: "The ambiance alone is worth the visit — warm, intimate, and refined. The cocktails are crafted with thoughtfulness, each sip tells a story.", name: "Priya Menon", role: "Food Blogger", initials: "PM" },
-  { text: "An evening that felt like a European escape without leaving the city. The lamb chops were transcendent and the service was genuinely attentive.", name: "Arjun Shah", role: "Regular Guest", initials: "AS" },
-  { text: "I've dined at many upscale venues, but the combination of coffee culture and bar here is truly unique. The Jazz Nights are unmissable events.", name: "Kavya Nair", role: "Food Critic", initials: "KN" },
+  {
+    text: "The ambiance alone is worth the visit — warm, intimate, and refined. The cocktails are crafted with thoughtfulness, each sip tells a story.",
+    name: "Priya Menon",
+    role: "Food Blogger",
+    initials: "PM",
+  },
+  {
+    text: "An evening that felt like a European escape without leaving the city. The lamb chops were transcendent and the service was genuinely attentive.",
+    name: "Arjun Shah",
+    role: "Regular Guest",
+    initials: "AS",
+  },
+  {
+    text: "I've dined at many upscale venues, but the combination of coffee culture and bar here is truly unique. The Jazz Nights are unmissable events.",
+    name: "Kavya Nair",
+    role: "Food Critic",
+    initials: "KN",
+  },
 ];
 
 const HERO_SLIDES = [
-  { img: "https://imgmediagumlet.lbb.in/media/2026/01/695dd3702fc23c297f46882e_1767756656264.jpg", alt: "Café ambiance" },
-  { img: "https://thepatriot.in/wp-content/uploads/2022/10/Cafe-Gumbad-2.jpg", alt: "Lounge interior" },
-  { img: "https://ansainteriors.com/wp-content/uploads/2019/11/cafe-interior-design.jpg", alt: "Evening bar" },
-  { img: "https://static.vecteezy.com/system/resources/thumbnails/052/183/531/small/cozy-coffee-shop-with-warm-lighting-and-big-window-creating-serene-atmosphere-photo.jpeg", alt: "Specialty coffee" },
+  {
+    img: "https://imgmediagumlet.lbb.in/media/2026/01/695dd3702fc23c297f46882e_1767756656264.jpg",
+    alt: "Café ambiance",
+  },
+  {
+    img: "https://thepatriot.in/wp-content/uploads/2022/10/Cafe-Gumbad-2.jpg",
+    alt: "Lounge interior",
+  },
+  {
+    img: "https://ansainteriors.com/wp-content/uploads/2019/11/cafe-interior-design.jpg",
+    alt: "Evening bar",
+  },
+  {
+    img: "https://static.vecteezy.com/system/resources/thumbnails/052/183/531/small/cozy-coffee-shop-with-warm-lighting-and-big-window-creating-serene-atmosphere-photo.jpeg",
+    alt: "Specialty coffee",
+  },
 ];
 
 const LIGHT_SECTION_DECOR = {
   about: [
     { Icon: FaCoffee, top: "6%", left: "4%", size: "d_decor_lg", rotate: -12 },
     { Icon: FaLeaf, top: "72%", left: "8%", size: "d_decor_md", rotate: 8 },
-    { Icon: FaCocktail, top: "18%", right: "6%", size: "d_decor_md", rotate: 15 },
+    {
+      Icon: FaCocktail,
+      top: "18%",
+      right: "6%",
+      size: "d_decor_md",
+      rotate: 15,
+    },
     { Icon: FaMusic, top: "58%", right: "4%", size: "d_decor_sm", rotate: -6 },
-    { Icon: FaBirthdayCake, bottom: "8%", right: "12%", size: "d_decor_sm", rotate: 10 },
+    {
+      Icon: FaBirthdayCake,
+      bottom: "8%",
+      right: "12%",
+      size: "d_decor_sm",
+      rotate: 10,
+    },
   ],
   order: [
     { Icon: FaBolt, top: "10%", right: "5%", size: "d_decor_lg", rotate: -8 },
-    { Icon: FaMobileAlt, top: "55%", left: "3%", size: "d_decor_md", rotate: 12 },
-    { Icon: FaCreditCard, bottom: "12%", right: "8%", size: "d_decor_sm", rotate: -14 },
+    {
+      Icon: FaMobileAlt,
+      top: "55%",
+      left: "3%",
+      size: "d_decor_md",
+      rotate: 12,
+    },
+    {
+      Icon: FaCreditCard,
+      bottom: "12%",
+      right: "8%",
+      size: "d_decor_sm",
+      rotate: -14,
+    },
     { Icon: FaCoffee, top: "28%", left: "6%", size: "d_decor_sm", rotate: 6 },
   ],
   blog: [
     { Icon: FaPenNib, top: "8%", left: "5%", size: "d_decor_md", rotate: -10 },
     { Icon: FaCoffee, top: "42%", right: "4%", size: "d_decor_lg", rotate: 8 },
-    { Icon: FaCocktail, bottom: "10%", left: "7%", size: "d_decor_sm", rotate: 14 },
+    {
+      Icon: FaCocktail,
+      bottom: "10%",
+      left: "7%",
+      size: "d_decor_sm",
+      rotate: 14,
+    },
     { Icon: FaLeaf, top: "20%", right: "10%", size: "d_decor_sm", rotate: -5 },
   ],
   gallery: [
-    { Icon: FaGlassCheers, top: "6%", right: "6%", size: "d_decor_lg", rotate: 12 },
-    { Icon: FaCoffee, bottom: "14%", left: "5%", size: "d_decor_md", rotate: -8 },
+    {
+      Icon: FaGlassCheers,
+      top: "6%",
+      right: "6%",
+      size: "d_decor_lg",
+      rotate: 12,
+    },
+    {
+      Icon: FaCoffee,
+      bottom: "14%",
+      left: "5%",
+      size: "d_decor_md",
+      rotate: -8,
+    },
     { Icon: FaStar, top: "38%", left: "4%", size: "d_decor_sm", rotate: 6 },
-    { Icon: FaCocktail, top: "12%", left: "10%", size: "d_decor_sm", rotate: -12 },
+    {
+      Icon: FaCocktail,
+      top: "12%",
+      left: "10%",
+      size: "d_decor_sm",
+      rotate: -12,
+    },
     { Icon: FaMusic, bottom: "8%", right: "5%", size: "d_decor_md", rotate: 4 },
   ],
 };
@@ -1815,7 +1976,13 @@ function LightSectionDecor({ variant = "about" }) {
 export default function Home() {
   const [activeTab, setActiveTab] = useState("food");
   const [toast, setToast] = useState(null);
-  const [resForm, setResForm] = useState({ name: "", date: "", time: "", guests: "", occasion: "" });
+  const [resForm, setResForm] = useState({
+    name: "",
+    date: "",
+    time: "",
+    guests: "",
+    occasion: "",
+  });
 
   const showToast = (msg) => {
     setToast(msg);
@@ -1827,7 +1994,9 @@ export default function Home() {
       showToast("⚠️ Please fill in all required fields");
       return;
     }
-    showToast("🎉 Reservation confirmed! We'll send a confirmation to your email.");
+    showToast(
+      "🎉 Reservation confirmed! We'll send a confirmation to your email.",
+    );
     setResForm({ name: "", date: "", time: "", guests: "", occasion: "" });
   };
 
@@ -1862,12 +2031,17 @@ export default function Home() {
             <div className="d_hero_content">
               <div className="d_hero_title_topline">Luxury Cafe Experience</div>
               <h1 className="d_hero_title">
-                Where <span className="d_hero_title_highlight">Coffee</span><br />Meets Crafted<br /><em>Evenings</em>
+                Where <span className="d_hero_title_highlight">Coffee</span>
+                <br />
+                Meets Crafted
+                <br />
+                <em>Evenings</em>
               </h1>
               <p className="d_hero_subtitle">Café · Bar · Dining Lounge</p>
               <p className="d_hero_desc">
-                Discover a refined all-day destination where specialty brews, signature cocktails,
-                and chef-curated plates come together in one timeless setting.
+                Discover a refined all-day destination where specialty brews,
+                signature cocktails, and chef-curated plates come together in
+                one timeless setting.
               </p>
               <div className="d_hero_actions">
                 <a href="#reservation" className="d_btn_primary">
@@ -1921,7 +2095,10 @@ export default function Home() {
       </div>
 
       {/* ── 3. ABOUT / STORY ── */}
-      <section className="d_light_section" style={{ background: "var(--d-bg)", padding: "0" }}>
+      <section
+        className="d_light_section"
+        style={{ background: "var(--d-bg)", padding: "0" }}
+      >
         <LightSectionDecor variant="about" />
         <div className="d_section">
           <div className="d_about_grid">
@@ -1938,18 +2115,27 @@ export default function Home() {
               />
               <div className="d_about_badge">
                 <span className="d_about_badge_num">10</span>
-                <span className="d_about_badge_text">Years of<br />Excellence</span>
+                <span className="d_about_badge_text">
+                  Years of
+                  <br />
+                  Excellence
+                </span>
               </div>
             </div>
             <div>
               <div className="d_section_tag">Our Story</div>
               <h2 className="d_section_title">
-                Crafted With<br /><em>Passion</em>, Served<br />With Pride
+                Crafted With
+                <br />
+                <em>Passion</em>, Served
+                <br />
+                With Pride
               </h2>
               <p className="d_section_lead">
-                Born from a love of authentic flavors and meaningful connections,
-                we blend the ritual of fine coffee with the artistry of craft cocktails —
-                creating a space that evolves through the day, from morning calm to evening revelry.
+                Born from a love of authentic flavors and meaningful
+                connections, we blend the ritual of fine coffee with the
+                artistry of craft cocktails — creating a space that evolves
+                through the day, from morning calm to evening revelry.
               </p>
               <div className="d_about_features">
                 {[
@@ -1974,15 +2160,34 @@ export default function Home() {
       {/* ── 4. MENU SHOWCASE ── */}
       <section id="menu" className="d_menu_section d_section_wide d_noise">
         <div className="d_section" style={{ paddingTop: 0, paddingBottom: 0 }}>
-          <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>Our Menu</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24 }}>
+          <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>
+            Our Menu
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+              gap: 24,
+            }}
+          >
             <div>
-              <h2 className="d_section_title" style={{ color: "var(--d-white)", marginBottom: 0 }}>
-                Crafted for <em>Every</em><br />Craving & Occasion
+              <h2
+                className="d_section_title"
+                style={{ color: "var(--d-white)", marginBottom: 0 }}
+              >
+                Crafted for <em>Every</em>
+                <br />
+                Craving & Occasion
               </h2>
             </div>
-            <p className="d_section_lead" style={{ color: "rgba(224,224,224,0.55)", maxWidth: 380 }}>
-              From morning pour-overs to midnight nightcaps — our menu is a journey through flavour.
+            <p
+              className="d_section_lead"
+              style={{ color: "rgba(224,224,224,0.55)", maxWidth: 380 }}
+            >
+              From morning pour-overs to midnight nightcaps — our menu is a
+              journey through flavour.
             </p>
           </div>
           <div className="d_menu_tabs">
@@ -1992,7 +2197,11 @@ export default function Home() {
                 className={`d_menu_tab ${activeTab === t ? "d_active" : ""}`}
                 onClick={() => setActiveTab(t)}
               >
-                {t === "food" ? "🍽 Food" : t === "drinks" ? "🍸 Bar" : "☕ Coffee"}
+                {t === "food"
+                  ? "🍽 Food"
+                  : t === "drinks"
+                    ? "🍸 Bar"
+                    : "☕ Coffee"}
               </button>
             ))}
           </div>
@@ -2010,7 +2219,9 @@ export default function Home() {
                     <span className="d_menu_price">{item.price}</span>
                     <button
                       className="d_order_btn"
-                      onClick={() => showToast(`✓ "${item.name}" added to your order!`)}
+                      onClick={() =>
+                        showToast(`✓ "${item.name}" added to your order!`)
+                      }
                     >
                       + Add to Order
                     </button>
@@ -2020,7 +2231,10 @@ export default function Home() {
             ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
-            <button className="d_btn_primary" onClick={() => showToast("🧾 Full menu opening...")}>
+            <button
+              className="d_btn_primary"
+              onClick={() => showToast("🧾 Full menu opening...")}
+            >
               View Full Menu →
             </button>
           </div>
@@ -2028,19 +2242,31 @@ export default function Home() {
       </section>
 
       {/* ── 5. ONLINE ORDER CTA ── */}
-      <section className="d_light_section" style={{ background: "var(--d-bg)", padding: "80px 5%" }}>
+      <section
+        className="d_light_section"
+        style={{ background: "var(--d-bg)", padding: "80px 5%" }}
+      >
         <LightSectionDecor variant="order" />
         <div className="d_order_cta">
           <div className="d_order_cta_left">
-            <div className="d_section_tag" style={{ color: "var(--d-gold)", marginBottom: 20 }}>Online Ordering</div>
+            <div
+              className="d_section_tag"
+              style={{ color: "var(--d-gold)", marginBottom: 20 }}
+            >
+              Online Ordering
+            </div>
             <h3 className="d_order_cta_title">
-              Order <em>Ahead</em>,<br />Skip the Wait
+              Order <em>Ahead</em>,<br />
+              Skip the Wait
             </h3>
             <p className="d_order_cta_desc">
-              Pre-order your favourites for dine-in or takeaway.
-              Freshly prepared at your preferred time — because your time is precious.
+              Pre-order your favourites for dine-in or takeaway. Freshly
+              prepared at your preferred time — because your time is precious.
             </p>
-            <button className="d_btn_primary" onClick={() => showToast("🛒 Online ordering coming soon!")}>
+            <button
+              className="d_btn_primary"
+              onClick={() => showToast("🛒 Online ordering coming soon!")}
+            >
               Reserve Table →
             </button>
           </div>
@@ -2081,11 +2307,31 @@ export default function Home() {
           <div className="d_experience_grid">
             <div className="d_exp_visual_panel">
               <div className="d_exp_mosaic">
-                <img className="d_exp_img d_tall" src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=85" alt="Interior" />
-                <img className="d_exp_img d_short" src="https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?w=600&q=80" alt="Bar" />
-                <img className="d_exp_img d_short" src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=600&q=80" alt="Coffee" />
-                <img className="d_exp_img d_short" src="https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&q=80" alt="Dining table" />
-                <img className="d_exp_img d_short" src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&q=80" alt="Evening bar ambiance" />
+                <img
+                  className="d_exp_img d_tall"
+                  src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=85"
+                  alt="Interior"
+                />
+                <img
+                  className="d_exp_img d_short"
+                  src="https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?w=600&q=80"
+                  alt="Bar"
+                />
+                <img
+                  className="d_exp_img d_short"
+                  src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=600&q=80"
+                  alt="Coffee"
+                />
+                <img
+                  className="d_exp_img d_short"
+                  src="https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&q=80"
+                  alt="Dining table"
+                />
+                <img
+                  className="d_exp_img d_short"
+                  src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&q=80"
+                  alt="Evening bar ambiance"
+                />
               </div>
               <div className="d_exp_floating_badge">
                 <span className="d_exp_badge_title">12 Hrs</span>
@@ -2093,39 +2339,72 @@ export default function Home() {
               </div>
             </div>
             <div className="d_exp_content">
-              <div className="d_section_tag" style={{ color: "var(--d-gold-light)" }}>The Experience</div>
-              <h2 className="d_section_title" style={{ color: "var(--d-white)" }}>
-                A Day at Zest,<br />Curated in <em style={{ color: "var(--d-gold-light)" }}>Moments</em>
+              <div
+                className="d_section_tag"
+                style={{ color: "var(--d-gold-light)" }}
+              >
+                The Experience
+              </div>
+              <h2
+                className="d_section_title"
+                style={{ color: "var(--d-white)" }}
+              >
+                A Day at Zest,
+                <br />
+                Curated in{" "}
+                <em style={{ color: "var(--d-gold-light)" }}>Moments</em>
               </h2>
               <p className="d_section_lead d_exp_lead">
-                Begin with artisanal coffee rituals, move through chef-led dining, and close the night with crafted music and signature pours.
-                Every zone, light tone, and service touchpoint is designed for comfort with luxury character.
+                Begin with artisanal coffee rituals, move through chef-led
+                dining, and close the night with crafted music and signature
+                pours. Every zone, light tone, and service touchpoint is
+                designed for comfort with luxury character.
               </p>
               <div className="d_exp_meta_strip">
                 <div className="d_exp_meta_item">
-                  <div className="d_exp_meta_icon"><FaClock /></div>
+                  <div className="d_exp_meta_icon">
+                    <FaClock />
+                  </div>
                   <div className="d_exp_meta_label">Operating Hours</div>
                   <div className="d_exp_meta_value">16 Hrs</div>
                 </div>
                 <div className="d_exp_meta_item">
-                  <div className="d_exp_meta_icon"><FaMapMarkerAlt /></div>
+                  <div className="d_exp_meta_icon">
+                    <FaMapMarkerAlt />
+                  </div>
                   <div className="d_exp_meta_label">Experience Zones</div>
                   <div className="d_exp_meta_value">5 Spaces</div>
                 </div>
                 <div className="d_exp_meta_item">
-                  <div className="d_exp_meta_icon"><FaStar /></div>
+                  <div className="d_exp_meta_icon">
+                    <FaStar />
+                  </div>
                   <div className="d_exp_meta_label">Guest Satisfaction</div>
                   <div className="d_exp_meta_value">4.9/5</div>
                 </div>
               </div>
               <div className="d_exp_cards">
                 {[
-                  { Icon: FaCoffee, title: "Morning Ritual Lounge", desc: "Single-origin brews, fresh bakery, and soft natural daylight seating for calm starts." },
-                  { Icon: FaMusic, title: "Sunset Sound Sessions", desc: "Acoustic and jazz-inspired evenings with volume-balanced ambience for conversation." },
-                  { Icon: FaGlassCheers, title: "Private Celebration Suites", desc: "Intimate hosting corners for birthdays, proposals, and premium social occasions." },
+                  {
+                    Icon: FaCoffee,
+                    title: "Morning Ritual Lounge",
+                    desc: "Single-origin brews, fresh bakery, and soft natural daylight seating for calm starts.",
+                  },
+                  {
+                    Icon: FaMusic,
+                    title: "Sunset Sound Sessions",
+                    desc: "Acoustic and jazz-inspired evenings with volume-balanced ambience for conversation.",
+                  },
+                  {
+                    Icon: FaGlassCheers,
+                    title: "Private Celebration Suites",
+                    desc: "Intimate hosting corners for birthdays, proposals, and premium social occasions.",
+                  },
                 ].map((c) => (
                   <div className="d_exp_card" key={c.title}>
-                    <div className="d_exp_icon"><c.Icon /></div>
+                    <div className="d_exp_icon">
+                      <c.Icon />
+                    </div>
                     <div>
                       <div className="d_exp_card_title">{c.title}</div>
                       <div className="d_exp_card_desc">{c.desc}</div>
@@ -2218,7 +2497,10 @@ export default function Home() {
       </section> */}
 
       {/* ── 8a. BLOGS ── */}
-      <section className="d_light_section" style={{ background: "var(--d-bg)" }}>
+      <section
+        className="d_light_section"
+        style={{ background: "var(--d-bg)" }}
+      >
         <LightSectionDecor variant="blog" />
         <div className="d_section">
           <div
@@ -2234,10 +2516,7 @@ export default function Home() {
             <div>
               <div className="d_section_tag">Latest Articles</div>
 
-              <h2
-                className="d_section_title"
-                style={{ marginBottom: 0 }}
-              >
+              <h2 className="d_section_title" style={{ marginBottom: 0 }}>
                 From Our <em>Blog</em>
               </h2>
             </div>
@@ -2248,9 +2527,7 @@ export default function Home() {
                 color: "var(--d-primary)",
                 borderColor: "var(--d-border)",
               }}
-              onClick={() =>
-                showToast("📰 Full blog page coming soon!")
-              }
+              onClick={() => showToast("📰 Full blog page coming soon!")}
             >
               View All Blogs →
             </button>
@@ -2275,13 +2552,9 @@ export default function Home() {
                 <div className="d_event_body">
                   {/* Top Content */}
                   <div>
-                    <div className="d_event_type">
-                      {blog.category}
-                    </div>
+                    <div className="d_event_type">{blog.category}</div>
 
-                    <div className="d_event_name">
-                      {blog.title}
-                    </div>
+                    <div className="d_event_name">{blog.title}</div>
                   </div>
 
                   {/* Footer */}
@@ -2300,9 +2573,7 @@ export default function Home() {
 
                     <button
                       className="d_event_register"
-                      onClick={() =>
-                        showToast(`📖 Opening "${blog.title}"`)
-                      }
+                      onClick={() => showToast(`📖 Opening "${blog.title}"`)}
                     >
                       Read More <FaArrowRight style={{ marginLeft: 8 }} />
                     </button>
@@ -2317,18 +2588,44 @@ export default function Home() {
       {/* ── 8b. TESTIMONIALS ── */}
       <section className="d_testi_section">
         <div className="d_testi_inner">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+              gap: 24,
+            }}
+          >
             <div>
-              <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>Guest Reviews</div>
-              <h2 className="d_section_title" style={{ color: "var(--d-white)", marginBottom: 0 }}>
-                Stories of <em>Unforgettable</em><br />Evenings
+              <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>
+                Guest Reviews
+              </div>
+              <h2
+                className="d_section_title"
+                style={{ color: "var(--d-white)", marginBottom: 0 }}
+              >
+                Stories of <em>Unforgettable</em>
+                <br />
+                Evenings
               </h2>
             </div>
             <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <span key={i} style={{ color: "var(--d-gold)", fontSize: 20 }}>★</span>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <span key={i} style={{ color: "var(--d-gold)", fontSize: 20 }}>
+                  ★
+                </span>
               ))}
-              <span style={{ color: "rgba(224,224,224,0.5)", fontSize: 14, marginLeft: 8, alignSelf: "center" }}>4.9 / 5 · 2,400+ reviews</span>
+              <span
+                style={{
+                  color: "rgba(224,224,224,0.5)",
+                  fontSize: 14,
+                  marginLeft: 8,
+                  alignSelf: "center",
+                }}
+              >
+                4.9 / 5 · 2,400+ reviews
+              </span>
             </div>
           </div>
           <div className="d_testi_grid">
@@ -2351,43 +2648,82 @@ export default function Home() {
       </section>
 
       {/* ── GALLERY ── */}
-      <section className="d_light_section" style={{ background: "var(--d-bg)", padding: "80px 5%" }}>
+      <section
+        className="d_light_section"
+        style={{ background: "var(--d-bg)", padding: "80px 5%" }}
+      >
         <LightSectionDecor variant="gallery" />
         <div style={{ maxWidth: 1300, margin: "0 auto" }}>
-          <div style={{ marginBottom: 40, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 20 }}>
+          <div
+            style={{
+              marginBottom: 40,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+              gap: 20,
+            }}
+          >
             <div>
               <div className="d_section_tag">Gallery</div>
-              <h2 className="d_section_title" style={{ marginBottom: 0 }}>A Glimpse of <em>Our World</em></h2>
+              <h2 className="d_section_title" style={{ marginBottom: 0 }}>
+                A Glimpse of <em>Our World</em>
+              </h2>
             </div>
-            <button className="d_btn_outline" style={{ color: "var(--d-primary)", borderColor: "var(--d-border)" }}
-              onClick={() => showToast("📸 Full gallery opening...")}>
+            <button
+              className="d_btn_outline"
+              style={{
+                color: "var(--d-primary)",
+                borderColor: "var(--d-border)",
+              }}
+              onClick={() => showToast("📸 Full gallery opening...")}
+            >
               View All →
             </button>
           </div>
           <div className="d_gallery_grid">
             <div className="d_gallery_item d_wide d_tall">
-              <img className="d_gallery_img" style={{ minHeight: 400 }} src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=85" alt="Interior" />
+              <img
+                className="d_gallery_img"
+                style={{ minHeight: 400 }}
+                src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=85"
+                alt="Interior"
+              />
             </div>
             <div className="d_gallery_item">
-              <img className="d_gallery_img" src="https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=400&q=80" alt="Coffee" />
+              <img
+                className="d_gallery_img"
+                src="https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=400&q=80"
+                alt="Coffee"
+              />
             </div>
             <div className="d_gallery_item">
-              <img className="d_gallery_img" src="https://images.unsplash.com/photo-1560512823-829485b8bf24?w=400&q=80" alt="Cocktail" />
+              <img
+                className="d_gallery_img"
+                src="https://images.unsplash.com/photo-1560512823-829485b8bf24?w=400&q=80"
+                alt="Cocktail"
+              />
             </div>
             <div className="d_gallery_item">
-              <img className="d_gallery_img" src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=400&q=80" alt="Food" />
+              <img
+                className="d_gallery_img"
+                src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=400&q=80"
+                alt="Food"
+              />
             </div>
             <div className="d_gallery_item">
-              <img className="d_gallery_img" src="https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=400&q=80" alt="Ambiance" />
+              <img
+                className="d_gallery_img"
+                src="https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=400&q=80"
+                alt="Ambiance"
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* Toast */}
-      {toast && (
-        <div className="d_toast">{toast}</div>
-      )}
+      {toast && <div className="d_toast">{toast}</div>}
     </>
   );
 }
