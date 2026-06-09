@@ -1835,15 +1835,15 @@ const TESTIMONIALS = [
   },
   {
     text: "An evening that felt like a European escape without leaving the city. The lamb chops were transcendent and the service was genuinely attentive.",
-    name: "Arjun Shah",
+    name: "Harshad Kaur",
     role: "Regular Guest",
-    initials: "AS",
+    initials: "HK",
   },
   {
     text: "I've dined at many upscale venues, but the combination of coffee culture and bar here is truly unique. The Jazz Nights are unmissable events.",
-    name: "Kavya Nair",
+    name: "Kavya Dair",
     role: "Food Critic",
-    initials: "KN",
+    initials: "KD",
   },
 ];
 
