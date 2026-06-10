@@ -8,12 +8,12 @@ import {
   Mail,
   MapPin,
   MessageCircle,
-  Navigation,
   Phone,
   Send,
   Users,
   Wifi,
 } from 'lucide-react';
+import { contactAPI } from '../api';
 import '../styles/x_pages.css';
 
 const ContactUs = () => {
@@ -25,6 +25,8 @@ const ContactUs = () => {
     message: '',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const contactInfo = [
     {
@@ -83,13 +85,27 @@ const ContactUs = () => {
       ...prev,
       [name]: value,
     }));
+    if (error) setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-    setTimeout(() => setSubmitted(false), 5000);
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await contactAPI.submit(formData);
+      if (response.data.success) {
+        setSubmitted(true);
+        setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+        setTimeout(() => setSubmitted(false), 5000);
+      }
+    } catch (err) {
+      console.error('Contact form error:', err);
+      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -169,6 +185,13 @@ const ContactUs = () => {
               </div>
             )}
 
+            {error && (
+              <div className="x_contact_error" style={{ color: '#e74c3c', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span role="img" aria-label="error">⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+
             <form className="x_contact_form" onSubmit={handleSubmit}>
               <div className="x_form_group">
                 <label htmlFor="name" className="x_form_label">
@@ -183,6 +206,7 @@ const ContactUs = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -200,6 +224,7 @@ const ContactUs = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
 
@@ -215,6 +240,7 @@ const ContactUs = () => {
                     placeholder="+1 (555) 123-4567"
                     value={formData.phone}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -232,6 +258,7 @@ const ContactUs = () => {
                   value={formData.subject}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -248,12 +275,19 @@ const ContactUs = () => {
                   value={formData.message}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 />
               </div>
 
-              <button type="submit" className="x_contact_submit">
-                <Send size={18} />
-                Send Message
+              <button type="submit" className="x_contact_submit" disabled={loading}>
+                {loading ? (
+                  <>Sending...</>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    Send Message
+                  </>
+                )}
               </button>
             </form>
           </div>

@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, enum: ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender', 'customer'], default: 'customer' },
   status: { type: String, enum: ['Active', 'Inactive', 'On Duty'], default: 'Active' },
+  phone: { type: String },
+  address: { type: String },
   image: { type: String } // Optional image URL
 }, { timestamps: true });
 

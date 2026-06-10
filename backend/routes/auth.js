@@ -83,4 +83,34 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+// Change Password
+router.post('/change-password', auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    console.log('Password change request for user:', req.user.id);
+    
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      console.log('User not found for password change');
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const isMatch = await user.comparePassword(currentPassword);
+    console.log('Current password match:', isMatch);
+    
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword; // Pre-save hook will hash it
+    await user.save();
+    console.log('Password updated successfully for user:', user._id);
+    
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;

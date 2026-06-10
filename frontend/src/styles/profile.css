@@ -436,7 +436,7 @@
   right: 8px;
   width: 18px;
   height: 18px;
-  background: #2ecc71;
+  background: #1a8269;
   border: 3px solid var(--p-white);
   border-radius: 50%;
 }
@@ -642,7 +642,7 @@
   color: var(--p-gold);
 }
 
-.x_input_wrapper input {
+.x_input_wrapper input , .x_input_wrapper textarea {
   width: 100%;
   padding: 16px 20px 16px 54px;
   background: var(--p-pearl);

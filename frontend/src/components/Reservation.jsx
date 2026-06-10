@@ -12,6 +12,8 @@ import {
   FiMail,
   FiPhone,
 } from "react-icons/fi";
+import { useAuth } from "../contexts/AuthContext";
+import { reservationsAPI } from "../api";
 
 const h_res_css = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
@@ -728,6 +730,7 @@ const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 export default function ZestReservation() {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -746,6 +749,18 @@ export default function ZestReservation() {
     expiry: "",
     cvv: "",
   });
+
+  useEffect(() => {
+    if (user) {
+      setForm(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+      }));
+    }
+  }, [user]);
+
   const [selHour, setSelHour] = useState(7);
   const [selMin, setSelMin] = useState(30);
   const [selPeriod, setSelPeriod] = useState("PM");
@@ -851,7 +866,7 @@ export default function ZestReservation() {
     if (!t || t.cap < form.guests) update("table", null);
   }, [form.guests]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
     const phoneDigits = form.phone.replace(/\D/g, "");
     const cardDigits = form.card.replace(/\D/g, "");
@@ -860,26 +875,42 @@ export default function ZestReservation() {
 
     if (step === 1 && !form.date) return setError("Please select a date.");
     if (step === 2 && !form.table) return setError("Please select a table.");
-    if (
-      step === 3 &&
-      (!form.name.trim() ||
-        !emailOk ||
-        phoneDigits.length < 10 ||
-        !form.seatingArea ||
-        !form.agreePolicy)
-    )
-      return setError(
-        "Complete guest info, seating details and accept reservation policy.",
-      );
+    
+    if (step === 3) {
+      if (!form.name.trim()) return setError("Please enter your full name.");
+      if (!emailOk) return setError("Please enter a valid email address.");
+      if (phoneDigits.length < 10) return setError("Please enter a valid 10-digit phone number.");
+      if (!form.seatingArea) return setError("Please select a seating area.");
+      if (!form.agreePolicy) return setError("You must accept the reservation policy.");
+    }
+
     if (step === 4 && (cardDigits.length !== 16 || !expiryOk || !cvvOk))
       return setError("Enter valid card number, expiry (MM/YY), and CVV.");
 
     if (step === 5) {
-      setLoading(true);
-      setTimeout(() => {
+      try {
+        setLoading(true);
+        const reservationData = {
+          customerName: form.name,
+          phone: form.phone,
+          email: form.email,
+          userId: user?._id || user?.id || null,
+          date: form.date,
+          time: formattedTime,
+          guests: form.guests,
+          tableNumber: form.table,
+          status: 'Pending'
+        };
+        
+        console.log('Sending reservation data:', reservationData);
+        await reservationsAPI.create(reservationData);
+        
         setLoading(false);
         setStep(6);
-      }, 2200);
+      } catch (err) {
+        setLoading(false);
+        setError(err.response?.data?.message || "Could not save reservation. Please try again.");
+      }
     } else setStep((p) => p + 1);
   };
 

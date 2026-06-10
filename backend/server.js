@@ -28,6 +28,7 @@ const inventoryRoutes = require('./routes/inventory');
 const reservationRoutes = require('./routes/reservations');
 const userRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
+const contactRoutes = require('./routes/contacts');
 
 const Menu = require('./models/Menu');
 const Table = require('./models/Table');
@@ -46,49 +47,23 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Public routes
 app.use('/api/auth', authRoutes);
-// Temporarily make /api/menu public for testing!
 app.use('/api/menu', menuRoutes);
-app.use('/api/reservations', reservationRoutes);
+app.use('/api/contacts', contactRoutes);
 
 // Public tables endpoint
 app.get('/api/tables/public', async (req, res) => {
   try {
     const tables = await Table.find({ type: 'Cafe' }).sort({ number: 1 });
-
-    console.log(
-      `[Tables API] Public GET — ${tables.length} tables from MongoDB`
-    );
-
     res.json(tables);
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
   }
 });
 
 // Protected routes
-app.use(
-  '/api/orders',
-  auth,
-  authorizeRoles(...STAFF_ROLES),
-  orderRoutes
-);
-
-app.use(
-  '/api/tables',
-  auth,
-  authorizeRoles(...STAFF_ROLES),
-  tableRoutes
-);
-
-app.use(
-  '/api/staff',
-  auth,
-  authorizeRoles(...STAFF_ROLES),
-  staffRoutes
-);
-
+app.use('/api/orders', auth, authorizeRoles(...STAFF_ROLES), orderRoutes);
+app.use('/api/tables', auth, authorizeRoles(...STAFF_ROLES), tableRoutes);
+app.use('/api/staff', auth, authorizeRoles(...STAFF_ROLES), staffRoutes);
 app.use('/api/inventory', auth, inventoryRoutes);
 app.use('/api/reservations', auth, reservationRoutes);
 app.use('/api/users', auth, userRoutes);

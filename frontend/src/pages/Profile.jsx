@@ -23,6 +23,7 @@ import "aos/dist/aos.css";
 import { reservationsAPI } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/profile.css";
+import { MdOutlineCancel } from "react-icons/md";
 
 const defaultPreferences = {
   newsletter: true,
@@ -102,7 +103,9 @@ const Profile = () => {
     if (!user) return;
     try {
       setBookingsLoading(true);
+      console.log('Fetching reservations for user:', user._id || user.id);
       const res = await reservationsAPI.getMy();
+      console.log('Reservations received:', res.data);
       setBookings((res.data || []).map(mapBooking));
     } catch (error) {
       console.error("Failed to load reservations:", error);
@@ -148,9 +151,7 @@ const Profile = () => {
   const handleLogout = () => setShowLogoutConfirm(true);
 
   const handleConfirmLogout = () => {
-    console.log("Logging out...");
-    setShowLogoutConfirm(false);
-    alert("Logged out successfully!");
+    logout();
   };
 
   const handleEditToggle = () => {
@@ -222,10 +223,16 @@ const Profile = () => {
       if (avatarFile) {
         const formData = new FormData();
         formData.append("name", userData.name.trim());
+        formData.append("phone", userData.phone);
+        formData.append("address", userData.address);
         formData.append("image", avatarFile);
         await updateProfileImage(formData);
       } else {
-        await updateProfile({ name: userData.name.trim() });
+        await updateProfile({
+          name: userData.name.trim(),
+          phone: userData.phone,
+          address: userData.address
+        });
       }
 
       setIsEditing(false);
@@ -351,7 +358,7 @@ const Profile = () => {
                   </div>
 
                   <button className={`x_edit_action_btn ${isEditing ? "x_cancel" : ""}`} onClick={handleEditToggle}>
-                    {isEditing ? <Lock size={18} /> : <Edit size={18} />}
+                    {isEditing ? <MdOutlineCancel size={18} /> : <Edit size={18} />}
                     <span>{isEditing ? "Cancel" : "Edit Profile"}</span>
                   </button>
                 </div>
@@ -373,6 +380,20 @@ const Profile = () => {
                           <div className="x_input_wrapper">
                             <Mail size={18} className="x_input_icon" />
                             <input type="email" value={userData.email} disabled />
+                          </div>
+                        </div>
+                        <div className="x_input_group_premium">
+                          <label>Phone Number</label>
+                          <div className="x_input_wrapper">
+                            <Phone size={18} className="x_input_icon" />
+                            <input type="text" name="phone" value={userData.phone} onChange={handleUserDataChange} placeholder="Enter phone number" />
+                          </div>
+                        </div>
+                        <div className="x_input_group_premium">
+                          <label>Current Address</label>
+                          <div className="x_input_wrapper">
+                            <MapPin size={18} className="x_input_icon" />
+                            <textarea name="address" value={userData.address} onChange={handleUserDataChange} placeholder="Enter your current address" rows={3} />
                           </div>
                         </div>
                         <div className="x_form_actions_premium">

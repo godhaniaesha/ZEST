@@ -57,10 +57,40 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
+    window.location.href = '/';
+  };
+
+  const updateProfile = async (data) => {
+    try {
+      const res = await api.put(`/users/${user._id || user.id}`, data);
+      setUser(res.data);
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Update failed' };
+    }
+  };
+
+  const updateProfileImage = async (formData) => {
+    try {
+      const res = await api.put(`/users/${user._id || user.id}`, formData);
+      setUser(res.data);
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Image upload failed' };
+    }
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      await api.post('/auth/change-password', { currentPassword, newPassword });
+      return { success: true };
+    } catch (error) {
+      throw error;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile, updateProfileImage, changePassword }}>
       {children}
     </AuthContext.Provider>
   );
