@@ -1,0 +1,287 @@
+/* ==========================================================================
+   SHARED LUXURY LEGAL PACK STYLING
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ROOT VARIABLES (Consistent with Home.js) */
+:root {
+  --d-primary: #16302B;
+  --d-primary-light: #1f4238;
+  --d-primary-dark: #0e1f1c;
+  --d-accent: #E0E0E0;
+  --d-accent-soft: #f0f0f0;
+  --d-accent-muted: #c8c8c8;
+  --d-gold: #C9A84C;
+  --d-gold-light: #e4c47a;
+  --d-gold-dark: #a8893a;
+  --d-success: #2ecc71;
+  --d-warning: #f39c12;
+  --d-danger: #e74c3c;
+  --d-info: #3498db;
+  --d-white: #ffffff;
+  --d-bg: #f5f4f0;
+  --d-bg-card: #ffffff;
+  --d-border: #e2e0da;
+  --d-text: #1a1a1a;
+  --d-text-muted: #6b7280;
+  --d-text-light: #9ca3af;
+  --d-shadow-sm: 0 1px 3px rgba(22,48,43,0.08);
+  --d-shadow-md: 0 4px 16px rgba(22,48,43,0.12);
+  --d-shadow-lg: 0 8px 32px rgba(22,48,43,0.18);
+  --d-radius-sm: 6px;
+  --d-radius-md: 12px;
+  --d-radius-lg: 20px;
+  --d-transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* CORE CONTAINER LAYOUT SETUP */
+.d_legal_wrapper {
+  padding: clamp(40px, 8vw, 80px) 0;
+  min-height: 100vh;
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.d_legal_wrapper.d_bg_light {
+  background: var(--d-bg);
+}
+
+.d_legal_wrapper.d_bg_dark {
+  background: linear-gradient(135deg, var(--d-primary-dark) 0%, var(--d-primary) 100%);
+}
+
+.d_legal_wrapper::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.d_legal_header {
+  margin-bottom: clamp(30px, 5vw, 50px);
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.d_legal_tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--d-gold-dark);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  display: block;
+}
+
+.d_legal_tag.gold_text {
+  color: var(--d-gold);
+}
+
+.d_legal_title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.d_legal_line {
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--d-gold-dark), var(--d-gold), var(--d-gold-light));
+  margin-top: 0.75rem;
+}
+
+.d_legal_subtitle {
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  color: var(--d-text-muted);
+  font-weight: 500;
+}
+
+.d_legal_content_container {
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* --------------------------------------------------------------------------
+   TERMS & PRIVACY COMPONENT (LIGHT DESIGN)
+   -------------------------------------------------------------------------- */
+.d_legal_card {
+  background: var(--d-white);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-lg);
+  padding: clamp(24px, 4vw, 48px);
+  box-shadow: var(--d-shadow-md);
+  transition: var(--d-transition);
+}
+
+.d_legal_card:hover {
+  box-shadow: var(--d-shadow-lg);
+  border-color: rgba(201,168,76,0.2);
+}
+
+.d_legal_section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px dashed var(--d-border);
+}
+
+.d_legal_section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.d_legal_icon_title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.d_legal_sec_icon {
+  font-size: 1.1rem;
+  color: var(--d-primary);
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22,48,43,0.05);
+  border-radius: var(--d-radius-md);
+}
+
+.d_legal_section h2 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  font-weight: 600;
+  color: var(--d-text);
+  margin: 0;
+}
+
+.d_legal_section p {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--d-text-muted);
+  font-weight: 400;
+  margin-left: 0;
+  margin-top: 8px;
+}
+
+.d_legal_section ul {
+  margin-left: 16px;
+  margin-top: 10px;
+  color: var(--d-text-muted);
+}
+
+.d_legal_section ul li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+  font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   FAQ COMPONENT (LIGHT THEME)
+   -------------------------------------------------------------------------- */
+.d_faq_accordion_container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* LUXURY GLASS EFFECT */
+.d_glass_faq_item {
+  background: var(--d-white);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-md);
+  overflow: hidden;
+  transition: var(--d-transition);
+}
+
+.d_faq_question_block {
+  padding: 18px 24px;
+  cursor: pointer;
+  user-select: none;
+  transition: var(--d-transition);
+}
+
+.d_faq_q_icon {
+  color: var(--d-gold-dark);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.d_faq_question_block h4 {
+  font-family: 'Cinzel', serif;
+  font-weight: 500;
+  font-size: clamp(0.85rem, 2vw, 1.05rem);
+  letter-spacing: 0.5px;
+  line-height: 1.5;
+  color: var(--d-text);
+}
+
+.d_faq_question_block > div:last-child {
+  color: var(--d-gold-dark);
+}
+
+/* ACCORDION EXPANSION ENGINE */
+.d_faq_answer_block {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  padding: 0 24px;
+}
+
+.d_faq_answer_block p {
+  padding-bottom: 18px;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  font-weight: 400;
+  color: var(--d-text-muted);
+}
+
+/* ACTIVE GLOW STATE STRUCTURE */
+.d_faq_active {
+  background: var(--d-white);
+  border-color: rgba(201, 168, 76, 0.45);
+  box-shadow: 0 12px 40px rgba(22, 48, 43, 0.15);
+}
+
+.d_faq_active .d_answer_show {
+  max-height: 400px; /* High boundary allowance for clean text wrap expansion */
+}
+
+.d_faq_question_block:hover {
+  background: rgba(201, 168, 76, 0.05);
+}
+
+.d_faq_question_block:hover .d_faq_q_icon {
+  color: var(--d-gold);
+}
+
+/* RESPONSIVE RE-ALIGNMENT FOR MICRO SCREENS */
+@media (max-width: 575.98px) {
+  .d_legal_section p {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+  .d_faq_question_block {
+    padding: 16px;
+  }
+  .d_faq_answer_block {
+    padding: 0 16px;
+  }
+  .d_legal_card {
+    padding: 20px 16px;
+  }
+}

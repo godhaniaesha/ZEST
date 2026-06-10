@@ -29,6 +29,10 @@ import Gallery from './pages/Gallery';
 import BlogDetail from './pages/BlogDetail';
 import Profile from './pages/Profile';
 import BarCafeHome from './pages/BarCafeHome';
+import NewHome from './pages/NewHome';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import FAQ from './pages/FAQ';
 
 function UserLayout({ children }) {
   return (
@@ -55,6 +59,7 @@ function App() {
           <Route path="/" element={<UserLayout>  <Home /> </UserLayout>} />
           <Route path="/home" element={<UserLayout>  <Home /> </UserLayout>} />
           <Route path="/cbhome" element={<UserLayout>  <BarCafeHome /> </UserLayout>} />
+          <Route path="/newhome" element={<UserLayout>  <NewHome /> </UserLayout>} />
           <Route path="/aboutus" element={<UserLayout>  <AboutUs /> </UserLayout>} />
           <Route path="/contactus" element={<UserLayout>  <ContactUs /> </UserLayout>} />
           <Route path="/services" element={<UserLayout>  <Services /> </UserLayout>} />
@@ -69,7 +74,13 @@ function App() {
 
           <Route path="/reservations" element={<UserLayout> <Reservation /> </UserLayout> } />
           <Route path="/profile" element={<UserLayout> <Profile /> </UserLayout> } />
+        
+        
+         <Route path="/termss" element={<UserLayout> <Terms /> </UserLayout> } />
+          <Route path="/privacy" element={<UserLayout> <Privacy /> </UserLayout> } />
+          <Route path="/faq" element={<UserLayout> <FAQ /> </UserLayout> } />
 
+          
           {/* ADMIN ROUTES */}
           <Route path="/admin/*" element={<AppRoutes />} />
 
