@@ -9,6 +9,7 @@ import {
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import { staffAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const STAFF = [
   { id: 1, name: 'Rajesh Kumar', role: 'Head Chef', shift: 'Morning', status: 'On Duty', initials: 'RK', color: '#C9A84C', phone: '+91 98765 43210', email: 'rajesh@breva.com', salary: '45000', leavesTaken: 2, leavesTotal: 15, joiningDate: '2023-01-10' },
@@ -29,6 +30,10 @@ export default function Staff() {
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [formData, setFormData] = useState({ name: '', role: '', shift: 'Morning', status: 'On Duty', phone: '', email: '', salary: '', leavesTaken: 0, leavesTotal: 12, joiningDate: '' });
+  const { user } = useAuth();
+  const userRole = user?.role || 'staff';
+
+  const canAddEditDelete = userRole === 'manager' || userRole === 'superadmin';
 
   const filtered = staffList.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.role.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -50,12 +55,14 @@ export default function Staff() {
   }, []);
 
   const handleAdd = () => {
+    if (!canAddEditDelete) return;
     setCurrentItem(null);
     setFormData({ name: '', role: '', shift: 'Morning', status: 'On Duty', phone: '', email: '', salary: '', leavesTaken: 0, leavesTotal: 12, joiningDate: '' });
     setShowForm(true);
   };
 
   const handleEdit = (item) => {
+    if (!canAddEditDelete) return;
     setCurrentItem(item);
     setFormData({
       name: item.name,
@@ -73,6 +80,7 @@ export default function Staff() {
   };
 
   const handleDeleteClick = (item) => {
+    if (!canAddEditDelete) return;
     setCurrentItem(item);
     setShowDelete(true);
   };
@@ -142,7 +150,7 @@ export default function Staff() {
         </div>
         <div className="d-flex gap-2">
           <button className="d-btn-outline d-hide-mobile">Shift Roster</button>
-          <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> Add Member</button>
+          {canAddEditDelete && <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> Add Member</button>}
         </div>
       </div>
 
@@ -229,10 +237,12 @@ export default function Staff() {
                       <div className="d-page-sub m-0">{s.role}</div>
                     </div>
                   </div>
-                  <div className="d-flex gap-1">
-                    <button className="d-navbar-icon-btn" onClick={() => handleEdit(s)}><MdEdit /></button>
-                    <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(s)}><MdDelete /></button>
-                  </div>
+                  {canAddEditDelete && (
+                    <div className="d-flex gap-1">
+                      <button className="d-navbar-icon-btn" onClick={() => handleEdit(s)}><MdEdit /></button>
+                      <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(s)}><MdDelete /></button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-2 rounded mb-3" style={{ background: 'var(--d-bg)', fontSize: '0.85rem' }}>

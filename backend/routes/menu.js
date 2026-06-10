@@ -4,6 +4,7 @@ const Menu = require("../models/Menu");
 const multer = require("multer");
 const path = require("path");
 const { inferMenuType, toMenuTypeArray } = require("../utils/menuType");
+const { auth, authorizeRoles } = require("../middleware/auth");
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -88,6 +89,8 @@ router.get("/:id", async (req, res) => {
 
 router.post(
   "/",
+  auth,
+  authorizeRoles("chef", "manager", "superadmin", "bartender"),
   upload.single("img"),
   async (req, res) => {
     try {
@@ -99,30 +102,38 @@ router.post(
       console.error("Error saving menu item:", err);
       res.status(400).json({ message: err.message });
     }
-  },
+  }
 );
 
-router.put("/:id", upload.single("img"), async (req, res) => {
-  try {
-    const updateData = buildMenuPayload(req.body, req.file);
-
-    const menuItem = await Menu.findByIdAndUpdate(
-      req.params.id,
-      { $set: updateData },
-      { new: true, runValidators: true },
-    );
-    if (!menuItem)
-      return res.status(404).json({ message: "Menu item not found" });
-    res.json(menuItem);
-  } catch (err) {
-    console.error("Error updating menu item:", err);
-    res.status(400).json({ message: err.message });
+router.put(
+  "/:id",
+  auth,
+  authorizeRoles("chef", "manager", "superadmin", "bartender"),
+  upload.single("img"),
+  async (req, res) => {
+    try {
+      const menuItemData = buildMenuPayload(req.body, req.file);
+      const updatedMenuItem = await Menu.findByIdAndUpdate(
+        req.params.id,
+        menuItemData,
+        { new: true }
+      );
+      if (!updatedMenuItem) {
+        return res.status(404).json({ message: "Menu item not found" });
+      }
+      res.json(updatedMenuItem);
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
   }
-});
+);
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, authorizeRoles("chef", "manager", "superadmin", "bartender"), async (req, res) => {
   try {
-    await Menu.findByIdAndDelete(req.params.id);
+    const menuItem = await Menu.findByIdAndDelete(req.params.id);
+    if (!menuItem) {
+      return res.status(404).json({ message: "Menu item not found" });
+    }
     res.json({ message: "Menu item deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -26,6 +26,8 @@ const tableRoutes = require('./routes/tables');
 const staffRoutes = require('./routes/staff');
 const inventoryRoutes = require('./routes/inventory');
 const reservationRoutes = require('./routes/reservations');
+const categoryRoutes = require('./routes/categories');
+const cuisineRoutes = require('./routes/cuisines');
 const userRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
 const contactRoutes = require('./routes/contacts');
@@ -45,10 +47,8 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
-app.use('/api/contacts', contactRoutes);
 
 // Public tables endpoint
 app.get('/api/tables/public', async (req, res) => {
@@ -60,13 +60,16 @@ app.get('/api/tables/public', async (req, res) => {
   }
 });
 
-// Protected routes
-app.use('/api/orders', auth, authorizeRoles(...STAFF_ROLES), orderRoutes);
-app.use('/api/tables', auth, authorizeRoles(...STAFF_ROLES), tableRoutes);
-app.use('/api/staff', auth, authorizeRoles(...STAFF_ROLES), staffRoutes);
-app.use('/api/inventory', auth, inventoryRoutes);
-app.use('/api/reservations', auth, reservationRoutes);
-app.use('/api/users', auth, userRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/tables', tableRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/reservations', reservationRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/cuisines', cuisineRoutes);
+app.use('/api/users', userRoutes);
+// app.use('/api/blog', blogRoutes);
+app.use('/api/contacts', contactRoutes);
 
 // MongoDB connection
 mongoose

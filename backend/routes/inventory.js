@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Inventory = require('../models/Inventory');
+const { auth, authorizeRoles } = require('../middleware/auth');
 
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const inventory = await Inventory.find();
     res.json(inventory);
@@ -11,7 +12,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartender'), async (req, res) => {
   const item = new Inventory({
     name: req.body.name,
     category: req.body.category,
@@ -28,7 +29,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartender'), async (req, res) => {
   try {
     const item = await Inventory.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(item);
@@ -37,7 +38,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
   try {
     await Inventory.findByIdAndDelete(req.params.id);
     res.json({ message: 'Inventory item deleted' });

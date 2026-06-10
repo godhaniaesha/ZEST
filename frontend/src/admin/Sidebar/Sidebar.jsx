@@ -35,7 +35,7 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: "Management (Manager)",
+    label: "Management",
     items: [
       { to: `/admin/pos`, icon: <MdLocalAtm />, label: 'POS & Billing', roles: ['manager', 'superadmin', 'cashier'] },
       { to: `/admin/orders`, icon: <MdReceiptLong />, label: 'Orders', badge: '8', roles: ['manager', 'superadmin', 'cashier', 'waiter', 'chef', 'bartender'] },
@@ -47,17 +47,17 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: "Kitchen (Chef)",
+    label: "Kitchen & Bar",
     items: [
       { to: '/admin/kitchen-display', icon: <MdKitchen />, label: 'Live Orders (KOT)', badge: '5', roles: ['chef', 'manager', 'superadmin'] },
       { to: '/admin/menu', icon: <MdRestaurantMenu />, label: 'Menu Items', badge: null, roles: ['chef', 'manager', 'superadmin'] },
-      { to: '/admin/bar', icon: <MdLocalBar />, label: 'Bar & Drinks', badge: null, roles: ['chef', 'manager', 'superadmin'] }, // Bartender/Chef roles
-      { to: '/admin/categories', icon: <MdLocalDining />, label: 'Categories & Cuisines', badge: null, roles: ['chef', 'manager', 'superadmin'] },
-      { to: '/admin/inventory', icon: <MdInventory2 />, label: 'Kitchen Stock', roles: ['chef', 'manager', 'superadmin'] }
+      { to: '/admin/bar', icon: <MdLocalBar />, label: 'Bar & Drinks', badge: null, roles: ['bartender', 'manager', 'superadmin'] },
+      { to: '/admin/categories', icon: <MdLocalDining />, label: 'Categories & Cuisines', badge: null, roles: ['chef', 'bartender', 'manager', 'superadmin'] },
+      { to: '/admin/inventory', icon: <MdInventory2 />, label: 'Inventory Stock', roles: ['chef', 'manager', 'superadmin', 'bartender'] }
     ]
   },
   {
-    label: "Service (Waiter)",
+    label: "Service",
     items: [
       { to: '/admin/tables', icon: <MdTableRestaurant />, label: 'Table Status', roles: ['waiter', 'manager', 'superadmin'] },
       { to: '/admin/take-order', icon: <MdCountertops />, label: 'Take New Order', roles: ['waiter', 'manager', 'superadmin'] },

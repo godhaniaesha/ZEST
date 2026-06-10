@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Row, Col, Form } from 'react-bootstrap';
 import { 
   MdAdd, MdPhone, MdPeople, MdEventSeat, 
@@ -7,14 +7,8 @@ import {
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-
-const INITIAL_RESERVATIONS = [
-  { id: 'R-001', name: 'Arjun Mehta',    time: '7:00 PM', date: new Date().toISOString().split('T')[0], guests: 4, table: 'Table 3', phone: '+91 98765 43210', email: 'arjun@email.com', status: 'Confirmed', notes: '' },
-  { id: 'R-002', name: 'Sneha Patel',    time: '7:30 PM', date: new Date().toISOString().split('T')[0], guests: 2, table: 'Table 6', phone: '+91 91234 56789', email: 'sneha@email.com', status: 'Confirmed', notes: 'Anniversary dinner' },
-  { id: 'R-003', name: 'Corporate Grp.', time: '8:00 PM', date: new Date().toISOString().split('T')[0], guests: 12,table: 'Tables 1+2', phone: '+91 98001 11222', email: 'corporate@email.com', status: 'Pending', notes: 'Team celebration' },
-  { id: 'R-004', name: 'Riya Sharma',    time: '8:30 PM', date: new Date().toISOString().split('T')[0], guests: 3, table: 'Table 8', phone: '+91 77654 32109', email: 'riya@email.com', status: 'Confirmed', notes: '' },
-  { id: 'R-005', name: 'Dev Kapoor',     time: '9:00 PM', date: new Date().toISOString().split('T')[0], guests: 6, table: 'Table 5', phone: '+91 88001 99882', email: 'dev@email.com', status: 'Cancelled', notes: '' },
-];
+import { useAuth } from '../../../contexts/AuthContext';
+import { reservationsAPI } from '../../../api';
 
 const TABLES = ['Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5', 'Table 6', 'Table 7', 'Table 8', 'Tables 1+2', 'Tables 3+4', 'Bar Counter'];
 const TIME_SLOTS = ['12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM'];
@@ -25,7 +19,8 @@ const STATUS_CLASS = {
 };
 
 export default function Reservations() {
-  const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
@@ -40,12 +35,33 @@ export default function Reservations() {
     status: 'Pending', 
     notes: '' 
   });
+  const { user } = useAuth();
+  const userRole = user?.role || 'waiter';
+
+  const canAddEditDelete = userRole === 'waiter' || userRole === 'manager' || userRole === 'superadmin';
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const response = await reservationsAPI.getAll();
+      setReservations(response.data || []);
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const confirmedCount = reservations.filter(r => r.status === 'Confirmed').length;
   const pendingCount = reservations.filter(r => r.status === 'Pending').length;
   const cancelledCount = reservations.filter(r => r.status === 'Cancelled').length;
 
   const handleAdd = () => {
+    if (!canAddEditDelete) return;
     setCurrentItem(null);
     setFormData({ 
       name: '', 
@@ -62,34 +78,70 @@ export default function Reservations() {
   };
 
   const handleEdit = (item) => {
+    if (!canAddEditDelete) return;
     setCurrentItem(item);
-    setFormData(item);
+    setFormData({
+      name: item.name || item.customerName,
+      date: item.date,
+      time: item.time,
+      guests: item.guests,
+      table: item.table || `Table ${item.tableNumber}`,
+      phone: item.phone,
+      email: item.email || '',
+      status: item.status,
+      notes: item.notes || ''
+    });
     setShowForm(true);
   };
 
   const handleDeleteClick = (item) => {
+    if (!canAddEditDelete) return;
     setCurrentItem(item);
     setShowDelete(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.phone || !formData.date || !formData.time || formData.guests < 1) {
       alert('Please fill in all required fields');
       return;
     }
 
-    if (currentItem) {
-      setReservations(reservations.map(r => r.id === currentItem.id ? { ...r, ...formData } : r));
-    } else {
-      const newId = `R-${String(reservations.length + 1).padStart(3, '0')}`;
-      setReservations([...reservations, { id: newId, ...formData }]);
+    const payload = {
+      customerName: formData.name,
+      phone: formData.phone,
+      email: formData.email,
+      date: formData.date,
+      time: formData.time,
+      guests: formData.guests,
+      table: formData.table,
+      tableNumber: parseInt(formData.table.replace(/[^0-9]/g, '')) || 0,
+      status: formData.status,
+      notes: formData.notes
+    };
+
+    try {
+      if (currentItem) {
+        await reservationsAPI.update(currentItem._id, payload);
+      } else {
+        await reservationsAPI.create(payload);
+      }
+      await loadData();
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving reservation:', error);
+      alert('Failed to save reservation');
     }
-    setShowForm(false);
   };
 
-  const confirmDelete = () => {
-    setReservations(reservations.filter(r => r.id !== currentItem.id));
-    setShowDelete(false);
+  const confirmDelete = async () => {
+    try {
+      await reservationsAPI.delete(currentItem._id);
+      await loadData();
+      setShowDelete(false);
+    } catch (error) {
+      console.error('Error deleting reservation:', error);
+      alert('Failed to delete reservation');
+    }
   };
 
   return (
@@ -103,7 +155,7 @@ export default function Reservations() {
         </div>
         <div className="d-flex gap-2">
           <button className="d-btn-outline d-hide-mobile">View Floor Plan</button>
-          <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> New Booking</button>
+          {canAddEditDelete && <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> New Booking</button>}
         </div>
       </div>
 
@@ -139,7 +191,7 @@ export default function Reservations() {
                 <th>Table</th>
                 <th>Contact</th>
                 <th>Status</th>
-                <th>Actions</th>
+                {canAddEditDelete && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -178,16 +230,18 @@ export default function Reservations() {
                       {r.status}
                     </span>
                   </td>
-                  <td>
-                    <div className="d-flex gap-1">
-                      <button className="d-navbar-icon-btn" onClick={() => handleEdit(r)}>
-                        <MdEdit />
-                      </button>
-                      <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(r)}>
-                        <MdDelete />
-                      </button>
-                    </div>
-                  </td>
+                  {canAddEditDelete && (
+                    <td>
+                      <div className="d-flex gap-1">
+                        <button className="d-navbar-icon-btn" onClick={() => handleEdit(r)}>
+                          <MdEdit />
+                        </button>
+                        <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(r)}>
+                          <MdDelete />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

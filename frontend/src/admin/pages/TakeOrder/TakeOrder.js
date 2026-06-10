@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Badge } from 'react-bootstrap';
-import { 
-  MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant, 
+import {
+  MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant,
   MdAdd, MdRemove, MdDeleteOutline, MdSend, MdHistory,
   MdReceipt, MdShoppingCart
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
-import { menuAPI } from '../../../api';
+import { menuAPI, reservationsAPI, ordersAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function TakeOrder() {
   const [activeTab, setActiveTab] = useState('cafe'); // 'cafe' or 'bar'
@@ -14,8 +15,10 @@ export default function TakeOrder() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const itemHasType = (item, target) => {
     const types = Array.isArray(item?.type) ? item.type : item?.type ? [item.type] : [];
@@ -23,19 +26,22 @@ export default function TakeOrder() {
   };
 
   useEffect(() => {
-    const loadMenu = async () => {
+    const loadData = async () => {
       try {
-        const response = await menuAPI.getAll();
-        const data = Array.isArray(response.data) ? response.data : [];
-        setMenuItems(data);
+        setLoading(true);
+        const [menuRes, resRes] = await Promise.all([
+          menuAPI.getAll(),
+          reservationsAPI.getAll()
+        ]);
+        setMenuItems(Array.isArray(menuRes.data) ? menuRes.data : []);
+        setReservations(Array.isArray(resRes.data) ? resRes.data.filter(r => r.status === 'Confirmed') : []);
       } catch (error) {
-        console.error('Error loading menu:', error);
-        setMenuItems([]);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
-    loadMenu();
+    loadData();
   }, []);
 
   const filteredMenuItems = menuItems.filter(item => 
@@ -69,6 +75,39 @@ export default function TakeOrder() {
 
   const removeFromCart = (_id) => {
     setCart(prev => prev.filter(item => item._id !== _id));
+  };
+
+  const handleSendToKitchen = async () => {
+    if (cart.length === 0 || !selectedTable) return;
+
+    const reservation = reservations.find(r => r._id === selectedTable);
+    const orderData = {
+      id: `ORD-${Date.now()}`,
+      table: reservation ? (reservation.table || `Table ${reservation.tableNumber}`) : selectedTable,
+      waiter: user?.name || 'Staff',
+      items: cart.map(item => ({
+        name: item.name,
+        qty: item.qty,
+        price: item.price
+      })),
+      type: activeTab === 'cafe' ? 'Dine-in' : 'Bar',
+      amount: Number(cartTotal), // Ensure amount is a number
+      status: 'Pending',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      userId: user?._id,
+      reservationId: selectedTable
+    };
+
+    try {
+      await ordersAPI.create(orderData);
+      alert('Order sent to kitchen successfully!');
+      setCart([]);
+      setSelectedTable('');
+      navigate('/admin/orders');
+    } catch (error) {
+      console.error('Error creating order:', error);
+      alert('Failed to send order to kitchen');
+    }
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -126,9 +165,11 @@ export default function TakeOrder() {
                   value={selectedTable} 
                   onChange={(e) => setSelectedTable(e.target.value)}
                 >
-                  <option value="">Select Table</option>
-                  {[1,2,3,4,5,6,7,8,9,10, 'Bar Counter'].map(t => (
-                    <option key={t} value={t}>{typeof t === 'number' ? `Table ${t}` : t}</option>
+                  <option value="">Select Confirmed Table</option>
+                  {reservations.map(r => (
+                    <option key={r._id} value={r._id}>
+                      {r.table || `Table ${r.tableNumber}`} - {r.customerName || r.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -236,6 +277,7 @@ export default function TakeOrder() {
                   className="d-btn-gold flex-grow-1" 
                   style={{ height: '52px', borderRadius: '12px', fontWeight: 800 }}
                   disabled={cart.length === 0 || !selectedTable}
+                  onClick={handleSendToKitchen}
                 >
                   <MdSend className="me-2" fontSize="1.2rem" /> SEND TO KITCHEN
                 </button>

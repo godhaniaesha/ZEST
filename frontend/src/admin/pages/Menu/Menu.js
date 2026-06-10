@@ -6,28 +6,8 @@ import {
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-import { menuAPI } from '../../../api';
+import { menuAPI, categoriesAPI, cuisinesAPI } from '../../../api';
 import { useAuth } from '../../../contexts/AuthContext';
-
-const MENU_ITEMS = [
-  { id: 1, name: 'Truffle Risotto', category: 'Mains', price: '680', status: 'Available', type: 'Cafe', cuisine: 'Italian', img: <MdRestaurant />, color: '#2ecc71', description: 'Creamy arborio rice with fresh truffle oil and parmesan', prepTime: 25, ingredients: 'Arborio rice, truffle oil, parmesan, vegetable broth, mushrooms' },
-  { id: 2, name: 'Mojito Classic', category: 'Cocktails', price: '320', status: 'Available', type: 'Bar', cuisine: 'International', img: <MdLocalBar />, color: '#3498db', description: 'Fresh mint, lime, rum, and soda water - the perfect summer drink', prepTime: 5, ingredients: 'White rum, mint leaves, lime, sugar, soda water' },
-  { id: 3, name: 'Beef Tenderloin', category: 'Mains', price: '1200', status: 'Available', type: 'Cafe', cuisine: 'Continental', img: <MdRestaurant />, color: '#2ecc71', description: 'Premium tenderloin with red wine reduction and roasted vegetables', prepTime: 35, ingredients: 'Beef tenderloin, red wine, garlic, rosemary, seasonal vegetables' },
-  { id: 4, name: 'Tiramisu', category: 'Desserts', price: '280', status: 'Sold Out', type: 'Cafe', cuisine: 'Italian', img: <MdIcecream />, color: '#e74c3c', description: 'Classic Italian dessert with coffee-soaked ladyfingers and mascarpone', prepTime: 20, ingredients: 'Ladyfingers, espresso, mascarpone, eggs, cocoa powder' },
-  { id: 5, name: 'Espresso Martini', category: 'Cocktails', price: '380', status: 'Available', type: 'Bar', cuisine: 'International', img: <MdLocalBar />, color: '#3498db', description: 'Vodka, coffee liqueur, and freshly brewed espresso', prepTime: 7, ingredients: 'Vodka, Kahlua, espresso, simple syrup' },
-  { id: 6, name: 'Caesar Salad', category: 'Starters', price: '320', status: 'Available', type: 'Cafe', cuisine: 'Continental', img: <MdRestaurant />, color: '#f39c12', description: 'Romaine lettuce with caesar dressing, parmesan, and croutons', prepTime: 10, ingredients: 'Romaine lettuce, caesar dressing, parmesan, croutons, lemon' },
-];
-
-const CATEGORIES = [
-  { name: 'All', icon: <MdFilterList /> },
-  { name: 'Starters', icon: <MdRestaurant />, type: 'Cafe' },
-  { name: 'Mains', icon: <MdRestaurant />, type: 'Cafe' },
-  { name: 'Desserts', icon: <MdIcecream />, type: 'Cafe' },
-  { name: 'Cocktails', icon: <MdLocalBar />, type: 'Bar' },
-  { name: 'Beer', icon: <MdLocalBar />, type: 'Bar' },
-  { name: 'Wine', icon: <MdLocalBar />, type: 'Bar' },
-  { name: 'Spirits', icon: <MdLocalBar />, type: 'Bar' },
-];
 
 const FORM_SKIP_KEYS = ['_id', '__v', 'createdAt', 'updatedAt', 'type'];
 
@@ -36,20 +16,10 @@ const itemHasType = (item, target) => {
   return types.includes(target);
 };
 
-const CUISINES = [
-  'Italian',
-  'Continental',
-  'Indian',
-  'Chinese',
-  'Mexican',
-  'International',
-  'Gujarati',
-  'Punjabi',
-  'South Indian',
-];
-
 export default function Menu() {
   const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [cuisines, setCuisines] = useState([]);
   const [active, setActive] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -70,11 +40,20 @@ export default function Menu() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const response = await menuAPI.getAll();
-      const data = Array.isArray(response.data) ? response.data : [];
+      const [menuRes, catRes, cuiRes] = await Promise.all([
+        menuAPI.getAll(),
+        categoriesAPI.getAll(),
+        cuisinesAPI.getAll()
+      ]);
+      
+      const data = Array.isArray(menuRes.data) ? menuRes.data : [];
       setItems(data.filter(i => itemHasType(i, 'Cafe')));
+      
+      const allCats = catRes.data || [];
+      setCategories([{ name: 'All', icon: <MdFilterList /> }, ...allCats.filter(c => c.type === 'Cafe').map(c => ({ name: c.name, icon: <MdRestaurant />, type: 'Cafe' }))]);
+      setCuisines((cuiRes.data || []).map(c => c.name));
     } catch (error) {
-      console.error('Error fetching menu items:', error);
+      console.error('Error fetching data:', error);
       setItems([]);
     } finally {
       setLoading(false);
@@ -93,7 +72,7 @@ export default function Menu() {
 
   const handleAdd = () => {
     setCurrentItem(null);
-    setFormData({ name: '', category: 'Starters', price: '', status: 'Available', type: 'Cafe', cuisine: 'Indian', description: '', prepTime: 15, ingredients: '' });
+    setFormData({ name: '', category: categories[1]?.name || '', price: '', status: 'Available', type: 'Cafe', cuisine: cuisines[0] || '', description: '', prepTime: 15, ingredients: '' });
     setShowForm(true);
   };
 
@@ -102,10 +81,10 @@ export default function Menu() {
     setFormData({
       name: item.name,
       category: item.category,
-      price: item.price.replace('₹', '').replace(',', ''),
+      price: String(item.price).replace('₹', '').replace(',', ''),
       status: item.status,
       type: item.type || 'Cafe',
-      cuisine: item.cuisine || 'Indian',
+      cuisine: item.cuisine || '',
       description: item.description || '',
       prepTime: item.prepTime || 15,
       ingredients: item.ingredients || ''
@@ -131,7 +110,7 @@ export default function Menu() {
         return;
       }
 
-      const categoryData = CATEGORIES.find(
+      const categoryData = categories.find(
         c => c.name === formData.category
       );
       const itemType = categoryData?.type || 'Cafe';
@@ -167,14 +146,6 @@ export default function Menu() {
       if (currentItem) {
         // Edit
         await menuAPI.update(currentItem._id, data);
-
-        setItems(
-          items.map(i =>
-            i.id === currentItem.id
-              ? { ...i, ...formData, price: formData.price }
-              : i
-          )
-        );
       } else {
         // Add
         await menuAPI.create(data);
@@ -191,21 +162,12 @@ export default function Menu() {
   const confirmDelete = async () => {
     try {
       await menuAPI.delete(currentItem._id);
-      loadData();
+      await loadData();
       setShowDelete(false);
     } catch (error) {
       console.error('Error deleting menu item:', error);
     }
   };
-
-  const formFields = [
-    { name: 'name', label: 'Item Name', type: 'text', required: true, col: 12 },
-    { name: 'category', label: 'Category', type: 'select', required: true, col: 6, options: CATEGORIES.filter(c => c.name !== 'All' && c.type === 'Cafe').map(c => ({ label: c.name, value: c.name })) },
-    { name: 'cuisine', label: 'Cuisine', type: 'select', required: true, col: 6, options: CUISINES.map(c => ({ label: c, value: c })) },
-    { name: 'price', label: 'Price (₹)', type: 'number', required: true, col: 6 },
-    { name: 'status', label: 'Status', type: 'select', required: true, col: 6, options: [{ label: 'Available', value: 'Available' }, { label: 'Sold Out', value: 'Sold Out' }] },
-    { name: 'img', label: 'Item Image', type: 'file', col: 12 },
-  ];
 
   return (
     <>
@@ -228,7 +190,7 @@ export default function Menu() {
       <Row className="g-3 mb-4">
         <Col xs={12} lg={8}>
           <div className="d-flex gap-2 flex-wrap">
-            {CATEGORIES.filter(c => c.name === 'All' || c.type === 'Cafe').map(c => (
+            {categories.map(c => (
               <button
                 key={c.name}
                 onClick={() => setActive(c.name)}
@@ -271,7 +233,7 @@ export default function Menu() {
 
       <Row className="g-3">
         {filtered.map(item => (
-          <Col key={item.id} xs={12} sm={6} xl={4}>
+          <Col key={item._id} xs={12} sm={6} xl={4}>
             <div className="d-card h-100 position-relative">
               <div className="d-flex gap-3">
                 <div style={{
@@ -286,7 +248,7 @@ export default function Menu() {
                   fontSize: '1.5rem',
                   flexShrink: 0
                 }}>
-                  {item.img || <MdRestaurant />}
+                  {item.img ? <img src={item.img} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--d-radius-md)' }} /> : <MdRestaurant />}
                 </div>
                 <div className="flex-grow-1">
                   <div className="d-flex justify-content-between align-items-start">
@@ -310,7 +272,7 @@ export default function Menu() {
                       </div>
                     )}
                   </div>
-                  <div className="d-page-sub mb-2">{item.category} • {item.cuisine}</div>
+                  <div className="d-page-sub mb-2">{item.category} {item.cuisine ? `• ${item.cuisine}` : ''}</div>
                   {item.description && <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>}
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
@@ -360,7 +322,7 @@ export default function Menu() {
               <Form.Select
                 value={formData.category}
                 onChange={(e) => {
-                  const categoryData = CATEGORIES.find(c => c.name === e.target.value);
+                  const categoryData = categories.find(c => c.name === e.target.value);
                   setFormData({
                     ...formData,
                     category: e.target.value,
@@ -368,7 +330,8 @@ export default function Menu() {
                   });
                 }}
               >
-                {CATEGORIES.filter(c => c.name !== 'All').map(c => (
+                <option value="">Select Category</option>
+                {categories.filter(c => c.name !== 'All').map(c => (
                   <option key={c.name} value={c.name}>{c.name}</option>
                 ))}
               </Form.Select>
@@ -381,7 +344,8 @@ export default function Menu() {
                 value={formData.cuisine}
                 onChange={(e) => setFormData({ ...formData, cuisine: e.target.value })}
               >
-                {CUISINES.map(c => (
+                <option value="">Select Cuisine</option>
+                {cuisines.map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </Form.Select>

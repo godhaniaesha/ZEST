@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Staff = require('../models/Staff');
+const { auth, authorizeRoles } = require('../middleware/auth');
 
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const staff = await Staff.find();
     res.json(staff);
@@ -11,14 +12,20 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
   const staffMember = new Staff({
     name: req.body.name,
     role: req.body.role,
     shift: req.body.shift,
     status: req.body.status,
     initials: req.body.initials,
-    color: req.body.color
+    color: req.body.color,
+    phone: req.body.phone,
+    email: req.body.email,
+    salary: req.body.salary,
+    leavesTaken: req.body.leavesTaken,
+    leavesTotal: req.body.leavesTotal,
+    joiningDate: req.body.joiningDate
   });
 
   try {
@@ -29,7 +36,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
   try {
     const staff = await Staff.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(staff);
@@ -38,7 +45,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
   try {
     await Staff.findByIdAndDelete(req.params.id);
     res.json({ message: 'Staff member deleted' });

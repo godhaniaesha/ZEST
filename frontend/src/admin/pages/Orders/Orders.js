@@ -229,10 +229,20 @@ export default function Orders() {
                     </div>
                   </td>
 
-                  <td title={o.items}>{o.items}</td>
+                  <td>
+                    {Array.isArray(o.items) ? (
+                      o.items.map((item, index) => (
+                        <span key={index} className="d-block">
+                          {item.name} x {item.qty}
+                        </span>
+                      ))
+                    ) : (
+                      o.items
+                    )}
+                  </td>
 
                   <td>
-                    <strong>{o.amount}</strong>
+                    <strong>₹{typeof o.amount === 'number' ? o.amount.toLocaleString() : o.amount}</strong>
                   </td>
 
                   <td>

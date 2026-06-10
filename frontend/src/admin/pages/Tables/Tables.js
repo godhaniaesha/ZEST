@@ -6,7 +6,7 @@ import {
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-import { tablesAPI } from '../../../api';
+import { tablesAPI, reservationsAPI } from '../../../api';
 import { useAuth } from '../../../contexts/AuthContext';
 
 const TABLE_TYPES = ['All', 'Cafe', 'Bar'];
@@ -15,13 +15,16 @@ const STATUSES = ['All', 'Free', 'Occupied', 'Reserved'];
 
 export default function Tables() {
   const [tables, setTables] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [activeType, setActiveType] = useState('All');
   const [activeStatus, setActiveStatus] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showReservationInfo, setShowReservationInfo] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
+  const [currentReservation, setCurrentReservation] = useState(null);
   const { user } = useAuth();
   const userRole = user?.role || 'waiter';
 
@@ -29,10 +32,14 @@ export default function Tables() {
 
   const loadData = async () => {
     try {
-      const response = await tablesAPI.getAll();
-      setTables(response.data);
+      const [tablesRes, reservationsRes] = await Promise.all([
+        tablesAPI.getAll(),
+        reservationsAPI.getAll()
+      ]);
+      setTables(tablesRes.data);
+      setReservations(reservationsRes.data);
     } catch (error) {
-      console.error('Error fetching tables:', error);
+      console.error('Error fetching tables or reservations:', error);
     } finally {
       setLoading(false);
     }
@@ -41,6 +48,33 @@ export default function Tables() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const getTableReservation = (tableNumber, tableType) => {
+    const tableLabel = `${tableType === 'Bar' ? 'B' : 'Table'} ${tableNumber}`;
+    // Find a confirmed reservation for today around the current time
+    return reservations.find(r => 
+      (r.table === tableLabel || r.tableNumber === tableNumber) && 
+      r.status === 'Confirmed'
+    );
+  };
+
+  const getDynamicStatus = (table) => {
+    if (table.status === 'Occupied') return 'Occupied';
+    const res = getTableReservation(table.number, table.type);
+    if (res) return 'Reserved';
+    return table.status;
+  };
+
+  const handleTableClick = (table) => {
+    const status = getDynamicStatus(table);
+    if (status === 'Reserved') {
+      const res = getTableReservation(table.number, table.type);
+      if (res) {
+        setCurrentReservation(res);
+        setShowReservationInfo(true);
+      }
+    }
+  };
 
   const filtered = tables.filter(table => {
     const matchesType = activeType === 'All' || table.type === activeType;
@@ -235,119 +269,123 @@ export default function Tables() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
             gap: '20px'
           }}>
-            {filtered.map((table) => (
-              <div
-                key={table._id}
-                className="d-table-box"
-                style={{
-                  border: `2px solid ${getStatusColor(table.status)}`,
-                  borderRadius: 'var(--d-radius-md)',
-                  padding: '20px',
-                  textAlign: 'center',
-                  transition: 'var(--d-transition)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  background: getStatusBg(table.status)
-                }}
-              >
-                <div className="d-table-header" style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '8px'
-                }}>
-                  <div className="d-table-id" style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontSize: '1.3rem',
-                    fontWeight: 800,
-                    color: 'var(--d-primary)'
-                  }}>{table.displayId || (table.type === 'Bar' ? 'B-' : 'C-') + String(table.number).padStart(2, '0')}</div>
-                  {canAddEditDelete && (
-                    <div className="d-table-actions" style={{
+            {filtered.map((table) => {
+              const dynamicStatus = getDynamicStatus(table);
+              return (
+                <div
+                  key={table._id}
+                  className="d-table-box"
+                  onClick={() => handleTableClick(table)}
+                  style={{
+                    border: `2px solid ${getStatusColor(dynamicStatus)}`,
+                    borderRadius: 'var(--d-radius-md)',
+                    padding: '20px',
+                    textAlign: 'center',
+                    transition: 'var(--d-transition)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    background: getStatusBg(dynamicStatus)
+                  }}
+                >
+                  <div className="d-table-header" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px'
+                  }}>
+                    <div className="d-table-id" style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontSize: '1.3rem',
+                      fontWeight: 800,
+                      color: 'var(--d-primary)'
+                    }}>{table.displayId || (table.type === 'Bar' ? 'B-' : 'C-') + String(table.number).padStart(2, '0')}</div>
+                    {canAddEditDelete && (
+                      <div className="d-table-actions" style={{
+                        display: 'flex',
+                        gap: '4px'
+                      }}>
+                        <button
+                          className="d-table-action-btn"
+                          onClick={(e) => { e.stopPropagation(); handleEdit(table); }}
+                          style={{
+                            width: '28px',
+                            height: '28px',
+                            border: 'none',
+                            background: 'var(--d-white)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'var(--d-transition)'
+                          }}
+                        >
+                          <MdEdit fontSize="0.9rem" />
+                        </button>
+                        <button
+                          className="d-table-action-btn text-danger"
+                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(table); }}
+                          style={{
+                            width: '28px',
+                            height: '28px',
+                            border: 'none',
+                            background: 'var(--d-white)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'var(--d-transition)'
+                          }}
+                        >
+                          <MdDelete fontSize="0.9rem" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="d-table-details" style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    marginBottom: '12px'
+                  }}>
+                    <div className="d-table-detail-item" style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--d-text-muted)',
                       display: 'flex',
+                      alignItems: 'center',
                       gap: '4px'
                     }}>
-                      <button
-                        className="d-table-action-btn"
-                        onClick={() => handleEdit(table)}
-                        style={{
-                          width: '28px',
-                          height: '28px',
-                          border: 'none',
-                          background: 'var(--d-white)',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'var(--d-transition)'
-                        }}
-                      >
-                        <MdEdit fontSize="0.9rem" />
-                      </button>
-                      <button
-                        className="d-table-action-btn text-danger"
-                        onClick={() => handleDeleteClick(table)}
-                        style={{
-                          width: '28px',
-                          height: '28px',
-                          border: 'none',
-                          background: 'var(--d-white)',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'var(--d-transition)'
-                        }}
-                      >
-                        <MdDelete fontSize="0.9rem" />
-                      </button>
+                      <MdPeople /> {table.capacity}
                     </div>
-                  )}
-                </div>
-                <div className="d-table-details" style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '12px',
-                  marginBottom: '12px'
-                }}>
-                  <div className="d-table-detail-item" style={{
-                    fontSize: '0.8rem',
-                    color: 'var(--d-text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
-                    <MdPeople /> {table.capacity}
+                    <div className="d-table-detail-item" style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--d-text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      {table.type}
+                    </div>
                   </div>
-                  <div className="d-table-detail-item" style={{
-                    fontSize: '0.8rem',
-                    color: 'var(--d-text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
+                  <div className="d-table-status-text" style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '8px',
+                    color: getStatusColor(dynamicStatus)
                   }}>
-                    {table.type}
+                    {dynamicStatus}
                   </div>
+                  <div className="d-table-location" style={{
+                    fontSize: '0.7rem',
+                    color: 'var(--d-text-light)',
+                    fontWeight: 600
+                  }}>{table.location}</div>
                 </div>
-                <div className="d-table-status-text" style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: '8px',
-                  color: getStatusColor(table.status)
-                }}>
-                  {table.status}
-                </div>
-                <div className="d-table-location" style={{
-                  fontSize: '0.7rem',
-                  color: 'var(--d-text-light)',
-                  fontWeight: 600
-                }}>{table.location}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -367,6 +405,46 @@ export default function Tables() {
         onDelete={confirmDelete}
         itemName={`Table ${currentItem?.number}`}
       />
+
+      {/* Reservation Info Modal */}
+      <FormModal
+        show={showReservationInfo}
+        onHide={() => setShowReservationInfo(false)}
+        title="Reservation Details"
+        onSubmit={() => setShowReservationInfo(false)}
+        submitLabel="Close"
+        hideFooter={false}
+      >
+        {currentReservation && (
+          <div className="reservation-details">
+            <div className="mb-3">
+              <label className="text-muted small d-block">Guest Name</label>
+              <div className="fw-bold">{currentReservation.name || currentReservation.customerName}</div>
+            </div>
+            <div className="row g-3">
+              <div className="col-6">
+                <label className="text-muted small d-block">Time</label>
+                <div>{currentReservation.time}</div>
+              </div>
+              <div className="col-6">
+                <label className="text-muted small d-block">Guests</label>
+                <div>{currentReservation.guests} Persons</div>
+              </div>
+              <div className="col-12">
+                <label className="text-muted small d-block">Contact</label>
+                <div>{currentReservation.phone}</div>
+                {currentReservation.email && <div className="small text-muted">{currentReservation.email}</div>}
+              </div>
+              {currentReservation.notes && (
+                <div className="col-12">
+                  <label className="text-muted small d-block">Notes</label>
+                  <div className="small">{currentReservation.notes}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </FormModal>
     </>
   );
 }

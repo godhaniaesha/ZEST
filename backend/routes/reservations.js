@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Reservation = require('../models/Reservation');
-const { auth } = require('../middleware/auth');
+const { auth, authorizeRoles } = require('../middleware/auth');
 
 // Helper to check for auth optionally
 const optionalAuth = (req, res, next) => {
@@ -18,7 +18,7 @@ const optionalAuth = (req, res, next) => {
   }
 };
 
-router.get('/', async (req, res) => {
+router.get('/', auth, authorizeRoles('manager', 'superadmin', 'waiter'), async (req, res) => {
   try {
     const reservations = await Reservation.find();
     res.json(reservations);
@@ -46,9 +46,9 @@ router.post('/', optionalAuth, async (req, res) => {
   const finalUserId = req.body.userId || (req.user ? req.user.id : null);
   console.log('Final User ID:', finalUserId);
 
-  if (!finalUserId) {
-    console.log('No user ID found for reservation');
-    return res.status(400).json({ message: 'User ID is required' });
+  if (!finalUserId && !req.body.customerName) {
+    console.log('No user ID or customer name found for reservation');
+    return res.status(400).json({ message: 'User ID or Customer Name is required' });
   }
   
   const reservation = new Reservation({
@@ -74,7 +74,7 @@ router.post('/', optionalAuth, async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'waiter'), async (req, res) => {
   try {
     const reservation = await Reservation.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(reservation);
@@ -83,7 +83,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
   try {
     await Reservation.findByIdAndDelete(req.params.id);
     res.json({ message: 'Reservation deleted' });

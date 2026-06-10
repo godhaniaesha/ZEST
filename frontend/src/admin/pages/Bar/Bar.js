@@ -6,19 +6,9 @@ import {
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-import { menuAPI } from '../../../api';
+import { menuAPI, categoriesAPI } from '../../../api';
 import { useAuth } from '../../../contexts/AuthContext';
 
-const DRINKS = [
-  { id: 1, name: 'Classic Mojito', cat: 'Cocktail', price: '320', available: true,  img: <MdLocalBar />, color: '#2ecc71', description: 'Refreshing mint and lime cocktail with white rum', ingredients: 'White rum, mint, lime, sugar, soda water', alcoholContent: '12%', prepTime: 5 },
-  { id: 2, name: 'Old Fashioned', cat: 'Cocktail', price: '480', available: true, img: <MdLocalBar />, color: '#f39c12', description: 'Classic bourbon cocktail with bitters and orange peel', ingredients: 'Bourbon, sugar cube, bitters, orange peel, ice', alcoholContent: '35%', prepTime: 7 },
-  { id: 3, name: 'Kingfisher Draught', cat: 'Beer', price: '180', available: true, img: <MdSportsBar />, color: '#3498db', description: 'Crisp and refreshing Indian lager beer', ingredients: 'Water, malt, hops, yeast', alcoholContent: '5%', prepTime: 1 },
-  { id: 4, name: 'House Red Wine', cat: 'Wine', price: '420', available: true, img: <MdWine />, color: '#e74c3c', description: 'Smooth and full-bodied red wine blend', ingredients: 'Red wine grapes', alcoholContent: '13%', prepTime: 2 },
-  { id: 5, name: 'Espresso Martini', cat: 'Cocktail', price: '380', available: false, img: <MdLocalBar />, color: '#9b59b6', description: 'Vodka and coffee liqueur with fresh espresso', ingredients: 'Vodka, Kahlua, espresso, simple syrup', alcoholContent: '20%', prepTime: 6 },
-  { id: 6, name: 'Whiskey Sour', cat: 'Cocktail', price: '440', available: true, img: <MdLocalBar />, color: '#e67e22', description: 'Classic sour cocktail with whiskey and lemon', ingredients: 'Whiskey, lemon juice, simple syrup, egg white', alcoholContent: '25%', prepTime: 8 },
-];
-
-const CATEGORIES = ['All', 'Cocktail', 'Beer', 'Wine', 'Spirits'];
 const FORM_SKIP_KEYS = ['_id', '__v', 'createdAt', 'updatedAt', 'type'];
 
 const itemHasType = (item, target) => {
@@ -28,6 +18,7 @@ const itemHasType = (item, target) => {
 
 export default function Bar() {
   const [drinks, setDrinks] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [active, setActive] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -35,7 +26,7 @@ export default function Bar() {
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', cat: '', cuisine: '', price: '', available: true,
+    name: '', category: '', cuisine: 'International', price: '', available: true,
     description: '', ingredients: '', alcoholContent: '', prepTime: 5,
   });
   const [imageFile, setImageFile] = useState(null);
@@ -48,9 +39,16 @@ export default function Bar() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const response = await menuAPI.getAll();
-      const data = Array.isArray(response.data) ? response.data : [];
+      const [menuRes, catRes] = await Promise.all([
+        menuAPI.getAll(),
+        categoriesAPI.getAll()
+      ]);
+      
+      const data = Array.isArray(menuRes.data) ? menuRes.data : [];
       setDrinks(data.filter(i => itemHasType(i, 'Bar')));
+      
+      const allCats = catRes.data || [];
+      setCategories(['All', ...allCats.filter(c => c.type === 'Bar').map(c => c.name)]);
     } catch (error) {
       console.error(error);
       setDrinks([]);
@@ -71,7 +69,7 @@ export default function Bar() {
 
   const handleAdd = () => {
     setCurrentItem(null);
-    setFormData({ name: '', cat: 'Cocktail', price: '', available: true, description: '', ingredients: '', alcoholContent: '', prepTime: 5 });
+    setFormData({ name: '', category: categories[1] || '', price: '', available: true, description: '', ingredients: '', alcoholContent: '', prepTime: 5 });
     setShowForm(true);
   };
 
@@ -79,9 +77,9 @@ export default function Bar() {
     setCurrentItem(item);
     setFormData({
       name: item.name,
-      cat: item.cat,
-      price: item.price.replace('₹', ''),
-      available: item.available,
+      category: item.category,
+      price: String(item.price).replace('₹', ''),
+      available: item.status === 'Available',
       description: item.description || '',
       ingredients: item.ingredients || '',
       alcoholContent: item.alcoholContent || '',
@@ -96,7 +94,7 @@ export default function Bar() {
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.price || !formData.cat) {
+    if (!formData.name || !formData.price || !formData.category) {
       alert('Please fill in all required fields (Name, Price, Category)');
       return;
     }
@@ -106,7 +104,7 @@ export default function Bar() {
     }
     const data = new FormData();
     data.append('name', formData.name);
-    data.append('category', formData.cat);
+    data.append('category', formData.category);
     data.append('price', formData.price);
     data.append('status', formData.available ? 'Available' : 'Sold Out');
     data.append('type', 'Bar');
@@ -134,7 +132,7 @@ export default function Bar() {
   const confirmDelete = async () => {
     try {
       await menuAPI.delete(currentItem._id);
-      loadData();
+      await loadData();
       setShowDelete(false);
     } catch (error) {
       console.error(error);
@@ -152,15 +150,6 @@ export default function Bar() {
         return <MdLocalBar />;
     }
   };
-
-  const formFields = [
-    { name: 'name', label: 'Drink Name', type: 'text', required: true, col: 12 },
-    { name: 'category', label: 'Category', type: 'select', required: true, col: 6, options: CATEGORIES.filter(c => c !== 'All').map(c => ({ label: c, value: c })) },
-    { name: 'cuisine', label: 'Cuisine', type: 'text', required: true, col: 6 },
-    { name: 'price', label: 'Price (₹)', type: 'number', required: true, col: 6 },
-    { name: 'status', label: 'Status', type: 'select', required: true, col: 6, options: [{ label: 'Available', value: 'Available' }, { label: 'Sold Out', value: 'Sold Out' }] },
-    { name: 'img', label: 'Drink Image', type: 'file', col: 12 },
-  ];
 
   if (loading) return <div>Loading...</div>;
 
@@ -185,7 +174,7 @@ export default function Bar() {
       <Row className="g-3 mb-4">
         <Col xs={12} lg={8}>
           <div className="d-flex gap-2 flex-wrap">
-            {CATEGORIES.map(c => (
+            {categories.map(c => (
               <button
                 key={c}
                 onClick={() => setActive(c)}
@@ -243,8 +232,8 @@ export default function Bar() {
                     width: '60px',
                     height: '60px',
                     borderRadius: 'var(--d-radius-md)',
-                    background: `${d.color}15`,
-                    color: d.color,
+                    background: `${d.color || '#3498db'}15`,
+                    color: d.color || '#3498db',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -276,7 +265,7 @@ export default function Bar() {
                       </div>
                     )}
                   </div>
-                  <div className="d-page-sub mb-1">{d.cat}{d.alcoholContent && <span className="ml-2" style={{ fontSize: '0.8rem' }}>• {d.alcoholContent}</span>}</div>
+                  <div className="d-page-sub mb-1">{d.category}{d.alcoholContent && <span className="ml-2" style={{ fontSize: '0.8rem' }}>• {d.alcoholContent}</span>}</div>
                   {d.description && <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{d.description}</div>}
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
@@ -289,8 +278,8 @@ export default function Bar() {
                         </span>
                       )}
                     </div>
-                    <span className={`d-chip ${d.available ? 'd-chip-green' : 'd-chip-red'}`}>
-                      {d.available ? 'In Stock' : 'Out of Stock'}
+                    <span className={`d-chip ${d.status === 'Available' ? 'd-chip-green' : 'd-chip-red'}`}>
+                      {d.status === 'Available' ? 'In Stock' : 'Out of Stock'}
                     </span>
                   </div>
                 </div>
@@ -303,7 +292,6 @@ export default function Bar() {
       <FormModal
         show={showForm}
         onHide={() => setShowForm(false)}
-        onSave={handleSave}
         title={currentItem ? "Edit Drink" : "Add New Drink"}
         onSubmit={handleSave}
       >
@@ -324,10 +312,11 @@ export default function Bar() {
             <Form.Group>
               <Form.Label className="small fw-bold">Category *</Form.Label>
               <Form.Select 
-                value={formData.cat}
-                onChange={(e) => setFormData({...formData, cat: e.target.value})}
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
               >
-                {CATEGORIES.filter(c => c !== 'All').map(c => (
+                <option value="">Select Category</option>
+                {categories.filter(c => c !== 'All').map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </Form.Select>

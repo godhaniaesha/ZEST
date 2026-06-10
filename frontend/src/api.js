@@ -63,6 +63,7 @@ export const menuAPI = {
 
 export const ordersAPI = {
   getAll: () => api.get('/orders'),
+  getByReservationId: (reservationId) => api.get(`/orders/reservation/${reservationId}`),
   create: (data) => api.post('/orders', data),
   update: (id, data) => api.put(`/orders/${id}`, data),
   delete: (id) => api.delete(`/orders/${id}`),
@@ -95,6 +96,20 @@ export const reservationsAPI = {
   create: (data) => api.post('/reservations', data),
   update: (id, data) => api.put(`/reservations/${id}`, data),
   delete: (id) => api.delete(`/reservations/${id}`),
+};
+
+export const categoriesAPI = {
+  getAll: () => api.get('/categories'),
+  create: (data) => api.post('/categories', data),
+  update: (id, data) => api.put(`/categories/${id}`, data),
+  delete: (id) => api.delete(`/categories/${id}`),
+};
+
+export const cuisinesAPI = {
+  getAll: () => api.get('/cuisines'),
+  create: (data) => api.post('/cuisines', data),
+  update: (id, data) => api.put(`/cuisines/${id}`, data),
+  delete: (id) => api.delete(`/cuisines/${id}`),
 };
 
 export const usersAPI = {

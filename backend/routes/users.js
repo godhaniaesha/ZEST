@@ -4,6 +4,7 @@ const User = require('../models/User');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { auth, authorizeRoles } = require('../middleware/auth');
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '../uploads/');
@@ -25,33 +26,42 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
-  } else {
+  }
+  else {
     cb(new Error('Only image files are allowed!'), false);
   }
 };
 
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
-router.get('/', async (req, res) => {
+router.get('/', auth, authorizeRoles('superadmin'), async (req, res) => {
   try {
     const users = await User.find().select('-password');
     res.json(users);
-  } catch (err) {
+  }
+  catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Allow superadmin or the user themselves to see their profile
+    if (req.user.role !== 'superadmin' && req.user.id !== req.params.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
     res.json(user);
-  } catch (err) {
+  }
+  catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', auth, authorizeRoles('superadmin'), async (req, res) => {
   const user = new User({
     name: req.body.name,
     email: req.body.email,
@@ -66,15 +76,22 @@ router.post('/', async (req, res) => {
     const userResponse = newUser.toObject();
     delete userResponse.password;
     res.status(201).json(userResponse);
-  } catch (err) {
+  }
+  catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
-router.put('/:id', upload.single('image'), async (req, res) => {
+router.put('/:id', auth, upload.single('image'), async (req, res) => {
   console.log('Update request for ID:', req.params.id);
   console.log('Request body:', req.body);
   console.log('Request file:', req.file);
+  
+  // Allow superadmin or the user themselves to update
+  if (req.user.role !== 'superadmin' && req.user.id !== req.params.id) {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -85,39 +102,39 @@ router.put('/:id', upload.single('image'), async (req, res) => {
     // Update fields
     if (req.body.name !== undefined) user.name = req.body.name;
     if (req.body.email !== undefined) user.email = req.body.email;
-    if (req.body.role !== undefined) user.role = req.body.role;
-    if (req.body.status !== undefined) user.status = req.body.status;
+    if (req.body.role !== undefined && req.user.role === 'superadmin') user.role = req.body.role;
+    if (req.body.status !== undefined && req.user.role === 'superadmin') user.status = req.body.status;
     if (req.body.phone !== undefined) user.phone = req.body.phone;
     if (req.body.address !== undefined) user.address = req.body.address;
     
     if (req.file) {
       user.image = `http://localhost:${process.env.PORT || 5000}/uploads/${req.file.filename}`;
       console.log('Image updated to:', user.image);
-    } else if (req.body.image !== undefined) {
+    }
+    else if (req.body.image !== undefined) {
       user.image = req.body.image;
     }
 
     if (req.body.password) {
       user.password = req.body.password;
-      console.log('Password update requested');
     }
 
-    const updatedUser = await user.save();
-    console.log('User updated successfully:', updatedUser._id);
-    const userResponse = updatedUser.toObject();
+    await user.save();
+    const userResponse = user.toObject();
     delete userResponse.password;
     res.json(userResponse);
-  } catch (err) {
-    console.error('Update user error details:', err);
+  }
+  catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, authorizeRoles('superadmin'), async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'User deleted' });
-  } catch (err) {
+  }
+  catch (err) {
     res.status(500).json({ message: err.message });
   }
 });

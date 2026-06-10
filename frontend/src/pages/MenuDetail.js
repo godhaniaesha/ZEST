@@ -80,8 +80,8 @@ const MenuDetail = () => {
       <div className="menu_detail_inner">
         <div className="menu_detail_top_nav">
           <button type="button" className="menu_detail_back_btn" onClick={() => navigate('/menu')}>
-            <ArrowLeft size={16} />
-            BACK TO EXPLORE
+            <ArrowLeft size={14} />
+            BACK TO MENU
           </button>
         </div>
 
@@ -100,24 +100,19 @@ const MenuDetail = () => {
                 {!isAvailable && <div className="sold_out_overlay">SOLD OUT</div>}
               </div>
 
-              <div className="menu_detail_visual_floating_card">
-                <div className="floating_card_icon">
-                  <Zap size={20} fill="var(--d-gold)" color="var(--d-gold)" />
+              <div className="chef_recommended_overlay">
+                <div className="chef_recommended_content">
+                  <span className="chef_recommended_label">CHEF RECOMMENDED</span>
+                  <h3 className="chef_recommended_name">{item.name}</h3>
+                  <div className="chef_recommended_meta">
+                    <span>{item.category}</span>
+                    <span className="meta_dot">•</span>
+                    <span className="meta_rating">{item.rating || 4.9} ★</span>
+                  </div>
                 </div>
-                <div className="floating_card_text">
-                  <strong>Freshly Prepared</strong>
-                  <span>Made to your order</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="chef_note_card">
-              <div className="chef_avatar">
-                <ChefHat size={24} />
-              </div>
-              <div className="chef_note_content">
-                <span className="chef_label">CHEF'S SPECIAL SELECTION</span>
-                <p>"This dish represents the core of Zest—bold flavors meet artisan techniques."</p>
+                <button className="chef_recommended_icon_btn">
+                  <ChefHat size={18} />
+                </button>
               </div>
             </div>
           </section>
@@ -125,79 +120,84 @@ const MenuDetail = () => {
           {/* ── RIGHT INFO COLUMN ── */}
           <section className="menu_detail_info">
             <div className="menu_detail_header">
-              <span className="category_tag">{item.category?.toUpperCase()}</span>
-              <div className="availability_status">
-                <span className={`status_dot ${isAvailable ? 'available' : 'unavailable'}`}></span>
-                {isAvailable ? 'Available Now' : 'Currently Unavailable'}
-              </div>
+              <span className="category_pill">{item.category?.toUpperCase()}</span>
             </div>
 
             <h1 className="menu_detail_title">{item.name}</h1>
+            <p className="short_description">
+              {item.shortDescription || `Decadent ${item.name.toLowerCase()} with a premium touch, served fresh for your delight.`}
+            </p>
 
             <div className="menu_detail_stats_row">
-              <div className="stat_pill">
-                <Star size={16} fill="#C9A84C" stroke="#C9A84C" />
-                <span className="stat_value">{item.rating || 4.5}</span>
-                <span className="stat_label">({item.reviews || 45} Reviews)</span>
+              <div className="stat_pill_v2">
+                <div className="stat_stars">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={12} fill={i < Math.floor(item.rating || 4.5) ? "#C9A84C" : "none"} stroke="#C9A84C" />
+                  ))}
+                </div>
+                <span className="stat_value">{item.rating || 4.9}</span>
+                <span className="stat_reviews">({item.reviews || 45} reviews)</span>
               </div>
-              <div className="stat_pill">
-                <Clock size={16} />
+              <div className="stat_pill_v2">
+                <Clock size={14} />
                 <span className="stat_value">{item.prepTime || '18 MIN'}</span>
               </div>
-              <div className="stat_pill">
-                <Flame size={16} />
-                <span className="stat_value">{item.calories || '580'}</span>
-                <span className="stat_label">KCAL</span>
+              <div className="stat_pill_v2">
+                <Flame size={14} />
+                <span className="stat_value">{item.calories || '580'} KCAL</span>
               </div>
             </div>
 
-            <div className="menu_detail_description_section">
-              <p className="main_description">
-                {item.description || 'Experience a culinary masterpiece crafted with the finest ingredients and passion. Every bite tells a story of tradition and innovation.'}
+            <div className="dietary_row">
+              <div className="dietary_pill_v2">
+                <Leaf size={12} />
+                <span>{item.dietary || 'VEGETARIAN'}</span>
+              </div>
+            </div>
+
+            <div className="menu_detail_price_section">
+              <span className="currency">₹</span>
+              <span className="amount">{item.price}</span>
+            </div>
+
+            <div className="detail_card">
+              <h4 className="detail_card_title">THE STORY</h4>
+              <p className="detail_card_text">
+                {item.description || 'Experience a culinary masterpiece crafted with the finest ingredients and passion. Every bite tells a story of tradition and innovation, perfected in our signature open kitchen.'}
               </p>
-
-              <div className="dietary_badges">
-                <div className="dietary_badge">
-                  <Leaf size={14} />
-                  <span>{item.dietary || 'VEGETARIAN'}</span>
-                </div>
-                {item.spicy && (
-                  <div className="dietary_badge spicy">
-                    <Flame size={14} />
-                    <span>SPICY</span>
-                  </div>
-                )}
-              </div>
             </div>
 
-            <div className="menu_detail_price_box">
-              <div className="price_label">Premium Selection</div>
-              <div className="price_value">
-                <span className="currency">₹</span>
-                <span className="amount">{item.price}</span>
-              </div>
-            </div>
-
-            <div className="menu_detail_features">
-              <h3 className="features_title">Why You'll Love It</h3>
-              <div className="features_grid">
-                {(item.highlights && item.highlights.length > 0 ? item.highlights : ['Artisan Ingredients', 'Chef Crafted', 'Seasonal Flavors', 'Perfectly Balanced']).map((h, i) => (
-                  <div key={i} className="feature_item">
-                    <CheckCircle2 size={16} className="feature_icon" />
+            <div className="detail_card">
+              <h4 className="detail_card_title">HIGHLIGHTS</h4>
+              <div className="highlights_grid_v2">
+                {(item.highlights && item.highlights.length > 0 ? item.highlights : ['Molten center', 'Fresh berries', 'Vanilla ice cream', 'Warm serving']).map((h, i) => (
+                  <div key={i} className="highlight_item">
+                    <span className="highlight_dot">•</span>
                     <span>{h}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="menu_detail_promise">
-              <div className="promise_icon">
-                <Info size={20} />
+            <div className="promise_card_v2">
+              <div className="promise_icon_v2">
+                <Info size={16} />
               </div>
-              <div className="promise_text">
-                <h4>OUR FRESHNESS PROMISE</h4>
-                <p>Sourced daily from local organic farms. Prepared to order in our signature open kitchen.</p>
+              <div className="promise_content_v2">
+                <h4 className="promise_title_v2">FRESHNESS PROMISE</h4>
+                <p className="promise_text_v2">
+                  All ingredients are sourced daily from local and organic farms wherever possible. Our kitchen team prepares every dish to order so you always receive it at peak freshness.
+                </p>
               </div>
+            </div>
+
+            <div className="tag_row_v2">
+              {['MADE TO ORDER', 'FRESH INGREDIENTS', 'EST. 18 MIN', 'CHEF CRAFTED'].map((tag, i) => (
+                <div key={i} className="tag_pill_v2">
+                  <div className="tag_dot_v2" />
+                  <span>{tag}</span>
+                </div>
+              ))}
             </div>
           </section>
         </div>
