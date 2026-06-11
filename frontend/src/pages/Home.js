@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FaCoffee,
   FaGlassCheers,
@@ -18,11 +18,13 @@ import {
 } from "react-icons/fa";
 import { FaBolt, FaCreditCard } from "react-icons/fa";
 import { FaArrowRightLong } from "react-icons/fa6";
+import { blogAPI } from "../api";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay, EffectFade } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
+import { useNavigate } from "react-router-dom";
 
 /* ─────────────────────────────────────────────
     ROOT TOKENS  (mirrors your :root exactly)
@@ -2084,36 +2086,6 @@ const MENU_ITEMS = {
   ],
 };
 
-const BLOGS = [
-  {
-    day: "14",
-    month: "Jun",
-    category: "Coffee Culture",
-    title: "Top 5 Signature Coffees You Must Try",
-    author: "Admin",
-    readTime: "4 min read",
-    img: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80",
-  },
-  {
-    day: "21",
-    month: "Jun",
-    category: "Mixology",
-    title: "The Art of Craft Cocktail Making",
-    author: "Sophia",
-    readTime: "6 min read",
-    img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80",
-  },
-  {
-    day: "28",
-    month: "Jun",
-    category: "Healthy Dining",
-    title: "Why Farm-Fresh Ingredients Matter",
-    author: "Chef Marco",
-    readTime: "5 min read",
-    img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80",
-  },
-];
-
 const TESTIMONIALS = [
   {
     text: "The ambiance alone is worth the visit — warm, intimate, and refined. The cocktails are crafted with thoughtfulness, each sip tells a story.",
@@ -2271,6 +2243,34 @@ export default function Home() {
     guests: "",
     occasion: "",
   });
+  const [blogs, setBlogs] = useState([]);
+  const navigate = useNavigate();
+
+  // Fetch blogs from backend
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const response = await blogAPI.getAll();
+        const transformedBlogs = response.data.map((blog) => {
+          const date = new Date(blog.createdAt);
+          return {
+            day: date.getDate().toString(),
+            month: date.toLocaleString('default', { month: 'short' }),
+            category: blog.category,
+            title: blog.title,
+            author: blog.author,
+            readTime: `${blog.readTime} min read`,
+            img: blog.image,
+          };
+        });
+        setBlogs(transformedBlogs);
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+      }
+    };
+    fetchBlogs();
+  }, []);
+  console.log(blogs);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -2287,7 +2287,9 @@ export default function Home() {
     );
     setResForm({ name: "", date: "", time: "", guests: "", occasion: "" });
   };
-
+  const handlePostClick = (postId) => {
+    navigate(`/blog/${postId}`);
+  };
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: STYLE }} />
@@ -2748,15 +2750,16 @@ export default function Home() {
                 color: "var(--d-primary)",
                 borderColor: "var(--d-border)",
               }}
-              onClick={() => showToast("📰 Full blog page coming soon!")}
+              onClick={() => navigate("/blog")}
             >
               View All Blogs →
             </button>
           </div>
 
           <div className="d_events_grid">
-            {BLOGS.map((blog) => (
-              <div className="d_event_card" key={blog.title}>
+            {blogs.map((blog) => (
+
+              <div className="d_event_card" key={blog._id}>
                 <div className="d_event_img_wrap">
                   <img
                     className="d_event_img"
@@ -2791,11 +2794,9 @@ export default function Home() {
                         {blog.readTime}
                       </span>
                     </div>
-
                     <button
                       className="d_event_register"
-                      onClick={() => showToast(`📖 Opening "${blog.title}"`)}
-                    >
+                      onClick={() => handlePostClick(blog._id)}>
                       Read More <FaArrowRight style={{ marginLeft: 8 }} />
                     </button>
                   </div>

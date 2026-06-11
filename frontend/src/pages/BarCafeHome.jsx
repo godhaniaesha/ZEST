@@ -1844,15 +1844,57 @@ const MENU_ITEMS = {
 };
 
 const testimonials = [
-  { text: "The ambience at Velour is unlike anything in Vadodara. Every detail — from the lighting to the cocktail menu — speaks of genuine craftsmanship.", name: "Arjun Mehta", role: "Food Blogger, Barodaites", initials: "AM", rating: 5 },
-  { text: "I celebrated my anniversary here and the staff went above and beyond. The reservation system made it so seamless — we felt like royalty.", name: "Priya Sharma", role: "Regular Patron", initials: "PS", rating: 5 },
-  { text: "Their cold brew reserve is the best I've had anywhere in Gujarat. The bar menu is sophisticated without being pretentious. A true hidden gem.", name: "Rohan Desai", role: "Entrepreneur", initials: "RD", rating: 5 },
+  {
+    text: "The ambience at Velour is unlike anything in Vadodara. Every detail — from the lighting to the cocktail menu — speaks of genuine craftsmanship.",
+    name: "Arjun Mehta",
+    role: "Food Blogger, Barodaites",
+    initials: "AM",
+    rating: 5,
+  },
+  {
+    text: "I celebrated my anniversary here and the staff went above and beyond. The reservation system made it so seamless — we felt like royalty.",
+    name: "Priya Sharma",
+    role: "Regular Patron",
+    initials: "PS",
+    rating: 5,
+  },
+  {
+    text: "Their cold brew reserve is the best I've had anywhere in Gujarat. The bar menu is sophisticated without being pretentious. A true hidden gem.",
+    name: "Rohan Desai",
+    role: "Entrepreneur",
+    initials: "RD",
+    rating: 5,
+  },
 ];
 
 const events = [
-  { day: "14", month: "Jun", name: "Jazz & Whiskey Evening", time: "8:00 PM – 11:00 PM", type: "Live Music", desc: "An intimate evening with the Bombay Jazz Collective, curated whiskey tastings from 12 single malts.", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&q=80" },
-  { day: "21", month: "Jun", name: "Cocktail Masterclass", time: "6:00 PM – 9:00 PM", type: "Workshop", desc: "Learn signature cocktail techniques from our head bartender. Includes premium spirits kit and recipes.", img: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&q=80" },
-  { day: "28", month: "Jun", name: "Rooftop Full Moon Dinner", time: "7:30 PM – 10:30 PM", type: "Dining Experience", desc: "A special 5-course dinner under the stars, paired with moonlight cocktails and live acoustic music.", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80" },
+  {
+    day: "14",
+    month: "Jun",
+    name: "Jazz & Whiskey Evening",
+    time: "8:00 PM – 11:00 PM",
+    type: "Live Music",
+    desc: "An intimate evening with the Bombay Jazz Collective, curated whiskey tastings from 12 single malts.",
+    img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&q=80",
+  },
+  {
+    day: "21",
+    month: "Jun",
+    name: "Cocktail Masterclass",
+    time: "6:00 PM – 9:00 PM",
+    type: "Workshop",
+    desc: "Learn signature cocktail techniques from our head bartender. Includes premium spirits kit and recipes.",
+    img: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&q=80",
+  },
+  {
+    day: "28",
+    month: "Jun",
+    name: "Rooftop Full Moon Dinner",
+    time: "7:30 PM – 10:30 PM",
+    type: "Dining Experience",
+    desc: "A special 5-course dinner under the stars, paired with moonlight cocktails and live acoustic music.",
+    img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
+  },
 ];
 
 const heroImages = [
@@ -1861,14 +1903,31 @@ const heroImages = [
   "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=80",
 ];
 
-const navLinks = ["Home", "About", "Menu", "Experience", "Reservations", "Gallery", "Events"];
+const navLinks = [
+  "Home",
+  "About",
+  "Menu",
+  "Experience",
+  "Reservations",
+  "Gallery",
+  "Events",
+];
 
 /* ─── COMPONENT ───────────────────────────────────────────────── */
 export default function BarCafeHome() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeMenuTab, setActiveMenuTab] = useState("drinks");
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", date: "", time: "", guests: "", occasion: "", note: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    date: "",
+    time: "",
+    guests: "",
+    occasion: "",
+    note: "",
+  });
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -1906,22 +1965,42 @@ export default function BarCafeHome() {
             </a>
             {/* Desktop Nav */}
             <div className="d-none d-lg-flex align-items-center gap-4">
-              {navLinks.map(l => (
-                <a key={l} className="d_nav_link" href="#" onClick={e => { e.preventDefault(); scrollTo(l.toLowerCase()); }}>
+              {navLinks.map((l) => (
+                <a
+                  key={l}
+                  className="d_nav_link"
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollTo(l.toLowerCase());
+                  }}
+                >
                   {l}
                 </a>
               ))}
             </div>
             <div className="d-none d-lg-flex align-items-center gap-3">
-              <a className="d_btn_primary" href="#" onClick={e => { e.preventDefault(); scrollTo("reservations"); }}>
+              <a
+                className="d_btn_primary"
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollTo("reservations");
+                }}
+              >
                 Reserve Now <FaArrowRight />
               </a>
             </div>
             {/* Mobile toggle */}
             <button
               className="d-lg-none btn p-0"
-              style={{ background: "none", border: "none", color: "white", fontSize: "1.5rem" }}
-              onClick={() => setMobileOpen(v => !v)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "white",
+                fontSize: "1.5rem",
+              }}
+              onClick={() => setMobileOpen((v) => !v)}
               aria-label="Toggle menu"
             >
               {mobileOpen ? <FiX /> : <FiMenu />}
@@ -1933,15 +2012,42 @@ export default function BarCafeHome() {
       {/* MOBILE MENU */}
       <div className={`d_mobile_menu ${mobileOpen ? "open" : ""}`}>
         <button
-          style={{ position: "absolute", top: "1.5rem", right: "1.5rem", background: "none", border: "none", color: "white", fontSize: "1.5rem", cursor: "pointer" }}
+          style={{
+            position: "absolute",
+            top: "1.5rem",
+            right: "1.5rem",
+            background: "none",
+            border: "none",
+            color: "white",
+            fontSize: "1.5rem",
+            cursor: "pointer",
+          }}
           onClick={() => setMobileOpen(false)}
-        ><FiX /></button>
-        {navLinks.map(l => (
-          <a key={l} className="d_mobile_nav_link" href="#" onClick={e => { e.preventDefault(); scrollTo(l.toLowerCase()); }}>
+        >
+          <FiX />
+        </button>
+        {navLinks.map((l) => (
+          <a
+            key={l}
+            className="d_mobile_nav_link"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollTo(l.toLowerCase());
+            }}
+          >
             {l}
           </a>
         ))}
-        <a className="d_btn_primary mt-2" href="#" onClick={e => { e.preventDefault(); scrollTo("reservations"); setMobileOpen(false); }}>
+        <a
+          className="d_btn_primary mt-2"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            scrollTo("reservations");
+            setMobileOpen(false);
+          }}
+        >
           Reserve Now <FaArrowRight />
         </a>
       </div>
@@ -1959,7 +2065,10 @@ export default function BarCafeHome() {
             effect="fade"
             loop={true}
             autoplay={{ delay: 4000, disableOnInteraction: false }}
-            pagination={{ clickable: true, el: '.d_hero_swiper .swiper-pagination' }}
+            pagination={{
+              clickable: true,
+              el: ".d_hero_swiper .swiper-pagination",
+            }}
             className="d_hero_swiper"
           >
             {heroImages.map((img, i) => (
@@ -1973,20 +2082,37 @@ export default function BarCafeHome() {
         <div className="d_hero_container">
           <div className="d_hero_content_wrap">
             <div className="d_hero_content">
-              <div className="d_hero_title_topline">Est. 2019 · Alkapuri, Vadodara</div>
+              <div className="d_hero_title_topline">
+                Est. 2019 · Alkapuri, Vadodara
+              </div>
               <div className="d_hero_eyebrow">Welcome to Velour</div>
               <h1 className="d_hero_title">
                 Crafted for the <em>Curious</em>
               </h1>
               <p className="d_hero_subtitle">Bar · Café · Experiences</p>
               <p className="d_hero_desc">
-                Where premium spirits meet specialty coffee. An intimate setting designed for memorable moments.
+                Where premium spirits meet specialty coffee. An intimate setting
+                designed for memorable moments.
               </p>
               <div className="d_hero_actions">
-                <a className="d_btn_primary" href="#" onClick={e => { e.preventDefault(); scrollTo("reservations"); }}>
+                <a
+                  className="d_btn_primary"
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollTo("reservations");
+                  }}
+                >
                   Reserve a Table <FaArrowRight />
                 </a>
-                <a className="d_btn_outline" href="#" onClick={e => { e.preventDefault(); scrollTo("menu"); }}>
+                <a
+                  className="d_btn_outline"
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollTo("menu");
+                  }}
+                >
                   Explore Menu
                 </a>
               </div>
@@ -2047,9 +2173,24 @@ export default function BarCafeHome() {
       {/* ══════════════════════════════════════ */}
       <section id="about" className="d_light_section">
         <div className="d_light_section_decor">
-          <div className="d_decor_icon d_decor_sm" style={{ top: "10%", left: "5%", "--decor-rotate": "15deg" }}><FaCoffee /></div>
-          <div className="d_decor_icon d_decor_md" style={{ top: "60%", right: "8%", "--decor-rotate": "-10deg" }}><FaGlassCheers /></div>
-          <div className="d_decor_icon d_decor_sm" style={{ bottom: "15%", left: "15%", "--decor-rotate": "5deg" }}><FaCocktail /></div>
+          <div
+            className="d_decor_icon d_decor_sm"
+            style={{ top: "10%", left: "5%", "--decor-rotate": "15deg" }}
+          >
+            <FaCoffee />
+          </div>
+          <div
+            className="d_decor_icon d_decor_md"
+            style={{ top: "60%", right: "8%", "--decor-rotate": "-10deg" }}
+          >
+            <FaGlassCheers />
+          </div>
+          <div
+            className="d_decor_icon d_decor_sm"
+            style={{ bottom: "15%", left: "15%", "--decor-rotate": "5deg" }}
+          >
+            <FaCocktail />
+          </div>
         </div>
         <div className="d_light_section_dots" />
         <div className="d_section">
@@ -2076,23 +2217,33 @@ export default function BarCafeHome() {
                 More than a bar, it's a <em>destination</em>
               </h2>
               <p className="d_section_lead">
-                Born in the heart of Vadodara in 2019, Velour was conceived as a sanctuary for those who seek more than just a drink. We curate experiences.
+                Born in the heart of Vadodara in 2019, Velour was conceived as a
+                sanctuary for those who seek more than just a drink. We curate
+                experiences.
               </p>
               <div className="d_about_features">
                 <div className="d_feature_pill">
-                  <div className="d_feature_icon"><FaCocktail /></div>
+                  <div className="d_feature_icon">
+                    <FaCocktail />
+                  </div>
                   <div className="d_feature_text">Craft Cocktails</div>
                 </div>
                 <div className="d_feature_pill">
-                  <div className="d_feature_icon"><FaCoffee /></div>
+                  <div className="d_feature_icon">
+                    <FaCoffee />
+                  </div>
                   <div className="d_feature_text">Specialty Coffee</div>
                 </div>
                 <div className="d_feature_pill">
-                  <div className="d_feature_icon"><FaMusic /></div>
+                  <div className="d_feature_icon">
+                    <FaMusic />
+                  </div>
                   <div className="d_feature_text">Live Music</div>
                 </div>
                 <div className="d_feature_pill">
-                  <div className="d_feature_icon"><FaLeaf /></div>
+                  <div className="d_feature_icon">
+                    <FaLeaf />
+                  </div>
                   <div className="d_feature_text">Ambiance</div>
                 </div>
               </div>
@@ -2106,12 +2257,15 @@ export default function BarCafeHome() {
       {/* ══════════════════════════════════════ */}
       <section id="menu" className="d_menu_section">
         <div className="d_section">
-          <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>Our Menu</div>
+          <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>
+            Our Menu
+          </div>
           <h2 className="d_section_title" style={{ color: "var(--d-white)" }}>
             Curated for the <em>discerning</em> palate
           </h2>
           <p className="d_section_lead">
-            From sunset cocktails to morning cold brews — every item is an expression of our commitment to quality.
+            From sunset cocktails to morning cold brews — every item is an
+            expression of our commitment to quality.
           </p>
 
           <div className="d_menu_tabs">
@@ -2119,7 +2273,7 @@ export default function BarCafeHome() {
               { key: "drinks", label: "Drinks", icon: <FaGlassCheers /> },
               { key: "food", label: "Food", icon: <FaLeaf /> },
               { key: "coffee", label: "Coffee", icon: <FaCoffee /> },
-            ].map(tab => (
+            ].map((tab) => (
               <button
                 key={tab.key}
                 className={`d_menu_tab ${activeMenuTab === tab.key ? "d_active" : ""}`}
@@ -2135,7 +2289,9 @@ export default function BarCafeHome() {
               <div key={i} className="d_menu_card">
                 <div className="d_menu_img_wrap">
                   <img src={item.img} alt={item.name} className="d_menu_img" />
-                  {item.tag && <span className="d_menu_tag_badge">{item.tag}</span>}
+                  {item.tag && (
+                    <span className="d_menu_tag_badge">{item.tag}</span>
+                  )}
                 </div>
                 <div className="d_menu_card_body">
                   <div className="d_menu_card_name">{item.name}</div>
@@ -2187,27 +2343,42 @@ export default function BarCafeHome() {
             </div>
 
             <div className="d_exp_content">
-              <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>The Experience</div>
-              <h2 className="d_section_title" style={{ color: "var(--d-white)" }}>
+              <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>
+                The Experience
+              </div>
+              <h2
+                className="d_section_title"
+                style={{ color: "var(--d-white)" }}
+              >
                 Every visit, <em>unforgettable</em>
               </h2>
-              <p className="d_section_lead" style={{ color: "rgba(224,224,224,0.72)" }}>
-                We've designed every corner of Velour to engage your senses and elevate every moment.
+              <p
+                className="d_section_lead"
+                style={{ color: "rgba(224,224,224,0.72)" }}
+              >
+                We've designed every corner of Velour to engage your senses and
+                elevate every moment.
               </p>
 
               <div className="d_exp_meta_strip">
                 <div className="d_exp_meta_item">
-                  <div className="d_exp_meta_icon"><FaClock /></div>
+                  <div className="d_exp_meta_icon">
+                    <FaClock />
+                  </div>
                   <div className="d_exp_meta_label">Hours</div>
                   <div className="d_exp_meta_value">11am-1am</div>
                 </div>
                 <div className="d_exp_meta_item">
-                  <div className="d_exp_meta_icon"><FaMapMarkerAlt /></div>
+                  <div className="d_exp_meta_icon">
+                    <FaMapMarkerAlt />
+                  </div>
                   <div className="d_exp_meta_label">Location</div>
                   <div className="d_exp_meta_value">Alkapuri</div>
                 </div>
                 <div className="d_exp_meta_item">
-                  <div className="d_exp_meta_icon"><FaMusic /></div>
+                  <div className="d_exp_meta_icon">
+                    <FaMusic />
+                  </div>
                   <div className="d_exp_meta_label">Vibe</div>
                   <div className="d_exp_meta_value">Lounge</div>
                 </div>
@@ -2215,24 +2386,39 @@ export default function BarCafeHome() {
 
               <div className="d_exp_cards">
                 <div className="d_exp_card">
-                  <div className="d_exp_icon"><FaGlassCheers /></div>
+                  <div className="d_exp_icon">
+                    <FaGlassCheers />
+                  </div>
                   <div>
                     <div className="d_exp_card_title">Premium Bar</div>
-                    <div className="d_exp_card_desc">600+ spirits from 40+ countries. Our head bartender curates a rotating seasonal menu.</div>
+                    <div className="d_exp_card_desc">
+                      600+ spirits from 40+ countries. Our head bartender
+                      curates a rotating seasonal menu.
+                    </div>
                   </div>
                 </div>
                 <div className="d_exp_card">
-                  <div className="d_exp_icon"><FaCoffee /></div>
+                  <div className="d_exp_icon">
+                    <FaCoffee />
+                  </div>
                   <div>
                     <div className="d_exp_card_title">Specialty Coffee</div>
-                    <div className="d_exp_card_desc">Partnered with Coorg and Chikmagalur estates for single-origin beans.</div>
+                    <div className="d_exp_card_desc">
+                      Partnered with Coorg and Chikmagalur estates for
+                      single-origin beans.
+                    </div>
                   </div>
                 </div>
                 <div className="d_exp_card">
-                  <div className="d_exp_icon"><FaMusic /></div>
+                  <div className="d_exp_icon">
+                    <FaMusic />
+                  </div>
                   <div>
                     <div className="d_exp_card_title">Live Music</div>
-                    <div className="d_exp_card_desc">Jazz nights and acoustic sessions. Every week brings something new.</div>
+                    <div className="d_exp_card_desc">
+                      Jazz nights and acoustic sessions. Every week brings
+                      something new.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2251,26 +2437,51 @@ export default function BarCafeHome() {
             A glimpse of <em>Velour</em>
           </h2>
           <p className="d_section_lead mb-5">
-            From our bar counter to our cozy corners — every space tells a story.
+            From our bar counter to our cozy corners — every space tells a
+            story.
           </p>
           <div className="d_gallery_grid">
             <div className="d_gallery_item d_wide">
-              <img src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=1200&q=80" alt="Bar Counter" className="d_gallery_img" />
+              <img
+                src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=1200&q=80"
+                alt="Bar Counter"
+                className="d_gallery_img"
+              />
             </div>
             <div className="d_gallery_item">
-              <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80" alt="Ambiance" className="d_gallery_img" />
+              <img
+                src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80"
+                alt="Ambiance"
+                className="d_gallery_img"
+              />
             </div>
             <div className="d_gallery_item">
-              <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80" alt="Coffee" className="d_gallery_img" />
+              <img
+                src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80"
+                alt="Coffee"
+                className="d_gallery_img"
+              />
             </div>
             <div className="d_gallery_item">
-              <img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&q=80" alt="Cocktails" className="d_gallery_img" />
+              <img
+                src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&q=80"
+                alt="Cocktails"
+                className="d_gallery_img"
+              />
             </div>
             <div className="d_gallery_item d_tall">
-              <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=800&q=80" alt="Lounge" className="d_gallery_img" />
+              <img
+                src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=800&q=80"
+                alt="Lounge"
+                className="d_gallery_img"
+              />
             </div>
             <div className="d_gallery_item d_wide">
-              <img src="https://images.unsplash.com/photo-1541014741259-de529411b96a?w=1200&q=80" alt="Food" className="d_gallery_img" />
+              <img
+                src="https://images.unsplash.com/photo-1541014741259-de529411b96a?w=1200&q=80"
+                alt="Food"
+                className="d_gallery_img"
+              />
             </div>
           </div>
         </div>
@@ -2281,22 +2492,34 @@ export default function BarCafeHome() {
       {/* ══════════════════════════════════════ */}
       <section id="reservations" className="d_reservation_section">
         <div className="d_res_inner">
-          <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>Reservations</div>
+          <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>
+            Reservations
+          </div>
           <h2 className="d_section_title">
             Secure your <em>table</em>
           </h2>
           <p className="d_section_lead">
-            Walk-ins welcome, but reservations ensure your preferred table, time, and personalized setup.
+            Walk-ins welcome, but reservations ensure your preferred table,
+            time, and personalized setup.
           </p>
 
           <div className="d_res_form">
             {submitted ? (
               <div style={{ textAlign: "center", padding: "2rem 0" }}>
                 <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✅</div>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.5rem", color: "var(--d-gold)", marginBottom: "0.5rem" }}>
+                <div
+                  style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontSize: "1.5rem",
+                    color: "var(--d-gold)",
+                    marginBottom: "0.5rem",
+                  }}
+                >
                   Reservation Confirmed!
                 </div>
-                <div style={{ color: "rgba(224,224,224,0.6)", fontSize: "0.9rem" }}>
+                <div
+                  style={{ color: "rgba(224,224,224,0.6)", fontSize: "0.9rem" }}
+                >
                   We'll send you a confirmation shortly. See you soon!
                 </div>
               </div>
@@ -2310,7 +2533,9 @@ export default function BarCafeHome() {
                       placeholder="Your name"
                       required
                       value={formData.name}
-                      onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, name: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="d_form_group">
@@ -2320,7 +2545,9 @@ export default function BarCafeHome() {
                       placeholder="+91 98765 43210"
                       required
                       value={formData.phone}
-                      onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, phone: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="d_form_group">
@@ -2330,7 +2557,9 @@ export default function BarCafeHome() {
                       type="email"
                       placeholder="your@email.com"
                       value={formData.email}
-                      onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, email: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="d_form_group">
@@ -2340,7 +2569,9 @@ export default function BarCafeHome() {
                       type="date"
                       required
                       value={formData.date}
-                      onChange={e => setFormData(p => ({ ...p, date: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, date: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="d_form_group">
@@ -2349,11 +2580,27 @@ export default function BarCafeHome() {
                       className="d_form_input"
                       required
                       value={formData.time}
-                      onChange={e => setFormData(p => ({ ...p, time: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, time: e.target.value }))
+                      }
                     >
                       <option value="">Select Time</option>
-                      {["11:00 AM", "11:30 AM", "12:00 PM", "1:00 PM", "1:30 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM"].map(t => (
-                        <option key={t} value={t}>{t}</option>
+                      {[
+                        "11:00 AM",
+                        "11:30 AM",
+                        "12:00 PM",
+                        "1:00 PM",
+                        "1:30 PM",
+                        "7:00 PM",
+                        "7:30 PM",
+                        "8:00 PM",
+                        "8:30 PM",
+                        "9:00 PM",
+                        "9:30 PM",
+                      ].map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -2363,12 +2610,18 @@ export default function BarCafeHome() {
                       className="d_form_input"
                       required
                       value={formData.guests}
-                      onChange={e => setFormData(p => ({ ...p, guests: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, guests: e.target.value }))
+                      }
                     >
                       <option value="">Number of Guests</option>
-                      {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"].map(g => (
-                        <option key={g} value={g}>{g} {g === "1" ? "Guest" : "Guests"}</option>
-                      ))}
+                      {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"].map(
+                        (g) => (
+                          <option key={g} value={g}>
+                            {g} {g === "1" ? "Guest" : "Guests"}
+                          </option>
+                        ),
+                      )}
                     </select>
                   </div>
                 </div>
@@ -2377,11 +2630,23 @@ export default function BarCafeHome() {
                   <select
                     className="d_form_input"
                     value={formData.occasion}
-                    onChange={e => setFormData(p => ({ ...p, occasion: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, occasion: e.target.value }))
+                    }
                   >
                     <option value="">Select Occasion (Optional)</option>
-                    {["Birthday", "Anniversary", "Business Dinner", "Date Night", "Friends Gathering", "Engagement", "Other"].map(o => (
-                      <option key={o} value={o}>{o}</option>
+                    {[
+                      "Birthday",
+                      "Anniversary",
+                      "Business Dinner",
+                      "Date Night",
+                      "Friends Gathering",
+                      "Engagement",
+                      "Other",
+                    ].map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -2392,7 +2657,9 @@ export default function BarCafeHome() {
                     rows={3}
                     placeholder="Any dietary requirements, seating preferences, or special arrangements..."
                     value={formData.note}
-                    onChange={e => setFormData(p => ({ ...p, note: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, note: e.target.value }))
+                    }
                     style={{ resize: "none" }}
                   />
                 </div>
@@ -2411,7 +2678,9 @@ export default function BarCafeHome() {
       <section className="d_testi_section">
         <div className="d_testi_inner">
           <div className="text-center">
-            <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>Testimonials</div>
+            <div className="d_section_tag" style={{ color: "var(--d-gold)" }}>
+              Testimonials
+            </div>
             <h2 className="d_section_title" style={{ color: "var(--d-white)" }}>
               What our <em>guests</em> say
             </h2>
@@ -2422,7 +2691,9 @@ export default function BarCafeHome() {
               <div key={i} className="d_testi_card">
                 <span className="d_testi_quote_mark">"</span>
                 <div className="d_testi_stars">
-                  {[...Array(t.rating)].map((_, j) => <FaStar key={j} />)}
+                  {[...Array(t.rating)].map((_, j) => (
+                    <FaStar key={j} />
+                  ))}
                 </div>
                 <div className="d_testi_text">{t.text}</div>
                 <div className="d_testi_author">
@@ -2448,7 +2719,8 @@ export default function BarCafeHome() {
             Events & <em>experiences</em>
           </h2>
           <p className="d_section_lead mb-5">
-            From live jazz to cocktail masterclasses — there's always something happening at Velour.
+            From live jazz to cocktail masterclasses — there's always something
+            happening at Velour.
           </p>
 
           <div className="d_events_grid">
@@ -2466,11 +2738,17 @@ export default function BarCafeHome() {
                     <div className="d_event_type">{ev.type}</div>
                     <div className="d_event_name">{ev.name}</div>
                     <div className="d_event_meta">
-                      <span><FaClock size={13} style={{ marginRight: 4 }} />{ev.time}</span>
+                      <span>
+                        <FaClock size={13} style={{ marginRight: 4 }} />
+                        {ev.time}
+                      </span>
                     </div>
                   </div>
                   <div className="d_event_footer">
-                    <button className="d_event_register" onClick={() => scrollTo("reservations")}>
+                    <button
+                      className="d_event_register"
+                      onClick={() => scrollTo("reservations")}
+                    >
                       Reserve Spot <FaArrowRight />
                     </button>
                   </div>
@@ -2492,32 +2770,48 @@ export default function BarCafeHome() {
                 Order <em>online</em> & enjoy at home
               </h3>
               <p className="d_order_cta_desc">
-                Can't make it to Velour? We bring the experience to you. Order your favorite drinks and food for delivery.
+                Can't make it to Velour? We bring the experience to you. Order
+                your favorite drinks and food for delivery.
               </p>
-              <button className="d_btn_primary" style={{ position: "relative", zIndex: 1 }}>
+              <button
+                className="d_btn_primary"
+                style={{ position: "relative", zIndex: 1 }}
+              >
                 Order Now <FaArrowRight />
               </button>
             </div>
             <div className="d_order_cta_right">
               <div className="d_order_feature">
-                <div className="d_order_feature_icon"><FaMobileAlt /></div>
+                <div className="d_order_feature_icon">
+                  <FaMobileAlt />
+                </div>
                 <div>
                   <div className="d_order_feature_title">Easy Ordering</div>
-                  <div className="d_order_feature_desc">Simple and intuitive online ordering system.</div>
+                  <div className="d_order_feature_desc">
+                    Simple and intuitive online ordering system.
+                  </div>
                 </div>
               </div>
               <div className="d_order_feature">
-                <div className="d_order_feature_icon"><FaBolt /></div>
+                <div className="d_order_feature_icon">
+                  <FaBolt />
+                </div>
                 <div>
                   <div className="d_order_feature_title">Fast Delivery</div>
-                  <div className="d_order_feature_desc">Quick delivery to your doorstep.</div>
+                  <div className="d_order_feature_desc">
+                    Quick delivery to your doorstep.
+                  </div>
                 </div>
               </div>
               <div className="d_order_feature">
-                <div className="d_order_feature_icon"><FaCreditCard /></div>
+                <div className="d_order_feature_icon">
+                  <FaCreditCard />
+                </div>
                 <div>
                   <div className="d_order_feature_title">Secure Payment</div>
-                  <div className="d_order_feature_desc">Multiple secure payment options available.</div>
+                  <div className="d_order_feature_desc">
+                    Multiple secure payment options available.
+                  </div>
                 </div>
               </div>
             </div>
