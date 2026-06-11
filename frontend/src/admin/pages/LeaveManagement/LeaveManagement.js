@@ -108,7 +108,7 @@ export default function LeaveManagement() {
       alert('Failed to approve leave');
     }
   };
-
+  
   const handleRejectClick = (item) => {
     setCurrentItem(item);
     setRejectionReason('');

@@ -1,116 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, User, Clock, ChevronRight, Search, Filter } from 'lucide-react';
 import '../styles/x_pages.css';
+import { blogAPI } from '../api';
 
 const Blog = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 6;
 
-  const blogPosts = [
-    {
-      id: 1,
-      title: 'The Art of Single-Origin Coffee',
-      category: 'coffee',
-      author: 'Sarah Mitchell',
-      date: '2024-05-15',
-      readTime: 5,
-      image: 'http://cdn.shopify.com/s/files/1/0017/8585/6070/files/Copy_of_Arabica_vs_robusta_beans_3_600x600.png?v=1683128142',
-      excerpt: 'Discover the journey from bean to cup. Learn about different origins and how they affect flavor profiles.',
-      content: 'Single-origin coffee represents the pinnacle of coffee craftsmanship...',
-    },
-    {
-      id: 2,
-      title: 'Cocktail Trends: What\'s Hot This Season',
-      category: 'cocktails',
-      author: 'James Chen',
-      date: '2024-05-12',
-      readTime: 7,
-      image: 'https://images.unsplash.com/photo-1555939594-58d7cb561404?auto=format&fit=crop&w=800&q=80',
-      excerpt: 'Explore the latest cocktail innovations and signature drinks taking the bar scene by storm.',
-      content: 'The world of mixology is constantly evolving...',
-    },
-    {
-      id: 3,
-      title: 'Brunch Essentials: What Makes Perfect Avocado Toast',
-      category: 'food',
-      author: 'Emma Rodriguez',
-      date: '2024-05-08',
-      readTime: 6,
-      image: 'https://images.unsplash.com/photo-1557804506-669714126472?auto=format&fit=crop&w=800&q=80',
-      excerpt: 'Master the simple yet perfect brunch classic with tips from our kitchen team.',
-      content: 'Great avocado toast starts with quality ingredients...',
-    },
-    {
-      id: 4,
-      title: 'Creating the Perfect Cafe Atmosphere',
-      category: 'lifestyle',
-      author: 'Michael Park',
-      date: '2024-05-05',
-      readTime: 8,
-      image: 'https://images.unsplash.com/photo-1442512595331-e89e9b186f46?auto=format&fit=crop&w=800&q=80',
-      excerpt: 'Ambiance matters. Learn how we design spaces that inspire conversation and connection.',
-      content: 'The atmosphere of a cafe is just as important as the coffee...',
-    },
-    {
-      id: 5,
-      title: 'Farm-to-Table: Our Sourcing Philosophy',
-      category: 'food',
-      author: 'Lisa Wong',
-      date: '2024-04-28',
-      readTime: 7,
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
-      excerpt: 'Meet the local farmers and producers behind our seasonal menus.',
-      content: 'Our commitment to quality starts with our suppliers...',
-    },
-    {
-      id: 6,
-      title: 'Espresso Fundamentals: A Beginner\'s Guide',
-      category: 'coffee',
-      author: 'David Johnson',
-      date: '2024-04-22',
-      readTime: 5,
-      image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=800&q=80',
-      excerpt: 'Understand the basics of espresso preparation and what makes a perfect shot.',
-      content: 'Espresso is both art and science...',
-    },
-    {
-      id: 7,
-      title: 'Desserts That Tell a Story',
-      category: 'food',
-      author: 'Sophie Anderson',
-      date: '2024-04-18',
-      readTime: 6,
-      image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
-      excerpt: 'Behind every dessert is inspiration. Meet our pastry chef and discover the stories behind our creations.',
-      content: 'Every dessert at Zest has a purpose...',
-    },
-    {
-      id: 8,
-      title: 'The Science of Flavor Pairing',
-      category: 'cocktails',
-      author: 'Alex Kumar',
-      date: '2024-04-12',
-      readTime: 8,
-      image: 'https://images.unsplash.com/photo-1536715088601-f84fd2c72ef4?auto=format&fit=crop&w=800&q=80',
-      excerpt: 'How our mixologists craft perfectly balanced cocktails that complement your meal.',
-      content: 'Flavor pairing is an ancient art form...',
-    },
-    {
-      id: 9,
-      title: 'Wellness Through Coffee Culture',
-      category: 'coffee',
-      author: 'Nina Patel',
-      date: '2024-04-08',
-      readTime: 6,
-      image: 'https://images.unsplash.com/photo-1527980965255-ce3bdb47b447?auto=format&fit=crop&w=800&q=80',
-      excerpt: 'Beyond caffeine: exploring the mental and social benefits of coffee culture.',
-      content: 'Coffee brings people together in meaningful ways...',
-    },
-  ];
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  const fetchBlogs = async () => {
+    try {
+      const response = await blogAPI.getAll();
+      setBlogPosts(response.data);
+    } catch (error) {
+      console.error('Error fetching blogs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = [
     { id: 'all', label: 'All Posts' },
@@ -202,10 +118,14 @@ const Blog = () => {
 
       {/* Blog Posts Grid */}
       <section className="x_blog_posts_section container">
-        {paginatedPosts.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-5">
+            <p>Loading articles...</p>
+          </div>
+        ) : paginatedPosts.length > 0 ? (
           <div className="x_blog_grid">
             {paginatedPosts.map((post) => (
-              <article className="x_blog_card" key={post.id}>
+              <article className="x_blog_card" key={post._id}>
                 <div className="x_blog_card_image">
                   <img src={post.image} alt={post.title} loading="lazy" />
                   <div className="x_blog_card_category">{post.category}</div>
@@ -216,7 +136,7 @@ const Blog = () => {
                   <div className="x_blog_card_meta">
                     <span className="x_blog_meta_item">
                       <Calendar size={14} />
-                      {formatDate(post.date)}
+                      {formatDate(post.createdAt)}
                     </span>
                     <span className="x_blog_meta_item">
                       <Clock size={14} />
@@ -229,7 +149,7 @@ const Blog = () => {
                   </div>
                   <button
                     className="x_blog_read_more"
-                    onClick={() => handlePostClick(post.id)}
+                    onClick={() => handlePostClick(post._id)}
                   >
                     Read More
                     <ChevronRight size={16} />

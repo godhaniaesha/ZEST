@@ -31,6 +31,7 @@ const cuisineRoutes = require('./routes/cuisines');
 const userRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
 const contactRoutes = require('./routes/contacts');
+const blogRoutes = require('./routes/blog');
 
 const Menu = require('./models/Menu');
 const Table = require('./models/Table');
@@ -49,6 +50,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/blog', blogRoutes);
 
 // Public tables endpoint
 app.get('/api/tables/public', async (req, res) => {

@@ -2,7 +2,7 @@ const mongoose = require("mongoose")
 
 const BlogSchema = new mongoose.Schema(
     {
-        name: {
+        title: {
             type: String,
             required: true
         },
@@ -11,22 +11,28 @@ const BlogSchema = new mongoose.Schema(
             required: true
         },
         author: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
+            type: String,
+            required: true
+        },
+        authorImage: {
+            type: String
         },
         image: {
             type: String,
             required: true
         },
-        content: [
-            {
-                type: {
-                    type: String
-                },
-                value: mongoose.Schema.Types.Mixed
-            }
-        ],
-        readTime: Number,
+        excerpt: {
+            type: String,
+            required: true
+        },
+        content: {
+            type: String,
+            required: true
+        },
+        readTime: {
+            type: Number,
+            required: true
+        },
     },
     {
         timestamps: true

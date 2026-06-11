@@ -151,3 +151,19 @@ export const contactAPI = {
   submit: (data) => api.post('/contacts', data),
   getAll: () => api.get('/contacts'),
 };
+
+export const blogAPI = {
+  getAll: () => api.get('/blog'),
+  getById: (id) => api.get(`/blog/${id}`),
+  create: (data) => api.post('/blog', data, {
+    headers: {
+      // Don't set Content-Type, let axios handle it for FormData
+    }
+  }),
+  update: (id, data) => api.put(`/blog/${id}`, data, {
+    headers: {
+      // Don't set Content-Type, let axios handle it for FormData
+    }
+  }),
+  delete: (id) => api.delete(`/blog/${id}`),
+};
