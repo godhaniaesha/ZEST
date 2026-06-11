@@ -23,6 +23,7 @@ import { Pagination, Autoplay, EffectFade } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
+import { Link } from "react-router-dom";
 
 /* ─────────────────────────────────────────────
     ROOT TOKENS  (mirrors your :root exactly)
@@ -999,6 +1000,7 @@ const STYLE = `
     border-radius: var(--d-radius-md);
     padding: 4px;
     width: fit-content;
+    flex-wrap: nowrap;
   }
 
   .d_menu_tab {
@@ -1905,8 +1907,7 @@ const STYLE = `
     .d_hero_glass_stats { width: min(560px, 100%); }
     .d_hero_glass_item { text-align: left; }
     .d_hero_scroll_indicator { left: 50%; transform: translateX(-50%); }
-    .d_menu_grid { grid-template-columns: repeat(2, 1fr); }
-    .d_events_grid { grid-template-columns: repeat(2, 1fr); }
+    .d_menu_grid { grid-template-columns: repeat(3, 1fr); }
     .d_testi_grid { grid-template-columns: repeat(2, 1fr); }
     .d_about_images { max-width: 100%; }
     .d_about_img_accent { right: 0; }
@@ -1917,7 +1918,6 @@ const STYLE = `
     .d_exp_cards { max-width: 760px; margin: 28px auto 0; }
     .d_gallery_grid { grid-template-columns: repeat(3, 1fr); }
     .d_gallery_item.d_wide { grid-column: span 2; }
-    .d_order_cta { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 900px) {
@@ -1937,8 +1937,8 @@ const STYLE = `
 
     .d_stats_inner { grid-template-columns: repeat(2, 1fr); }
     .d_stat_item:nth-child(2) { border-right: none; }
-    .d_menu_grid { grid-template-columns: 1fr; }
-    .d_events_grid { grid-template-columns: 1fr; }
+    .d_menu_grid { grid-template-columns: repeat(2, 1fr); }
+    .d_events_grid { grid-template-columns: repeat(2, 1fr); }
     .d_testi_grid { grid-template-columns: 1fr; }
     .d_res_grid { grid-template-columns: 1fr; }
     .d_hero_image_side { display: none; }
@@ -1946,7 +1946,6 @@ const STYLE = `
     .d_gallery_item.d_tall { grid-row: span 1; }
     .d_order_cta_left,
     .d_order_cta_right { padding: 40px 32px; }
-    .d_menu_tabs { flex-wrap: wrap; }
     .d_exp_visual_panel { padding: 12px; }
     .d_exp_mosaic { gap: 10px; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
     .d_exp_img.d_tall { grid-row: span 1; aspect-ratio: 4/3; height: auto; }
@@ -1966,6 +1965,7 @@ const STYLE = `
     .d_hero_glass_stats { padding: 18px 20px; border-radius: var(--d-radius-md); }
     .d_hero_scroll_indicator { bottom: 18px; }
     .d_section { padding: 48px 5%; }
+    .d_order_cta { grid-template-columns: 1fr; }
   }
     @media (max-width:700px){
     .d_about_grid { grid-template-columns: 1fr; gap: 48px; }
@@ -1973,6 +1973,12 @@ const STYLE = `
       .d_about_img_accent {     width: 40%;
       aspect-ratio: 2 / 2; }
     }
+  
+  @media (max-width: 576px) {
+    .d_menu_grid { grid-template-columns: 1fr; }
+    .d_events_grid { grid-template-columns: 1fr; }
+    .d_about_badge { left: -12px; }
+  }
 
   @media (max-width: 480px) {
     .d_about_features { grid-template-columns: 1fr; }
@@ -2117,9 +2123,9 @@ const BLOGS = [
 const TESTIMONIALS = [
   {
     text: "The ambiance alone is worth the visit — warm, intimate, and refined. The cocktails are crafted with thoughtfulness, each sip tells a story.",
-    name: "Priya Menon",
+    name: "Priya Halmon",
     role: "Food Blogger",
-    initials: "PM",
+    initials: "PH",
   },
   {
     text: "An evening that felt like a European escape without leaving the city. The lamb chops were transcendent and the service was genuinely attentive.",
@@ -2332,7 +2338,7 @@ export default function Home() {
                 one timeless setting.
               </p>
               <div className="d_hero_actions">
-                <a href="#reservation" className="d_btn_primary">
+                <a href="reservations" className="d_btn_primary">
                   Reserve a Table <FaArrowRightLong />
                 </a>
                 <a href="#menu" className="d_btn_outline">
@@ -2519,11 +2525,11 @@ export default function Home() {
             ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
-            <button
-              className="d_btn_primary"
+            <button className="bg-transparent border-0"
               onClick={() => showToast("🧾 Full menu opening...")}
+              href="menu"
             >
-              View Full Menu →
+              <Link to="/menu"  className="d_btn_primary">View Full Menu →</Link>
             </button>
           </div>
         </div>
@@ -2552,10 +2558,10 @@ export default function Home() {
               prepared at your preferred time — because your time is precious.
             </p>
             <button
-              className="d_btn_primary"
+              className="bg-transparent border-0"
               onClick={() => showToast("🛒 Online ordering coming soon!")}
             >
-              Reserve Table →
+              <Link to="/reservations"  className="d_btn_primary">Reserve Table →</Link>
             </button>
           </div>
           <div className="d_order_cta_right">
@@ -2623,7 +2629,7 @@ export default function Home() {
             <a href="#menu" className="d_cta_gold">
               EXPLORE THE MENU <FaArrowRight className="ms-2" />
             </a>
-            <a href="#reserve" className="d_cta_ghost">
+            <a href="reservations" className="d_cta_ghost">
               BOOK PRIVATE VAULT
             </a>
           </div>
@@ -2902,14 +2908,16 @@ export default function Home() {
               </h2>
             </div>
             <button
-              className="d_btn_outline"
+              className="d_btn_outline "
               style={{
                 color: "var(--d-text)",
                 borderColor: "rgba(201,168,76,0.3)",
               }}
               onClick={() => showToast("📸 Full gallery opening...")}
             >
-              View All →
+              <Link to="/gallery" className="text-decoration-none" style={{ color: "var(--d-text)" }}>
+                View All →
+              </Link>
             </button>
           </div>
           <div className="d_gallery_grid">

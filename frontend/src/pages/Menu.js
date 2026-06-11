@@ -1,32 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, Star } from "lucide-react";
-import { FaArrowLeftLong, FaArrowRightLong } from "react-icons/fa6";
-import { menuAPI } from "../api";
-import { normalizeMenuItem } from "../utils/menuUtils";
-import "../styles/menu_style.css";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Star } from 'lucide-react';
+import { FaArrowLeftLong, FaArrowRightLong } from 'react-icons/fa6';
+import { menuAPI } from '../api';
+import { normalizeMenuItem } from '../utils/menuUtils';
+import '../styles/menu_style.css';
 
 const Menu = () => {
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("featured");
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('featured');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+  const itemsPerPage = 9;
 
   useEffect(() => {
     const fetchMenu = async () => {
       try {
         setLoading(true);
         const response = await menuAPI.getAll();
-        const normalizedData = response.data.map((item) =>
-          normalizeMenuItem(item),
-        );
+        const normalizedData = response.data.map(item => normalizeMenuItem(item));
         setMenuItems(normalizedData);
       } catch (error) {
-        console.error("Error fetching menu:", error);
+        console.error('Error fetching menu:', error);
       } finally {
         setLoading(false);
       }
@@ -35,14 +33,14 @@ const Menu = () => {
   }, []);
 
   const categories = [
-    { id: "all", label: "All Items" },
-    { id: "appetizers", label: "Appetizers" },
-    { id: "salads", label: "Salads" },
-    { id: "desserts", label: "Desserts" },
-    { id: "mains", label: "Main Course" },
-    { id: "beverages", label: "Beverages" },
-    { id: "cocktails", label: "Cocktails" },
-    { id: "breakfast", label: "Breakfast" },
+    { id: 'all', label: 'All Items' },
+    { id: 'appetizers', label: 'Appetizers' },
+    { id: 'salads', label: 'Salads' },
+    { id: 'desserts', label: 'Desserts' },
+    { id: 'mains', label: 'Main Course' },
+    { id: 'beverages', label: 'Beverages' },
+    { id: 'cocktails', label: 'Cocktails' },
+    { id: 'breakfast', label: 'Breakfast' },
   ];
 
   const categoryLabelMap = categories.reduce((labels, category) => {
@@ -50,71 +48,46 @@ const Menu = () => {
     return labels;
   }, {});
 
-  const featuredItem =
-    menuItems.length > 0
-      ? menuItems.find((item) => item.id === 8) || menuItems[0]
-      : null;
+  const featuredItem = menuItems.length > 0 ? (menuItems.find((item) => item.id === 8) || menuItems[0]) : null;
 
   const filteredItems = menuItems
-    .filter(
-      (item) => activeCategory === "all" || item.category === activeCategory,
-    )
+    .filter((item) => activeCategory === 'all' || item.category === activeCategory)
     .filter((item) => {
       const query = searchQuery.trim().toLowerCase();
       if (!query) return true;
       return (
         item.name.toLowerCase().includes(query) ||
         item.description.toLowerCase().includes(query) ||
-        (categoryLabelMap[item.category] || item.category)
-          .toLowerCase()
-          .includes(query)
+        (categoryLabelMap[item.category] || item.category).toLowerCase().includes(query)
       );
     })
     .sort((a, b) => {
-      if (sortBy === "price-low") return a.price - b.price;
-      if (sortBy === "price-high") return b.price - a.price;
-      if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === 'price-low') return a.price - b.price;
+      if (sortBy === 'price-high') return b.price - a.price;
+      if (sortBy === 'rating') return b.rating - a.rating;
       return 0;
     });
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedItems = filteredItems.slice(
-    startIndex,
-    startIndex + itemsPerPage,
-  );
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
   /* ── Handlers ── */
-  const handleCategoryChange = (id) => {
-    setActiveCategory(id);
-    setCurrentPage(1);
-  };
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(1);
-  };
-  const handleSortChange = (e) => {
-    setSortBy(e.target.value);
-    setCurrentPage(1);
-  };
+  const handleCategoryChange = (id) => { setActiveCategory(id); setCurrentPage(1); };
+  const handleSearchChange = (e) => { setSearchQuery(e.target.value); setCurrentPage(1); };
+  const handleSortChange = (e) => { setSortBy(e.target.value); setCurrentPage(1); };
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
   const handleCardClick = (id) => navigate(`/menu/${id}`);
   const handleCardKeyDown = (e, id) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      handleCardClick(id);
-    }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(id); }
   };
   const resetFilters = () => {
-    setActiveCategory("all");
-    setSearchQuery("");
-    setSortBy("featured");
-    setCurrentPage(1);
+    setActiveCategory('all'); setSearchQuery(''); setSortBy('featured'); setCurrentPage(1);
   };
 
   if (loading) {
@@ -133,19 +106,17 @@ const Menu = () => {
   return (
     <div className="x_menu_page">
       <div className="x_menu_inner">
+
         {/* ══════════════════ HERO HEADER ══════════════════ */}
         <section className="x_menu_hero">
           <div className="x_menu_hero_left">
             <div className="x_menu_hero_label">
               <span className="x_menu_hero_label_line" />
-              <span className="x_menu_hero_label_text">
-                Zest Kitchen &amp; Bar
-              </span>
+              <span className="x_menu_hero_label_text">Zest Kitchen &amp; Bar</span>
             </div>
 
             <h1 className="x_menu_headline">
-              Savour <em>flavours</em>
-              <br />
+              Savour <em>flavours</em><br />
               Crafted to Delight.
             </h1>
 
@@ -164,12 +135,7 @@ const Menu = () => {
                 <span>Categories</span>
               </div>
               <div className="x_menu_stats_item">
-                <strong>
-                  ₹
-                  {menuItems.length > 0
-                    ? Math.min(...menuItems.map((i) => i.price))
-                    : 0}
-                </strong>
+                <strong>₹{menuItems.length > 0 ? Math.min(...menuItems.map(i => i.price)) : 0}</strong>
                 <span>Starts at</span>
               </div>
             </div>
@@ -178,15 +144,15 @@ const Menu = () => {
           <div className="x_menu_hero_right">
             <div className="x_menu_simple_showcase">
               <div className="x_simple_frame">
-                <div
-                  className="x_simple_main_img"
-                  style={{
+                <div 
+                  className="x_simple_main_img" 
+                  style={{ 
                     backgroundImage: `url(${featuredItem?.image})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                  role="img"
-                  aria-label="Featured Dish"
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }} 
+                  role="img" 
+                  aria-label="Featured Dish" 
                 />
                 <div className="x_simple_frame_border" />
               </div>
@@ -226,33 +192,27 @@ const Menu = () => {
 
             <div className="x_menu_sort_wrap">
               <span className="x_menu_sort_label">Sort By</span>
-              <div className="x_menu_sort_select">
-                <select
-                  className="x_menu_sort_group"
-                  value={sortBy}
-                  onChange={handleSortChange}
-                  aria-label="Sort menu items"
-                >
-                  <option value="featured">Featured</option>
-                  <option value="rating">Top Rated</option>
-                  <option value="price-low">Price: Low → High</option>
-                  <option value="price-high">Price: High → Low</option>
-                </select>
-              </div>
+              <select 
+                className="x_menu_sort_select"
+                value={sortBy} 
+                onChange={handleSortChange} 
+                aria-label="Sort menu items"
+              >
+                <option value="featured">Featured</option>
+                <option value="rating">Top Rated</option>
+                <option value="price-low">Price: Low → High</option>
+                <option value="price-high">Price: High → Low</option>
+              </select>
             </div>
           </div>
 
           <div className="x_menu_filters_bar">
-            <div
-              className="x_menu_filter_buttons"
-              role="group"
-              aria-label="Menu categories"
-            >
+            <div className="x_menu_filter_buttons" role="group" aria-label="Menu categories">
               {categories.map((cat) => (
                 <button
                   type="button"
                   key={cat.id}
-                  className={`x_menu_filter_btn${activeCategory === cat.id ? " active" : ""}`}
+                  className={`x_menu_filter_btn${activeCategory === cat.id ? ' active' : ''}`}
                   onClick={() => handleCategoryChange(cat.id)}
                   aria-pressed={activeCategory === cat.id}
                 >
@@ -265,12 +225,8 @@ const Menu = () => {
 
         {/* ── Results bar ── */}
         <div className="x_menu_results_info">
-          <span className="x_menu_results_count">
-            Showing {paginatedItems.length} of {filteredItems.length} items
-          </span>
-          <strong className="x_menu_active_cat">
-            {categoryLabelMap[activeCategory]}
-          </strong>
+          <span className="x_menu_results_count">Showing {paginatedItems.length} of {filteredItems.length} items</span>
+          <strong className="x_menu_active_cat">{categoryLabelMap[activeCategory]}</strong>
         </div>
 
         {/* ══════════════════ GRID ══════════════════ */}
@@ -302,16 +258,12 @@ const Menu = () => {
                       <div className="x_menu_.card_price_group">
                         <span className="x_menu_card_price">₹{item.price}</span>
                         {item.originalPrice && (
-                          <span className="x_menu_card_orig_price">
-                            ₹{item.originalPrice}
-                          </span>
+                          <span className="x_menu_card_orig_price">₹{item.originalPrice}</span>
                         )}
                       </div>
                       <div className="x_menu_card_rating">
                         <Star size={14} fill="currentColor" />
-                        <span>
-                          {item.rating} ({item.reviews})
-                        </span>
+                        <span>{item.rating} ({item.reviews})</span>
                       </div>
                     </div>
                   </div>
@@ -321,18 +273,10 @@ const Menu = () => {
           </section>
         ) : (
           <section className="x_menu_empty">
-            <span className="x_menu_empty_icon" aria-hidden="true">
-              🍽
-            </span>
+            <span className="x_menu_empty_icon" aria-hidden="true">🍽</span>
             <h2>No items found</h2>
             <p>Try a different category or search term.</p>
-            <button
-              type="button"
-              className="x_menu_reset_btn"
-              onClick={resetFilters}
-            >
-              Reset Filters
-            </button>
+            <button type="button" className="x_menu_reset_btn" onClick={resetFilters}>Reset Filters</button>
           </section>
         )}
 
@@ -353,10 +297,10 @@ const Menu = () => {
               <button
                 type="button"
                 key={page}
-                className={`pagination_btn${currentPage === page ? " active" : ""}`}
+                className={`pagination_btn${currentPage === page ? ' active' : ''}`}
                 onClick={() => handlePageChange(page)}
                 aria-label={`Page ${page}`}
-                aria-current={currentPage === page ? "page" : undefined}
+                aria-current={currentPage === page ? 'page' : undefined}
               >
                 {page}
               </button>
