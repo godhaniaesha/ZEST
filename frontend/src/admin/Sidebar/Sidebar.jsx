@@ -5,7 +5,7 @@ import {
   MdInventory2, MdPeople, MdBarChart, MdSettings, MdLogout,
   MdLocalBar, MdStar, MdKitchen, MdCountertops, MdTableRestaurant,
   MdLocalAtm, MdAdminPanelSettings, MdHistory, MdNotificationsActive,
-  MdLocalDining, MdAccessTime, MdEvent, MdArticle
+  MdLocalDining, MdAccessTime, MdEvent, MdArticle, MdPhotoLibrary
 } from 'react-icons/md';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -45,6 +45,7 @@ const NAV_GROUPS = [
       { to: `/admin/leave-management`, icon: <MdEvent />, label: 'Leave Management', badge: '2', roles: ['manager', 'superadmin'] },
       { to: `/admin/reports`, icon: <MdBarChart />, label: 'Reports & Analytics', roles: ['manager', 'superadmin'] },
       { to: `/admin/blog`, icon: <MdArticle />, label: 'Blog Management', roles: ['manager', 'superadmin'] },
+      { to: `/admin/gallery`, icon: <MdPhotoLibrary />, label: 'Gallery Management', roles: ['manager', 'superadmin'] },
     ],
   },
   {

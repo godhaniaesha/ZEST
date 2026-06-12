@@ -3,121 +3,12 @@ import {
   Grid, List, X, ChevronLeft, ChevronRight,
   Maximize2
 } from 'lucide-react';
+import axios from 'axios';
 // import './gallery_style.css';
 
 /* ═══════════════════════════════════════════════════════════
    GALLERY DATA
    ═══════════════════════════════════════════════════════════ */
-const galleryItems = [
-  {
-    id: 1,
-    title: 'Creamy Mushroom Pasta',
-    category: 'food',
-    tag: 'Mains',
-    description: 'Handmade pappardelle tossed in wild mushroom cream with truffle shavings.',
-    image: 'https://i.pinimg.com/736x/a6/08/96/a60896911e4267f8984ab2012b4d897d.jpg',
-    featured: true,
-  },
-  {
-    id: 2,
-    title: 'Espresso Martini',
-    category: 'drinks',
-    tag: 'Cocktails',
-    description: 'Bold espresso blended with premium vodka and velvety coffee liqueur.',
-    image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=75',
-    featured: false,
-  },
-  {
-    id: 3,
-    title: 'Chocolate Lava Cake',
-    category: 'desserts',
-    tag: 'Desserts',
-    description: 'Dark chocolate cake with a gloriously molten Valrhona centre.',
-    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=75',
-    featured: false,
-  },
-  {
-    id: 4,
-    title: 'The Interior',
-    category: 'ambiance',
-    tag: 'Ambiance',
-    description: 'Warm Edison lighting, dark timber, and hand-stitched leather seating.',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=75',
-    featured: true,
-  },
-  {
-    id: 5,
-    title: 'Grilled Salmon',
-    category: 'food',
-    tag: 'Mains',
-    description: 'Sustainable Atlantic salmon, charred edges, lemon beurre blanc.',
-    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=75',
-    featured: false,
-  },
-  {
-    id: 6,
-    title: 'Cold Brew Coffee',
-    category: 'drinks',
-    tag: 'Beverages',
-    description: '18-hour steep, single-origin Ethiopian beans, zero acidity.',
-    image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=800&q=75',
-    featured: false,
-  },
-  {
-    id: 7,
-    title: 'Avocado Toast',
-    category: 'food',
-    tag: 'Breakfast',
-    description: 'Stone-baked sourdough, hand-mashed Hass avocado, poached egg.',
-    image: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&w=800&q=75',
-    featured: false,
-  },
-  {
-    id: 8,
-    title: 'Bar Counter',
-    category: 'ambiance',
-    tag: 'Ambiance',
-    description: 'Marble-topped bar with a curated back-bar of rare spirits.',
-    image: 'https://images.unsplash.com/photo-1538488881038-e252a119ace7?auto=format&fit=crop&w=800&q=75',
-    featured: false,
-  },
-  {
-    id: 9,
-    title: 'Vanilla Panna Cotta',
-    category: 'desserts',
-    tag: 'Desserts',
-    description: 'Madagascar Bourbon vanilla, trembling set, seasonal berry compote.',
-    image: 'https://i.pinimg.com/736x/65/90/55/659055b6f165eae21bc7d7ae94679079.jpg',
-    featured: false,
-  },
-  {
-    id: 10,
-    title: 'Old Fashioned',
-    category: 'drinks',
-    tag: 'Cocktails',
-    description: 'Buffalo Trace bourbon, Demerara syrup, Angostura bitters, expressed orange.',
-    image: 'https://images.unsplash.com/photo-1470338745628-171cf53de3a8?auto=format&fit=crop&w=800&q=75',
-    featured: false,
-  },
-  {
-    id: 11,
-    title: 'Pancakes Stack',
-    category: 'food',
-    tag: 'Breakfast',
-    description: 'Buttermilk pancakes, grade-A maple syrup, seasonal berries, whipped cream.',
-    image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=800&q=75',
-    featured: false,
-  },
-  {
-    id: 12,
-    title: 'Dining Room',
-    category: 'ambiance',
-    tag: 'Ambiance',
-    description: 'Sixty-cover dining room draped in soft candlelight and botanical accents.',
-    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=75',
-    featured: true,
-  },
-];
 
 const filterCategories = [
   { id: 'all',      label: 'All' },
@@ -131,9 +22,29 @@ const filterCategories = [
    GALLERY COMPONENT
    ═══════════════════════════════════════════════════════════ */
 const Gallery = () => {
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter]   = useState('all');
   const [viewMode, setViewMode]           = useState('grid');
   const [lightboxIndex, setLightboxIndex] = useState(null);
+
+  // Fetch gallery items from backend
+  useEffect(() => {
+    const fetchGalleryItems = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/gallery');
+        setGalleryItems(response.data);
+      } catch (error) {
+        console.error('Error fetching gallery items:', error);
+        // Fallback to empty array if API fails
+        setGalleryItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGalleryItems();
+  }, []);
       
   const filtered = activeFilter === 'all'
     ? galleryItems
@@ -167,6 +78,18 @@ const Gallery = () => {
   };
 
   const activeLightboxItem = lightboxIndex !== null ? filtered[lightboxIndex] : null;
+
+  if (loading) {
+    return (
+      <div className="x_gallery_page">
+        <div className="x_gallery_inner">
+          <div style={{ textAlign: 'center', padding: '100px 0' }}>
+            <h2>Loading gallery...</h2>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="x_gallery_page">
