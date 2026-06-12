@@ -18,7 +18,7 @@ import {
 } from "react-icons/fa";
 import { FaBolt, FaCreditCard } from "react-icons/fa";
 import { FaArrowRightLong } from "react-icons/fa6";
-import { blogAPI } from "../api";
+import { blogAPI, menuAPI, galleryAPI } from "../api";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay, EffectFade } from "swiper/modules";
 import "swiper/css";
@@ -2020,77 +2020,12 @@ const STYLE = `
   `;
 
 /* ─── DATA ──────────────────────────── */
-const MENU_ITEMS = {
-  food: [
-    {
-      name: "Saffron Risotto",
-      desc: "Aged parmesan, wild mushrooms, truffle oil drizzle",
-      price: "₹680",
-      tag: "Chef's Pick",
-      img: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600&q=80",
-    },
-    {
-      name: "Grilled Paneer Steak",
-      desc: "Smoked paneer, herb butter, roasted vegetables, mint yogurt",
-      price: "₹980",
-      tag: "Signature",
-      img: "https://i.pinimg.com/736x/c2/2d/e6/c22de692e1d328790389d5e179a35168.jpg",
-    },
-    {
-      name: "Mezze Platter",
-      desc: "House hummus, baba ganoush, pita, olives & pickles",
-      price: "₹420",
-      tag: "Sharing",
-      img: "https://images.unsplash.com/photo-1541014741259-de529411b96a?w=600&q=80",
-    },
-  ],
-  drinks: [
-    {
-      name: "Dark & Stormy",
-      desc: "Dark rum, ginger beer, fresh lime, bitters",
-      price: "₹360",
-      tag: "Classic",
-      img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80",
-    },
-    {
-      name: "Smoked Negroni",
-      desc: "Gin, Campari, sweet vermouth, cedar smoke",
-      price: "₹420",
-      tag: "Signature",
-      img: "https://images.unsplash.com/photo-1572096244012-63dfa5b6ae06?w=600&q=80",
-    },
-    {
-      name: "Gold Rush",
-      desc: "Bourbon, honey syrup, lemon juice, egg white foam",
-      price: "₹390",
-      tag: "House Fav",
-      img: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&q=80",
-    },
-  ],
-  coffee: [
-    {
-      name: "Reserve Pour-Over",
-      desc: "Single-origin Ethiopian beans, notes of jasmine & berry",
-      price: "₹280",
-      tag: "Specialty",
-      img: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80",
-    },
-    {
-      name: "Dalgona Cloud",
-      desc: "Whipped espresso, vanilla cold foam, oat milk base",
-      price: "₹220",
-      tag: "Trending",
-      img: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&q=80",
-    },
-    {
-      name: "Cardamom Latte",
-      desc: "Double espresso, steamed milk, house cardamom blend",
-      price: "₹240",
-      tag: "Bestseller",
-      img: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=80",
-    },
-  ],
-};
+// Menu items are now fetched dynamically from backend
+// const MENU_ITEMS = {
+//   food: [...],
+//   drinks: [...],
+//   coffee: [...],
+// };
 
 const TESTIMONIALS = [
   {
@@ -2250,6 +2185,9 @@ export default function Home() {
     occasion: "",
   });
   const [blogs, setBlogs] = useState([]);
+  const [menuItems, setMenuItems] = useState({ food: [], drinks: [], coffee: [] });
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [heroSlides, setHeroSlides] = useState([]);
   const navigate = useNavigate();
 
   // Fetch blogs from backend
@@ -2267,6 +2205,7 @@ export default function Home() {
             author: blog.author,
             readTime: `${blog.readTime} min read`,
             img: blog.image,
+            _id: blog._id,
           };
         });
         setBlogs(transformedBlogs);
@@ -2275,6 +2214,83 @@ export default function Home() {
       }
     };
     fetchBlogs();
+  }, []);
+
+  // Fetch menu items from backend
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const response = await menuAPI.getAll();
+        const allMenuItems = response.data;
+        
+        // Transform and categorize menu items
+        const transformedMenu = {
+          food: allMenuItems
+            .filter(item => item.category && item.category.toLowerCase().includes('food'))
+            .map(item => ({
+              name: item.name,
+              desc: item.description || item.cuisine || '',
+              price: `₹${item.price}`,
+              tag: item.highlights && item.highlights.length > 0 ? item.highlights[0] : 'Special',
+              img: item.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80',
+            })),
+          drinks: allMenuItems
+            .filter(item => item.category && item.category.toLowerCase().includes('drink') || item.type && item.type.includes('Bar'))
+            .map(item => ({
+              name: item.name,
+              desc: item.description || item.cuisine || '',
+              price: `₹${item.price}`,
+              tag: item.highlights && item.highlights.length > 0 ? item.highlights[0] : 'Classic',
+              img: item.img || 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80',
+            })),
+          coffee: allMenuItems
+            .filter(item => item.category && item.category.toLowerCase().includes('coffee') || item.type && item.type.includes('Cafe'))
+            .map(item => ({
+              name: item.name,
+              desc: item.description || item.cuisine || '',
+              price: `₹${item.price}`,
+              tag: item.highlights && item.highlights.length > 0 ? item.highlights[0] : 'Specialty',
+              img: item.img || 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
+            })),
+        };
+        
+        setMenuItems(transformedMenu);
+      } catch (error) {
+        console.error("Error fetching menu items:", error);
+      }
+    };
+    fetchMenuItems();
+  }, []);
+
+  // Fetch gallery items from backend
+  useEffect(() => {
+    const fetchGalleryItems = async () => {
+      try {
+        const response = await galleryAPI.getAll();
+        const transformedGallery = response.data.map(item => ({
+          _id: item._id,
+          image: item.image,
+          title: item.title,
+          category: item.category,
+          tag: item.tag,
+          description: item.description,
+          featured: item.featured,
+        }));
+        setGalleryItems(transformedGallery);
+
+        // Set hero slides from featured gallery items or fallback to static
+        const featuredItems = transformedGallery.filter(item => item.featured);
+        if (featuredItems.length > 0) {
+          setHeroSlides(featuredItems.slice(0, 4).map(item => ({
+            img: item.image,
+            alt: item.title,
+          })));
+        }
+      } catch (error) {
+        console.error("Error fetching gallery items:", error);
+      }
+    };
+    fetchGalleryItems();
   }, []);
   console.log(blogs);
 
@@ -2315,7 +2331,7 @@ export default function Home() {
             autoplay={{ delay: 5200, disableOnInteraction: false }}
             pagination={{ clickable: true }}
           >
-            {HERO_SLIDES.map((slide) => (
+            {(heroSlides.length > 0 ? heroSlides : HERO_SLIDES).map((slide) => (
               <SwiperSlide key={slide.alt}>
                 <img src={slide.img} alt={slide.alt} />
               </SwiperSlide>
@@ -2502,29 +2518,40 @@ export default function Home() {
             ))}
           </div>
           <div className="d_menu_grid">
-            {MENU_ITEMS[activeTab].map((item) => (
-              <div className="d_menu_card" key={item.name}>
-                <div className="d_menu_img_wrap">
-                  <img className="d_menu_img" src={item.img} alt={item.name} />
-                  <span className="d_menu_tag_badge">{item.tag}</span>
-                </div>
-                <div className="d_menu_card_body">
-                  <div className="d_menu_card_name">{item.name}</div>
-                  <div className="d_menu_card_desc">{item.desc}</div>
-                  <div className="d_menu_card_footer">
-                    <span className="d_menu_price">{item.price}</span>
-                    <button
-                      className="d_order_btn"
-                      onClick={() =>
-                        showToast(`✓ "${item.name}" added to your order!`)
-                      }
-                    >
-                      + Add to Order
-                    </button>
+            {menuItems[activeTab] && menuItems[activeTab].length > 0 ? (
+              menuItems[activeTab].map((item) => (
+                <div className="d_menu_card" key={item.name}>
+                  <div className="d_menu_img_wrap">
+                    <img className="d_menu_img" src={item.img} alt={item.name} />
+                    <span className="d_menu_tag_badge">{item.tag}</span>
+                  </div>
+                  <div className="d_menu_card_body">
+                    <div className="d_menu_card_name">{item.name}</div>
+                    <div className="d_menu_card_desc">{item.desc}</div>
+                    <div className="d_menu_card_footer">
+                      <span className="d_menu_price">{item.price}</span>
+                      <button
+                        className="d_order_btn"
+                        onClick={() =>
+                          showToast(`✓ "${item.name}" added to your order!`)
+                        }
+                      >
+                        + Add to Order
+                      </button>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div style={{ 
+                gridColumn: '1 / -1', 
+                textAlign: 'center', 
+                padding: '40px',
+                color: 'rgba(224,224,224,0.6)' 
+              }}>
+                No items available in this category
               </div>
-            ))}
+            )}
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
             <button className="bg-transparent border-0"
@@ -2922,61 +2949,87 @@ export default function Home() {
             </button>
           </div>
           <div className="d_gallery_grid">
-            <div className="d_gallery_item d_wide d_tall">
-              <img
-                className="d_gallery_img"
-                src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=85"
-                alt="Interior"
-              />
-              <div className="d_gallery_overlay">
-                <div className="d_gallery_caption">The Main Lounge</div>
-                <div className="d_gallery_subcaption">Interior Design</div>
-              </div>
-            </div>
-            <div className="d_gallery_item">
-              <img
-                className="d_gallery_img"
-                src="https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=400&q=80"
-                alt="Coffee"
-              />
-              <div className="d_gallery_overlay">
-                <div className="d_gallery_caption">Artisan Coffee</div>
-                <div className="d_gallery_subcaption">Beverages</div>
-              </div>
-            </div>
-            <div className="d_gallery_item">
-              <img
-                className="d_gallery_img"
-                src="https://images.unsplash.com/photo-1560512823-829485b8bf24?w=400&q=80"
-                alt="Cocktail"
-              />
-              <div className="d_gallery_overlay">
-                <div className="d_gallery_caption">Signature Cocktails</div>
-                <div className="d_gallery_subcaption">Mixology</div>
-              </div>
-            </div>
-            <div className="d_gallery_item">
-              <img
-                className="d_gallery_img"
-                src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=400&q=80"
-                alt="Food"
-              />
-              <div className="d_gallery_overlay">
-                <div className="d_gallery_caption">Michelin Grade</div>
-                <div className="d_gallery_subcaption">Cuisine</div>
-              </div>
-            </div>
-            <div className="d_gallery_item">
-              <img
-                className="d_gallery_img"
-                src="https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=400&q=80"
-                alt="Ambiance"
-              />
-              <div className="d_gallery_overlay">
-                <div className="d_gallery_caption">Night Vibes</div>
-                <div className="d_gallery_subcaption">Ambiance</div>
-              </div>
-            </div>
+            {galleryItems && galleryItems.length > 0 ? (
+              galleryItems.slice(0, 5).map((item, index) => {
+                // First item gets wide and tall class
+                const isFirst = index === 0;
+                return (
+                  <div 
+                    key={item._id || index} 
+                    className={`d_gallery_item ${isFirst ? 'd_wide d_tall' : ''}`}
+                  >
+                    <img
+                      className="d_gallery_img"
+                      src={item.image}
+                      alt={item.title}
+                    />
+                    <div className="d_gallery_overlay">
+                      <div className="d_gallery_caption">{item.title}</div>
+                      <div className="d_gallery_subcaption">{item.category}</div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              // Fallback to static images if no gallery items
+              <>
+                <div className="d_gallery_item d_wide d_tall">
+                  <img
+                    className="d_gallery_img"
+                    src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=85"
+                    alt="Interior"
+                  />
+                  <div className="d_gallery_overlay">
+                    <div className="d_gallery_caption">The Main Lounge</div>
+                    <div className="d_gallery_subcaption">Interior Design</div>
+                  </div>
+                </div>
+                <div className="d_gallery_item">
+                  <img
+                    className="d_gallery_img"
+                    src="https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=400&q=80"
+                    alt="Coffee"
+                  />
+                  <div className="d_gallery_overlay">
+                    <div className="d_gallery_caption">Artisan Coffee</div>
+                    <div className="d_gallery_subcaption">Beverages</div>
+                  </div>
+                </div>
+                <div className="d_gallery_item">
+                  <img
+                    className="d_gallery_img"
+                    src="https://images.unsplash.com/photo-1560512823-829485b8bf24?w=400&q=80"
+                    alt="Cocktail"
+                  />
+                  <div className="d_gallery_overlay">
+                    <div className="d_gallery_caption">Signature Cocktails</div>
+                    <div className="d_gallery_subcaption">Mixology</div>
+                  </div>
+                </div>
+                <div className="d_gallery_item">
+                  <img
+                    className="d_gallery_img"
+                    src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=400&q=80"
+                    alt="Food"
+                  />
+                  <div className="d_gallery_overlay">
+                    <div className="d_gallery_caption">Michelin Grade</div>
+                    <div className="d_gallery_subcaption">Cuisine</div>
+                  </div>
+                </div>
+                <div className="d_gallery_item">
+                  <img
+                    className="d_gallery_img"
+                    src="https://images.unsplash.com/photo-1525610553991-2bede1a236e2?w=400&q=80"
+                    alt="Ambiance"
+                  />
+                  <div className="d_gallery_overlay">
+                    <div className="d_gallery_caption">Night Vibes</div>
+                    <div className="d_gallery_subcaption">Ambiance</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>

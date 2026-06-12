@@ -27,6 +27,7 @@ import Categories from './pages/Categories/Categories';
 import StaffAttendance from './pages/StaffAttendance/StaffAttendance';
 import LeaveManagement from './pages/LeaveManagement/LeaveManagement';
 import BlogManagement from './pages/Blog/Blog';
+import GalleryManagement from './pages/Gallery/Gallery';
 
 const ADMIN_ROLES = ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender'];
 
@@ -70,6 +71,7 @@ export default function AppRoutes() {
         <Route path="staff-attendance" element={<StaffAttendance />} />
         <Route path="leave-management" element={<LeaveManagement />} />
         <Route path="blog" element={<BlogManagement />} />
+        <Route path="gallery" element={<GalleryManagement />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />

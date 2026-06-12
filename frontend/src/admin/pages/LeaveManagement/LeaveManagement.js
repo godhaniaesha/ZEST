@@ -296,7 +296,7 @@ export default function LeaveManagement() {
                       background: `${staff.color}15`, color: staff.color,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontWeight: 800, fontSize: '1.1rem', flexShrink: 0
-                    }}>{staff.initials}</div>
+                    }}>{staff.initials}</div> 
                     <div>
                       <h6 className="mb-0">{staff.name}</h6>
                       <div className="small text-muted">{staff.role}</div>

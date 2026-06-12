@@ -167,3 +167,19 @@ export const blogAPI = {
   }),
   delete: (id) => api.delete(`/blog/${id}`),
 };
+
+export const galleryAPI = {
+  getAll: () => api.get('/gallery'),
+  getById: (id) => api.get(`/gallery/${id}`),
+  create: (data) => api.post('/gallery', data, {
+    headers: {
+      // Don't set Content-Type, let axios handle it for FormData
+    }
+  }),
+  update: (id, data) => api.put(`/gallery/${id}`, data, {
+    headers: {
+      // Don't set Content-Type, let axios handle it for FormData
+    }
+  }),
+  delete: (id) => api.delete(`/gallery/${id}`),
+};
