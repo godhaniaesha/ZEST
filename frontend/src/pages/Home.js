@@ -19,6 +19,7 @@ import {
 import { FaBolt, FaCreditCard } from "react-icons/fa";
 import { FaArrowRightLong } from "react-icons/fa6";
 import { blogAPI } from "../api";
+import { normalizeBlogPost } from "../utils/blogUtils";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay, EffectFade } from "swiper/modules";
 import "swiper/css";
@@ -2257,18 +2258,22 @@ export default function Home() {
     const fetchBlogs = async () => {
       try {
         const response = await blogAPI.getAll();
-        const transformedBlogs = response.data.map((blog) => {
-          const date = new Date(blog.createdAt);
+        const data = Array.isArray(response.data) ? response.data : [];
+        const transformedBlogs = data.map((blog) => {
+          const normalized = normalizeBlogPost(blog);
+          if (!normalized) return null;
+          const date = new Date(normalized.createdAt);
           return {
+            _id: normalized._id,
             day: date.getDate().toString(),
             month: date.toLocaleString('default', { month: 'short' }),
-            category: blog.category,
-            title: blog.title,
-            author: blog.author,
-            readTime: `${blog.readTime} min read`,
-            img: blog.image,
+            category: normalized.category,
+            title: normalized.title,
+            author: normalized.author,
+            readTime: `${normalized.readTime} min read`,
+            img: normalized.image,
           };
-        });
+        }).filter(Boolean);
         setBlogs(transformedBlogs);
       } catch (error) {
         console.error("Error fetching blogs:", error);
@@ -2276,7 +2281,6 @@ export default function Home() {
     };
     fetchBlogs();
   }, []);
-  console.log(blogs);
 
   const showToast = (msg) => {
     setToast(msg);

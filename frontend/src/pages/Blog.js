@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, User, Clock, ChevronRight, Search, Filter } from 'lucide-react';
+import { Calendar, User, Clock, Search } from 'lucide-react';
+import { FaArrowLeftLong, FaArrowRightLong } from 'react-icons/fa6';
 import '../styles/x_pages.css';
 import { blogAPI } from '../api';
+import { BLOG_CATEGORIES, formatBlogDate, normalizeBlogPost } from '../utils/blogUtils';
 
 const Blog = () => {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [blogPosts, setBlogPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const itemsPerPage = 6;
+  const itemsPerPage = 9;
 
   useEffect(() => {
     fetchBlogs();
@@ -19,25 +21,19 @@ const Blog = () => {
 
   const fetchBlogs = async () => {
     try {
+      setLoading(true);
       const response = await blogAPI.getAll();
-      setBlogPosts(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setBlogPosts(data.map(normalizeBlogPost).filter(Boolean));
     } catch (error) {
       console.error('Error fetching blogs:', error);
+      setBlogPosts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const categories = [
-    { id: 'all', label: 'All Posts' },
-    { id: 'coffee', label: 'Coffee' },
-    { id: 'food', label: 'Food' },
-    { id: 'cocktails', label: 'Cocktails' },
-    { id: 'lifestyle', label: 'Lifestyle' },
-  ];
-
-  // Filter posts
-  let filteredPosts = activeCategory === 'all'
+  let filteredPosts = activeCategory === 'All'
     ? blogPosts
     : blogPosts.filter((post) => post.category === activeCategory);
 
@@ -64,140 +60,244 @@ const Blog = () => {
     setCurrentPage(1);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const handleCategoryChange = (id) => {
+    setActiveCategory(id);
+    setCurrentPage(1);
   };
 
+  const getInitials = (name) => {
+    if (!name) return 'A';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="x_blog_page">
+        <div className="x_blog_inner">
+          <div className="menu_detail_state">
+            <div className="menu_detail_loader" />
+            <p>Loading stories...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main className="x_blog_page">
-      {/* Hero Section */}
-      <section className="x_blog_hero container">
-        <div className="x_blog_hero_content">
-          <span className="x_blog_eyebrow">
-            <Search size={16} />
-            Stories & Insights
-          </span>
-          <h1 className="x_blog_headline">Food, Coffee & Conversations</h1>
-          <p>Read stories from our kitchen, bar, and community. Discover tips, trends, and inspiration.</p>
-        </div>
-      </section>
-
-      {/* Search and Filter Section */}
-      <section className="x_blog_controls container">
-        <div className="x_blog_search_box">
-          <Search size={18} />
-          <input
-            type="text"
-            placeholder="Search articles..."
-            value={searchQuery}
-            onChange={handleSearch}
-            className="x_blog_search_input"
-          />
-        </div>
-
-        <div className="x_blog_categories">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              className={`x_blog_category_btn ${activeCategory === cat.id ? 'active' : ''}`}
-              onClick={() => {
-                setActiveCategory(cat.id);
-                setCurrentPage(1);
-              }}
-            >
-              <Filter size={14} />
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Blog Posts Grid */}
-      <section className="x_blog_posts_section container">
-        {loading ? (
-          <div className="text-center py-5">
-            <p>Loading articles...</p>
+    <div className="x_blog_page">
+      <div className="x_blog_inner">
+        {/* Hero Section */}
+        <section className="x_blog_hero">
+          <div className="x_blog_hero_left">
+            <div className="x_blog_hero_label">
+              <span className="x_blog_hero_label_line" />
+              <span className="x_blog_hero_label_text">Stories & Insights</span>
+            </div>
+            <h1 className="x_blog_headline">
+              Food, Coffee &<br />
+              <em>Conversations.</em>
+            </h1>
+            <p className="x_blog_hero_sub">
+              Read stories from our kitchen, bar, and community. Discover tips,
+              trends, and inspiration for your next meal.
+            </p>
+            <div className="x_blog_stats" aria-label="Blog stats">
+              <div className="x_blog_stats_item">
+                <strong>{blogPosts.length}</strong>
+                <span>Stories</span>
+              </div>
+              <div className="x_blog_stats_item">
+                <strong>{BLOG_CATEGORIES.length - 1}</strong>
+                <span>Categories</span>
+              </div>
+            </div>
           </div>
-        ) : paginatedPosts.length > 0 ? (
-          <div className="x_blog_grid">
-            {paginatedPosts.map((post) => (
-              <article className="x_blog_card" key={post._id}>
-                <div className="x_blog_card_image">
-                  <img src={post.image} alt={post.title} loading="lazy" />
-                  <div className="x_blog_card_category">{post.category}</div>
-                </div>
-                <div className="x_blog_card_content">
-                  <h3>{post.title}</h3>
-                  <p className="x_blog_card_excerpt">{post.excerpt}</p>
-                  <div className="x_blog_card_meta">
-                    <span className="x_blog_meta_item">
-                      <Calendar size={14} />
-                      {formatDate(post.createdAt)}
-                    </span>
-                    <span className="x_blog_meta_item">
-                      <Clock size={14} />
-                      {post.readTime} min read
-                    </span>
-                  </div>
-                  <div className="x_blog_card_author">
-                    <User size={14} />
-                    <span>{post.author}</span>
-                  </div>
-                  <button
-                    className="x_blog_read_more"
-                    onClick={() => handlePostClick(post._id)}
-                  >
-                    Read More
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </article>
-            ))}
+          <div className="x_blog_hero_right">
+            <div className="x_blog_simple_showcase">
+              <div className="x_simple_frame">
+                <div 
+                  className="x_simple_main_img" 
+                  style={{ 
+                    backgroundImage: 'url(https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=75)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }} 
+                  role="img" 
+                  aria-label="Featured story" 
+                />
+                <div className="x_simple_frame_border" />
+              </div>
+              <div className="x_simple_label">
+                <span className="x_simple_tag">From Our Kitchen</span>
+                <h3 className="x_simple_title">Latest Stories</h3>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="x_blog_no_results">
-            <p>No articles found. Try adjusting your search.</p>
-          </div>
-        )}
-      </section>
+        </section>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <section className="x_blog_pagination container">
-          <div className="x_blog_pagination_controls">
-            <button
-              className="x_blog_page_btn"
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            <div className="x_blog_page_numbers">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        {/* Section Head */}
+        <div className="x_gallery_section_head">
+          <div className="x_gallery_section_title_group">
+            <span className="x_gallery_section_num">01</span>
+            <h2 className="x_gallery_section_title">
+              Our <em>Story</em> Archive
+            </h2>
+          </div>
+        </div>
+
+        {/* Controls Section */}
+        <section className="x_blog_controls_section">
+          <div className="x_blog_top_controls">
+            <div className="x_blog_search_wrap">
+              <Search size={18} />
+              <input
+                type="search"
+                className="x_blog_search_input"
+                value={searchQuery}
+                onChange={handleSearch}
+                placeholder="Search stories..."
+                aria-label="Search stories"
+              />
+            </div>
+          </div>
+
+          <div className="x_blog_filters_bar">
+            <div className="x_blog_filter_buttons" role="group" aria-label="Blog categories">
+              {BLOG_CATEGORIES.map((cat) => (
                 <button
-                  key={page}
-                  className={`x_blog_page_num ${currentPage === page ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(page)}
+                  type="button"
+                  key={cat.id}
+                  className={`x_blog_filter_btn${activeCategory === cat.id ? ' active' : ''}`}
+                  onClick={() => handleCategoryChange(cat.id)}
+                  aria-pressed={activeCategory === cat.id}
                 >
-                  {page}
+                  {cat.label}
                 </button>
               ))}
             </div>
-            <button
-              className="x_blog_page_btn"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
           </div>
         </section>
-      )}
-    </main>
+
+        {/* Results bar */}
+        <div className="x_blog_results_info">
+          <span className="x_blog_results_count">Showing {paginatedPosts.length} of {filteredPosts.length} stories</span>
+          <strong className="x_blog_active_cat">{activeCategory}</strong>
+        </div>
+
+        {/* Blog Grid */}
+        {paginatedPosts.length > 0 ? (
+          <section className="x_blog_grid" aria-label="Blog posts">
+            {paginatedPosts.map((post) => (
+              <article
+                key={post._id}
+                className="x_blog_card"
+                onClick={() => handlePostClick(post._id)}
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${post.title}`}
+              >
+                <div className="x_blog_card_img_wrap">
+                  {post.image ? (
+                    <img src={post.image} alt={post.title} loading="lazy" />
+                  ) : (
+                    <div className="x_blog_card_img_placeholder" />
+                  )}
+                  <div className="x_blog_card_badge">{post.category}</div>
+                </div>
+                <div className="x_blog_card_content">
+                  <div className="x_blog_card_category">{post.category}</div>
+                  <h3 className="x_blog_card_title">{post.title}</h3>
+                  <p className="x_blog_card_desc">{post.excerpt}</p>
+                  <div className="x_blog_card_footer">
+                    <div className="x_blog_card_author">
+                      {post.authorImage ? (
+                        <img src={post.authorImage} alt={post.author} className="x_blog_card_author_img" />
+                      ) : (
+                        <div className="x_blog_card_author_initials">{getInitials(post.author)}</div>
+                      )}
+                      <span className="x_blog_card_author_name">{post.author}</span>
+                    </div>
+                    <div className="x_blog_card_meta">
+                      <span className="x_blog_meta_item">
+                        <Calendar size={14} />
+                        {formatBlogDate(post.createdAt)}
+                      </span>
+                      <span className="x_blog_meta_item">
+                        <Clock size={14} />
+                        {post.readTime} min
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </section>
+        ) : (
+          <section className="x_blog_empty">
+            <span className="x_blog_empty_icon" aria-hidden="true">📝</span>
+            <h2>No stories found</h2>
+            <p>Try a different category or search term.</p>
+            <button type="button" className="x_blog_reset_btn" onClick={() => {
+              handleCategoryChange('All');
+              setSearchQuery('');
+            }}>
+              View All Stories
+            </button>
+          </section>
+        )}
+
+        {/* Pagination */}
+        {filteredPosts.length > 0 && totalPages > 1 && (
+          <nav className="menu_pagination" aria-label="Page navigation">
+            <button
+              type="button"
+              className="pagination_btn"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              aria-label="First page"
+            >
+              <FaArrowLeftLong size={13} />
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                type="button"
+                key={page}
+                className={`pagination_btn${currentPage === page ? ' active' : ''}`}
+                onClick={() => handlePageChange(page)}
+                aria-label={`Page ${page}`}
+                aria-current={currentPage === page ? 'page' : undefined}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="pagination_btn"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              aria-label="Last page"
+            >
+              <FaArrowRightLong size={13} />
+            </button>
+          </nav>
+        )}
+
+        {filteredPosts.length > 0 && (
+          <span className="pagination_info">
+            Page {currentPage} of {totalPages}
+          </span>
+        )}
+      </div>
+    </div>
   );
 };
 
