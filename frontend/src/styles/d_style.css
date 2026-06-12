@@ -220,7 +220,7 @@ body {
   border: 1.5px solid var(--d-border);
   border-radius: var(--d-radius-md);
   padding: 0 14px;
-  height: 42px;
+  height: 44px;
   width: 280px;
   margin-left: 12px;
   transition: var(--d-transition);
@@ -823,7 +823,7 @@ body {
   color: var(--d-primary-dark);
   border: none;
   border-radius: var(--d-radius-sm);
-  padding: 9px 20px;
+  padding: 10px 20px;
   font-family: 'Lato', sans-serif;
   font-size: 0.85rem;
   font-weight: 700;
@@ -845,9 +845,9 @@ body {
   color: var(--d-primary);
   border: 1.5px solid var(--d-primary);
   border-radius: var(--d-radius-sm);
-  padding: 8px 18px;
+  padding: 10px 18px;
   font-family: 'Lato', sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.90rem;
   font-weight: 600;
   cursor: pointer;
   transition: var(--d-transition);
@@ -1407,7 +1407,7 @@ body {
 }
 
 .d-pos-table-select {
-  height: 48px;
+  height: 44px;
   background: var(--d-white);
   border: 1.5px solid var(--d-border);
   border-radius: var(--d-radius-md);

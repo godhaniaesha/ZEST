@@ -90,7 +90,7 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
         </div>
 
         {/* Search Bar */}
-        <div className="d-navbar-search-box">
+        {/* <div className="d-navbar-search-box">
           <MdSearch className="d-search-icon" />
           <input
             type="text"
@@ -98,7 +98,7 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Right */}

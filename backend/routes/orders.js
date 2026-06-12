@@ -22,24 +22,82 @@ router.get('/reservation/:reservationId', auth, async (req, res) => {
 });
 
 router.post('/', auth, async (req, res) => {
-  const order = new Order({
-    id: req.body.id,
-    table: req.body.table,
-    waiter: req.body.waiter,
-    items: req.body.items,
-    type: req.body.type,
-    amount: req.body.amount,
-    status: req.body.status,
-    time: req.body.time,
-    userId: req.body.userId,
-    reservationId: req.body.reservationId
-  });
-
   try {
+    const order = new Order({
+      id: req.body.id,
+      table: req.body.table,
+      waiter: req.body.waiter,
+      items: req.body.items,
+      type: req.body.type,
+      amount: req.body.amount,
+      status: req.body.status || 'Pending',
+      time: req.body.time,
+      userId: req.body.userId,
+      reservationId: req.body.reservationId
+    });
+
     const newOrder = await order.save();
     res.status(201).json(newOrder);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+router.patch('/:id/payment-status', auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const validStatuses = ['Pending', 'Paid', 'Cancelled'];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: 'Invalid payment status'
+      });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        message: 'Order not found'
+      });
+    }
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
+
+
+router.patch('/:orderId/items/:itemId/status', auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const order = await Order.findOneAndUpdate(
+      {
+        _id: req.params.orderId,
+        'items._id': req.params.itemId
+      },
+      {
+        $set: {
+          'items.$.status': status
+        }
+      },
+      { new: true }
+    );
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message
+    });
   }
 });
 

@@ -15,7 +15,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config.data);
 
     // If data is FormData, let axios set the Content-Type automatically by deleting the manual Content-Type
@@ -67,6 +67,7 @@ export const ordersAPI = {
   create: (data) => api.post('/orders', data),
   update: (id, data) => api.put(`/orders/${id}`, data),
   delete: (id) => api.delete(`/orders/${id}`),
+  updateItemStatus: (orderId, itemId, data) => api.patch(`/orders/${orderId}/items/${itemId}/status`, data),
 };
 
 export const tablesAPI = {

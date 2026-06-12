@@ -24,7 +24,7 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-  const [editingStatusId, setEditingStatusId] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
   const itemsPerPage = 10;
   const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Cancelled'];
   const orderData = orders.length > 0 ? orders : ORDERS;
@@ -47,19 +47,18 @@ export default function Orders() {
     loadData();
   }, []);
 
-  const handleStatusUpdate = async (orderId, newStatus) => {
+  const handleItemStatusUpdate = async (orderId, itemId, newStatus) => {
     try {
-      const order = orders.find(o => o._id === orderId);
-      if (!order) return;
-      
-      // Now we use MongoDB _id for updates!
-      await ordersAPI.update(orderId, { ...order, status: newStatus });
+      await ordersAPI.updateItemStatus(orderId, itemId, {
+        status: newStatus
+      });
+
       loadData();
-      setEditingStatusId(null);
     } catch (err) {
-      console.error('Error updating status:', err);
+      console.error('Error updating item status:', err);
     }
   };
+
 
   const handleDelete = async () => {
     try {
@@ -148,24 +147,29 @@ export default function Orders() {
                 <th>Source</th>
                 <th>Staff</th>
                 <th>Items</th>
+                <th>Qty</th>
+                <th>Item Status</th>
                 <th>Amount</th>
-                <th>Status</th>
+                <th>Payment Status</th>
                 <th>Time</th>
-                <th style={{ width: '100px' }}>Actions</th>
+                <th style={{ width: "100px" }}>Actions</th>
               </tr>
             </thead>
+
             <tbody>
-              {(currentData.length > 0 ? currentData : filtered).flatMap(order => {
+              {(currentData.length > 0 ? currentData : filtered).flatMap((order) => {
                 const items = Array.isArray(order.items) ? order.items : [];
-                
-                // If there are no items, still show the order row
+
                 if (items.length === 0) {
                   return (
                     <tr key={`${order._id}-empty`}>
-                      <td><strong>{order.id}</strong></td>
+                      <td>
+                        <strong>{order.id}</strong>
+                      </td>
+
                       <td>
                         <div className="d-flex align-items-center gap-2">
-                          {order.type === 'Cafe' ? (
+                          {order.type === "Cafe" ? (
                             <MdLocalCafe className="text-success" />
                           ) : (
                             <MdLocalBar className="text-primary" />
@@ -173,46 +177,70 @@ export default function Orders() {
                           <span>{order.table}</span>
                         </div>
                       </td>
+
                       <td>
                         <div className="d-flex align-items-center gap-2">
-                          <MdPerson style={{ color: 'var(--d-text-light)' }} />
+                          <MdPerson style={{ color: "var(--d-text-light)" }} />
                           <span>{order.waiter}</span>
                         </div>
                       </td>
+
                       <td>-</td>
-                      <td><strong>₹{typeof order.amount === 'number' ? order.amount.toLocaleString() : order.amount}</strong></td>
+                      <td>-</td>
+                      <td>-</td>
+
                       <td>
+                        <strong>
+                          ₹
+                          {typeof order.amount === "number"
+                            ? order.amount.toLocaleString()
+                            : order.amount}
+                        </strong>
+                      </td>
+
+                      {/* <td>
                         {editingStatusId === order._id ? (
                           <Form.Select
                             size="sm"
                             value={order.status}
-                            onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                            onChange={(e) =>
+                              handleStatusUpdate(order._id, e.target.value)
+                            }
                             onBlur={() => setEditingStatusId(null)}
                             autoFocus
                             className="d-status-select"
                           >
-                            {['Pending', 'Preparing', 'Served', 'Cancelled'].map(s => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
+                            {["Pending", "Preparing", "Served", "Cancelled"].map(
+                              (s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              )
+                            )}
                           </Form.Select>
                         ) : (
-                          <span 
+                          <span
                             className={`d-chip ${STATUS_MAP[order.status]}`}
                             onClick={() => setEditingStatusId(order._id)}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: "pointer" }}
                           >
                             {order.status}
                           </span>
                         )}
-                      </td>
+                      </td> */}
+
                       <td>
                         <div
                           className="d-flex align-items-center gap-1"
-                          style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }}
+                          style={{
+                            color: "var(--d-text-muted)",
+                            fontSize: "0.8rem",
+                          }}
                         >
                           <MdAccessTime /> {order.time}
                         </div>
                       </td>
+
                       <td>
                         <div className="d-flex gap-1">
                           <button
@@ -226,84 +254,118 @@ export default function Orders() {
                     </tr>
                   );
                 }
-                
-                // Otherwise, create a row for each individual item
+
                 return items.map((item, index) => {
-                  // Only show order ID, table, waiter, etc., on first item
                   const isFirstItem = index === 0;
-                  
+
                   return (
                     <tr key={`${order._id}-${index}`}>
-                      <td>{isFirstItem ? <strong>{order.id}</strong> : ''}</td>
+                      <td>{isFirstItem ? <strong>{order.id}</strong> : ""}</td>
+
                       <td>
-                        {isFirstItem ? (
+                        {isFirstItem && (
                           <div className="d-flex align-items-center gap-2">
-                            {order.type === 'Cafe' ? (
+                            {order.type === "Cafe" ? (
                               <MdLocalCafe className="text-success" />
                             ) : (
                               <MdLocalBar className="text-primary" />
                             )}
                             <span>{order.table}</span>
                           </div>
-                        ) : ''}
+                        )}
                       </td>
+
                       <td>
-                        {isFirstItem ? (
+                        {isFirstItem && (
                           <div className="d-flex align-items-center gap-2">
-                            <MdPerson style={{ color: 'var(--d-text-light)' }} />
+                            <MdPerson style={{ color: "var(--d-text-light)" }} />
                             <span>{order.waiter}</span>
                           </div>
-                        ) : ''}
+                        )}
                       </td>
+
+                      {/* Item Name */}
+                      <td>{item.name}</td>
+
+                      {/* Qty */}
+                      <td>{item.qty}</td>
+
+                      {/* Item Status */}
                       <td>
-                        <div className="d-flex align-items-center gap-2">
-                          <span>{item.name} x {item.qty}</span>
-                          {item.status && (
-                            <span className={`d-chip ${STATUS_MAP[item.status]}`} style={{ fontSize: '0.7rem', padding: '3px 8px' }}>
-                              {item.status}
-                            </span>
-                          )}
-                        </div>
+                        {editingItem === item._id ? (
+                          <Form.Select
+                            size="sm"
+                            value={item.status}
+                            autoFocus
+                            onBlur={() => setEditingItem(null)}
+                            onChange={(e) =>
+                              handleItemStatusUpdate(
+                                order._id,
+                                item._id,
+                                e.target.value
+                              )
+                            }
+                            className='d-status-select text-nowrap'
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Preparing">Preparing</option>
+                            <option value="Served">Served</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </Form.Select>
+                        ) : (
+                          <span
+                            className={`d-chip ${STATUS_MAP[item.status]}`}
+                            style={{
+                              cursor: "pointer",
+                              fontSize: "0.7rem",
+                              padding: "3px 8px",
+                            }}
+                            onClick={() => setEditingItem(item._id)}
+                          >
+                            {item.status}
+                          </span>
+                        )}
                       </td>
-                      <td>{isFirstItem ? <strong>₹{typeof order.amount === 'number' ? order.amount.toLocaleString() : order.amount}</strong> : ''}</td>
+
+                      {/* Amount */}
                       <td>
                         {isFirstItem ? (
-                          editingStatusId === order._id ? (
-                            <Form.Select
-                              size="sm"
-                              value={order.status}
-                              onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                              onBlur={() => setEditingStatusId(null)}
-                              autoFocus
-                              className="d-status-select"
-                            >
-                              {['Pending', 'Preparing', 'Served', 'Cancelled'].map(s => (
-                                <option key={s} value={s}>{s}</option>
-                              ))}
-                            </Form.Select>
-                          ) : (
-                            <span 
-                              className={`d-chip ${STATUS_MAP[order.status]}`}
-                              onClick={() => setEditingStatusId(order._id)}
-                              style={{ cursor: 'pointer' }}
-                            >
-                              {order.status}
-                            </span>
-                          )
-                        ) : ''}
+                          <strong>
+                            ₹
+                            {typeof order.amount === "number"
+                              ? order.amount.toLocaleString()
+                              : order.amount}
+                          </strong>
+                        ) : (
+                          ""
+                        )}
                       </td>
+
+                      {/* Order Status */}
                       <td>
-                        {isFirstItem ? (
+                        <span className={`d-chip ${STATUS_MAP[order.status]}`}>
+                          {order.status}
+                        </span>
+                      </td>
+
+                      {/* Time */}
+                      <td>
+                        {isFirstItem && (
                           <div
                             className="d-flex align-items-center gap-1"
-                            style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }}
+                            style={{
+                              color: "var(--d-text-muted)",
+                              fontSize: "0.8rem",
+                            }}
                           >
                             <MdAccessTime /> {order.time}
                           </div>
-                        ) : ''}
+                        )}
                       </td>
+
+                      {/* Actions */}
                       <td>
-                        {isFirstItem ? (
+                        {isFirstItem && (
                           <div className="d-flex gap-1">
                             <button
                               className="d-navbar-icon-btn"
@@ -312,7 +374,7 @@ export default function Orders() {
                               <MdDelete />
                             </button>
                           </div>
-                        ) : ''}
+                        )}
                       </td>
                     </tr>
                   );

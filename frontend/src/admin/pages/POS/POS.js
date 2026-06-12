@@ -230,7 +230,7 @@ export default function POS() {
                       <th>Price</th>
                       <th>Qty</th>
                       <th>Total</th>
-                      <th></th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -322,16 +322,7 @@ export default function POS() {
 
                 <div className="d-payment-methods mb-4">
                   <div className="text-muted small mb-2">Payment Method</div>
-                  <div className="d-flex gap-2">
-                    <button
-                      className={`d-btn-outline flex-grow-1 ${
-                        paymentMethod === "Cash" ? "active" : ""
-                      }`}
-                      style={{ fontSize: "0.75rem" }}
-                      onClick={() => setPaymentMethod("Cash")}
-                    >
-                      Cash
-                    </button>
+                  <div className="d-flex gap-3">
                     <button
                       className={`d-btn-outline flex-grow-1 ${
                         paymentMethod === "Card" ? "active" : ""
@@ -354,21 +345,21 @@ export default function POS() {
                 </div>
 
                 <button
-                  className="d-btn-gold w-100 py-3"
+                  className="d-btn-gold w-100 "
                   style={{ justifyContent: "center", fontSize: "1rem" }}
                   onClick={handlePayment}
                   disabled={cart.length === 0}
                 >
                   <MdPayment className="me-2" /> Complete Payment
                 </button>
-                <button
-                  className="d-btn-outline w-100 mt-2"
+                {/* <button
+                  className="d-btn-outline w-100 mt-3"
                   style={{ justifyContent: "center" }}
                   onClick={handlePrintBill}
                   disabled={cart.length === 0}
                 >
                   <MdReceipt className="me-2" /> Print Bill
-                </button>
+                </button> */}
               </div>
             ) : (
               <div className="text-center py-5" style={{ color: "var(--d-text-muted)" }}>
