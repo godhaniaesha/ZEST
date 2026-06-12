@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, User, Clock, ChevronLeft, ChevronRight, Share2, MessageCircle } from 'lucide-react';
 import '../styles/x_pages.css';
 import { blogAPI } from '../api';
+import { formatBlogDate, normalizeBlogPost } from '../utils/blogUtils';
 
 const BlogDetail = () => {
-  const { id, _id } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [allPosts, setAllPosts] = useState([]);
@@ -17,25 +18,21 @@ const BlogDetail = () => {
 
   const fetchPostAndAll = async () => {
     try {
+      setLoading(true);
       const [postResponse, allResponse] = await Promise.all([
         blogAPI.getById(id),
         blogAPI.getAll(),
       ]);
-      setPost(postResponse.data);
-      setAllPosts(allResponse.data);
+      setPost(normalizeBlogPost(postResponse.data));
+      const data = Array.isArray(allResponse.data) ? allResponse.data : [];
+      setAllPosts(data.map(normalizeBlogPost).filter(Boolean));
     } catch (error) {
       console.error('Error fetching blog:', error);
+      setPost(null);
+      setAllPosts([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
   };
 
   if (loading) {
@@ -79,14 +76,21 @@ const BlogDetail = () => {
           <div className="x_blogdetail_header_content">
             <div className="x_blogdetail_category">{post.category}</div>
             <h1 className="x_blogdetail_title">{post.title}</h1>
+            <p className="x_blogdetail_excerpt">{post.excerpt}</p>
             <div className="x_blogdetail_meta">
               <div className="x_blogdetail_author">
-                <img src={post.authorImage || 'https://via.placeholder.com/50'} alt={post.author} className="x_author_avatar" />
+                {post.authorImage ? (
+                  <img src={post.authorImage} alt={post.author} className="x_author_avatar" />
+                ) : (
+                  <div className="x_author_avatar_fallback">
+                    <User size={20} />
+                  </div>
+                )}
                 <div>
                   <p className="x_author_name">{post.author}</p>
                   <div className="x_blogdetail_date_time">
                     <Calendar size={14} />
-                    <span>{formatDate(post.createdAt)}</span>
+                    <span>{formatBlogDate(post.createdAt)}</span>
                     <Clock size={14} />
                     <span>{post.readTime} min read</span>
                   </div>
@@ -106,9 +110,11 @@ const BlogDetail = () => {
       </section>
 
       {/* Featured Image */}
-      <section className="x_blogdetail_image">
-        <img src={post.image} alt={post.title} />
-      </section>
+      {post.image && (
+        <section className="x_blogdetail_image">
+          <img src={post.image} alt={post.title} />
+        </section>
+      )}
 
       {/* Article Content */}
       <article className="x_blogdetail_content container">
@@ -119,11 +125,11 @@ const BlogDetail = () => {
 
       {/* Navigation */}
       {(prevPost || nextPost) && (
-        <section className="x_blogdetail_nav container">
+        <section className="x_blogdetail_nav ">
           <div className="x_blogdetail_nav_grid">
             {prevPost ? (
               <div className="x_blogdetail_nav_card" onClick={() => navigate(`/blog/${prevPost._id}`)}>
-                <ChevronLeft size={20} />
+                <ChevronLeft size={24} />
                 <div>
                   <p className="x_nav_label">Previous Article</p>
                   <p className="x_nav_title">{prevPost.title}</p>
@@ -138,7 +144,7 @@ const BlogDetail = () => {
                   <p className="x_nav_label">Next Article</p>
                   <p className="x_nav_title">{nextPost.title}</p>
                 </div>
-                <ChevronRight size={20} />
+                <ChevronRight size={24} />
               </div>
             ) : (
               <div />

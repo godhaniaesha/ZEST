@@ -22,7 +22,6 @@ const CATEGORIES = [
 const FORM_SKIP_KEYS = ['_id', '__v', 'createdAt', 'updatedAt'];
 
 
-// ✅ UPDATED: Content field with HTML helper
 const BLOG_FORM_FIELDS = [
   { name: 'title', label: 'Article Title *', type: 'text', required: true, col: 12, placeholder: 'e.g. The Art of Single-Origin Coffee' },
   { name: 'category', label: 'Category *', type: 'select', required: true, col: 6, options: CATEGORIES.filter(c => c.name !== 'All').map(c => ({ label: c.name, value: c.name })) },
@@ -102,7 +101,6 @@ export default function BlogManagement() {
 
   const handleEdit = (item) => {
     setCurrentItem(item);
-    // ✅ Convert HTML back to plain text for editing
     const plainTextContent = convertHTMLToPlainText(item.content);
     setFormData({
       title: item.title,
@@ -123,17 +121,28 @@ export default function BlogManagement() {
     setShowDelete(true);
   };
 
+const decodeHtmlEntities = (str) => {
+  if (!str) return '';
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = str;
+  return textarea.value;
+};
 
-// ✅ FIXED: Convert plain text to HTML (NO double encoding)
 const convertPlainTextToHTML = (text) => {
   if (!text) return '';
-  
-  // ❌ REMOVED: HTML escaping (this was causing double encoding)
-  // Don't escape HTML here - let the content be raw HTML
-  
-  let html = text;
-  
-  // Wrap multiple lines as paragraphs (ONLY if not already HTML)
+
+  let html = text.trim();
+
+  if (html.includes('&lt;') || html.includes('&gt;') || html.includes('&amp;')) {
+    html = decodeHtmlEntities(html);
+  }
+
+  html = html.replace(/```html\s*/gi, '').replace(/```\s*/g, '').trim();
+
+  if (/<(h[1-6]|p|div|ul|ol|table|blockquote|img|pre|code)\b/i.test(html)) {
+    return html;
+  }
+
   if (!html.trim().startsWith('<')) {
     html = html
       .split(/\n\s*\n/)
@@ -144,68 +153,57 @@ const convertPlainTextToHTML = (text) => {
       .join('\n');
   }
   
-  // Handle headings (h1 → h2, h2 → h3, h3 → h4)
   html = html.replace(/^### (.+)$/g, '<h2>$1</h2>');
   html = html.replace(/^## (.+)$/g, '<h3>$1</h3>');
   html = html.replace(/^# (.+)$/g, '<h4>$1</h4>');
   
-  // Handle bold **text** (ONLY if not already HTML)
   if (!html.includes('<strong>')) {
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   }
   
-  // Handle italic *text* (ONLY if not already HTML)
   if (!html.includes('<em>')) {
     html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   }
   
-  // Handle unordered lists (- item)
   html = html.replace(/^- (.+)$/g, '<li>$1</li>');
   html = html.replace(/(<li>.+<\/li>\n?)+/g, '<ul>$1</ul>');
   
-  // Handle blockquotes (> quote)
   html = html.replace(/^> (.+)$/g, '<blockquote>$1</blockquote>');
   
-  // Handle images (![alt](url))
   html = html.replace(/!\[([^\]]+)\]\(([^\)]+)\)/g, '<img src="$2" alt="$1" style="width:100%; max-width:600px; border-radius:10px; margin:20px 0;" />');
   
-  // Handle links ([text](url))
   html = html.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2">$1</a>');
   
   return html;
 };
 
 
-  // ✅ NEW: Convert HTML back to plain text
   const convertHTMLToPlainText = (html) => {
     if (!html) return '';
     
     let text = html
-      // Remove HTML tags but keep content
-      .replace(/<[/]?h[1-6][^>]*>/g, '\n')
-      .replace(/<[/]?p[^>]*>/g, '\n\n')
-      .replace(/<[/]?ul[^>]*>/g, '\n')
-      .replace(/<[/]?ol[^>]*>/g, '\n')
-      .replace(/<[/]?li[^>]*>/g, '\n- ')
-      .replace(/<[/]?blockquote[^>]*>/g, '\n> ')
-      .replace(/<[/]?pre[^>]*>/g, '\n')
-      .replace(/<[/]?code[^>]*>/g, '')
-      .replace(/<[/]?strong[^>]*>/g, '')
-      .replace(/<[/]?em[^>]*>/g, '')
-      .replace(/<[/]?a[^>]*>/g, '')
-      .replace(/<[/]?img[^>]*>/g, '')
-      .replace(/<[/]?tr[^>]*>/g, '\n')
-      .replace(/<[/]?th[^>]*>/g, '|')
-      .replace(/<[/]?td[^>]*>/g, '|')
-      .replace(/<[/]?table[^>]*>/g, '\n')
+      .replace(/<\/?h[1-6][^>]*>/g, '\n')
+      .replace(/<\/?p[^>]*>/g, '\n\n')
+      .replace(/<\/?ul[^>]*>/g, '\n')
+      .replace(/<\/?ol[^>]*>/g, '\n')
+      .replace(/<\/?li[^>]*>/g, '\n- ')
+      .replace(/<\/?blockquote[^>]*>/g, '\n> ')
+      .replace(/<\/?pre[^>]*>/g, '\n')
+      .replace(/<\/?code[^>]*>/g, '')
+      .replace(/<\/?strong[^>]*>/g, '')
+      .replace(/<\/?em[^>]*>/g, '')
+      .replace(/<\/?a[^>]*>/g, '')
+      .replace(/<\/?img[^>]*>/g, '')
+      .replace(/<\/?tr[^>]*>/g, '\n')
+      .replace(/<\/?th[^>]*>/g, '|')
+      .replace(/<\/?td[^>]*>/g, '|')
+      .replace(/<\/?table[^>]*>/g, '\n')
       .replace(/<\/?[^>]+(>|$)/g, '')
-      // Decode HTML entities
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
-      // Clean up extra whitespace
       .replace(/\n{3,}/g, '\n\n')
       .trim();
     
@@ -215,12 +213,10 @@ const convertPlainTextToHTML = (text) => {
 
   const handleSave = async (data, fileData) => {
     try {
-      // ✅ Convert plain text to HTML for content field
       if (data.content) {
         data.content = convertPlainTextToHTML(data.content);
       }
       
-      // Validation
       if (!data.title || !data.category || !data.author || !data.excerpt || !data.content) {
         alert('Please fill in all required fields (Title, Category, Author, Excerpt, Content)');
         return;
@@ -262,10 +258,8 @@ const convertPlainTextToHTML = (text) => {
 
 
       if (currentItem) {
-        // Edit
         await blogAPI.update(currentItem._id, formDataToSend);
       } else {
-        // Add
         await blogAPI.create(formDataToSend);
       }
 
@@ -298,6 +292,11 @@ const convertPlainTextToHTML = (text) => {
     });
   };
 
+  const getInitials = (name) => {
+    if (!name) return 'A';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
 
   return (
     <>
@@ -317,107 +316,206 @@ const convertPlainTextToHTML = (text) => {
         </div>
       </div>
 
-
       <Row className="g-3 mb-4">
-        <Col xs={12} lg={8}>
-          <div className="d-flex gap-2 flex-wrap">
-            {CATEGORIES.map(c => (
-              <button
-                key={c.name}
-                onClick={() => setActive(c.name)}
-                style={{
-                  padding: '8px 16px',
-                  border: '1.5px solid var(--d-border)',
-                  borderRadius: 'var(--d-radius-md)',
-                  background: active === c.name ? 'var(--d-primary)' : 'var(--d-white)',
-                  color: active === c.name ? 'var(--d-white)' : 'var(--d-text-muted)',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'var(--d-transition)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                {c.icon} {c.name}
-              </button>
-            ))}
-          </div>
-        </Col>
-        <Col xs={12} lg={4}>
-          <div className="d-navbar-search-box w-100 m-0">
-            <MdSearch className="d-search-icon" />
-            <input
-              type="text"
-              placeholder="Search articles..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <Col xs={12} lg={12}>
+          <div className="x_menu_filters_bar" style={{
+            display: 'flex',
+            justifyContent: 'center',
+            borderTop: '1px solid var(--border-subtle)',
+            borderBottom: '1px solid var(--border-subtle)',
+            padding: '12px 0',
+            width: '100%'
+          }}>
+            <div className="x_menu_filter_buttons" role="group" aria-label="Blog categories" style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '8px',
+              width: '100%'
+            }}>
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.name}
+                  type="button"
+                  className={`x_menu_filter_btn${active === cat.name ? ' active' : ''}`}
+                  onClick={() => setActive(cat.name)}
+                  aria-pressed={active === cat.name}
+                >
+                  {cat.icon} {cat.name}
+                </button>
+              ))}
+            </div>
           </div>
         </Col>
       </Row>
 
-
-      <div className="d-section-sub mb-3">
-        {filtered.length} {filtered.length === 1 ? 'article' : 'articles'} found
+      <div className="x_menu_results_info" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '18px 0', fontFamily: '"Playfair Display", serif'}}>
+        <span className="x_menu_results_count" style={{fontSize: '0.9rem', color: 'var(--d-text-muted)', fontStyle: 'italic'}}>
+          {filtered.length} {filtered.length === 1 ? 'article' : 'articles'} found
+        </span>
+        <strong className="x_menu_active_cat" style={{fontSize: '1.4rem', fontWeight: 700, color: 'var(--d-primary-dark)', textTransform: 'capitalize'}}>
+          {active}
+        </strong>
       </div>
 
-
-      <Row className="g-3">
-        {filtered.map(item => (
-          <Col key={item._id} xs={12} sm={6} xl={4}>
-            <div className="d-card h-100 position-relative">
-              <div className="d-flex gap-3">
-                {item.image && (
-                  <div style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: 'var(--d-radius-md)',
-                    overflow: 'hidden',
-                    flexShrink: 0
+      {loading ? (
+        <div className="text-center py-5">
+          <p style={{ color: 'var(--d-text-muted)' }}>Loading articles...</p>
+        </div>
+      ) : (
+        <div className="d-blog-grid">
+          {filtered.map(item => (
+            <div key={item._id} className="d-blog-card">
+              <div className="d-blog-card-image-wrap">
+                {item.image ? (
+                  <img 
+                    src={item.image} 
+                    alt={item.title} 
+                    className="d-blog-card-image"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    background: 'linear-gradient(135deg, var(--d-primary), var(--d-gold))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}>
-                    <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <MdArticle style={{ fontSize: '3rem', color: 'white', opacity: 0.5 }} />
                   </div>
                 )}
-                <div className="flex-grow-1">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{item.title}</h5>
-                    {canAddEditDelete && (
-                      <div className="d-flex gap-1">
-                        <button
-                          className="d-navbar-icon-btn"
-                          onClick={() => handleEdit(item)}
-                          style={{ width: '28px', height: '28px', fontSize: '1rem' }}
-                        >
-                          <MdEdit />
-                        </button>
-                        <button
-                          className="d-navbar-icon-btn text-danger"
-                          onClick={() => handleDeleteClick(item)}
-                          style={{ width: '28px', height: '28px', fontSize: '1rem' }}
-                        >
-                          <MdDelete />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="d-page-sub mb-2">{item.category} • {item.author}</div>
-                  <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.excerpt}</div>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <span className="text-muted small" style={{ fontSize: '0.8rem' }}>
-                        {formatDate(item.createdAt)} • {item.readTime} min read
-                      </span>
-                    </div>
-                  </div>
+                <div className="d-blog-card-category-badge">
+                  {item.category}
                 </div>
               </div>
-            </div>
-          </Col>
-        ))}
-      </Row>
 
+              <div className="d-blog-card-content">
+                <h3 className="d-blog-card-title">{item.title}</h3>
+                <p className="d-blog-card-excerpt">{item.excerpt}</p>
+                
+                <div className="d-blog-card-meta" style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '20px',
+                  borderTop: '1px solid var(--border-subtle)'
+                }}>
+                  <div className="d-blog-card-author" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    {item.authorImage ? (
+                      <img 
+                        src={item.authorImage} 
+                        alt={item.author} 
+                        style={{ 
+                          width: '32px', 
+                          height: '32px', 
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <div className="d-blog-card-author-avatar" style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--d-gold), var(--d-gold-dark))',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--d-white)',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        fontFamily: '"Lato", sans-serif'
+                      }}>
+                        {getInitials(item.author)}
+                      </div>
+                    )}
+                    <span className="d-blog-card-author-name" style={{
+                      fontFamily: '"Playfair Display", serif',
+                      fontSize: '0.9rem',
+                      fontWeight: 700,
+                      color: 'var(--d-primary-dark)'
+                    }}>{item.author}</span>
+                  </div>
+                  <div className="d-blog-card-date" style={{
+                    fontFamily: '"Playfair Display", serif',
+                    fontSize: '0.9rem',
+                    color: 'var(--d-text-muted)'
+                  }}>
+                    {formatDate(item.createdAt)} • {item.readTime} min read
+                  </div>
+                </div>
+
+                {canAddEditDelete && (
+                  <div className="d-blog-card-actions" style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="d-blog-card-action-btn"
+                      onClick={() => handleEdit(item)}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid var(--border-subtle)',
+                        background: 'var(--d-bg)',
+                        color: 'var(--d-text-muted)',
+                        cursor: 'pointer',
+                        transition: 'var(--d-transition)',
+                        fontSize: '1rem'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--d-primary)';
+                        e.currentTarget.style.color = 'white';
+                        e.currentTarget.style.borderColor = 'var(--d-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'var(--d-bg)';
+                        e.currentTarget.style.color = 'var(--d-text-muted)';
+                        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                      }}
+                    >
+                      <MdEdit />
+                    </button>
+                    <button 
+                      className="d-blog-card-action-btn d-danger"
+                      onClick={() => handleDeleteClick(item)}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid var(--border-subtle)',
+                        background: 'var(--d-bg)',
+                        color: 'var(--d-text-muted)',
+                        cursor: 'pointer',
+                        transition: 'var(--d-transition)',
+                        fontSize: '1rem'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--d-danger)';
+                        e.currentTarget.style.color = 'white';
+                        e.currentTarget.style.borderColor = 'var(--d-danger)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'var(--d-bg)';
+                        e.currentTarget.style.color = 'var(--d-text-muted)';
+                        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                      }}
+                    >
+                      <MdDelete />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <FormModal
         show={showForm}
@@ -427,7 +525,6 @@ const convertPlainTextToHTML = (text) => {
         fields={BLOG_FORM_FIELDS}
         onSubmit={handleSave}
       />
-
 
       <DeleteModal
         show={showDelete}
