@@ -1,36 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col } from 'react-bootstrap';
+import { Row, Col, Form } from 'react-bootstrap';
 import {
-  MdMoreVert, MdRefresh, MdLocalCafe, MdLocalBar,
-  MdAccessTime, MdPerson, MdReceipt, MdEdit, MdDelete
+  MdRefresh, MdLocalCafe, MdLocalBar,
+  MdAccessTime, MdPerson, MdReceipt, MdDelete
 } from 'react-icons/md';
 import Pagination from '../../components/Pagination';
 import DeleteModal from '../../components/DeleteModal';
-import FormModal from '../../components/FormModal';
 import { ordersAPI } from '../../../api';
 
-const ORDERS = [
-  { id: '#T-1021', table: 'Table 4', waiter: 'Raj', items: 'Pasta, Wine x2', type: 'Bar', amount: '₹1,250', status: 'Served', time: '2 min ago' },
-  { id: '#T-1020', table: 'Table 7', waiter: 'Priya', items: 'Steak, Beer', type: 'Bar', amount: '₹980', status: 'Preparing', time: '8 min ago' },
-  { id: '#T-1019', table: 'Bar', waiter: 'Sam', items: 'Mojito x3', type: 'Bar', amount: '₹750', status: 'Served', time: '14 min ago' },
-  { id: '#T-1018', table: 'Table 2', waiter: 'Anita', items: 'Risotto, Water', type: 'Cafe', amount: '₹620', status: 'Pending', time: '20 min ago' },
-  { id: '#T-1017', table: 'Table 9', waiter: 'Raj', items: 'Burger, Fries', type: 'Cafe', amount: '₹540', status: 'Cancelled', time: '35 min ago' },
-  { id: '#T-1016', table: 'Table 1', waiter: 'Priya', items: 'Soup, Salad, Dessert', type: 'Cafe', amount: '₹870', status: 'Served', time: '45 min ago' },
-  { id: '#T-1015', table: 'Table 5', waiter: 'Sam', items: 'Tiramisu, Coffee', type: 'Cafe', amount: '₹450', status: 'Served', time: '50 min ago' },
-  { id: '#T-1014', table: 'Table 8', waiter: 'Anita', items: 'Espresso Martini x2', type: 'Bar', amount: '₹760', status: 'Preparing', time: '55 min ago' },
-  { id: '#T-1013', table: 'Table 3', waiter: 'Raj', items: 'Caesar Salad', type: 'Cafe', amount: '₹320', status: 'Served', time: '1 hour ago' },
-  { id: '#T-1012', table: 'Table 6', waiter: 'Priya', items: 'Beef Tenderloin', type: 'Cafe', amount: '₹1,200', status: 'Served', time: '1.2 hours ago' },
-  { id: '#T-1011', table: 'Bar', waiter: 'Sam', items: 'Old Fashioned', type: 'Bar', amount: '₹480', status: 'Served', time: '1.5 hours ago' },
-  { id: '#T-1010', table: 'Table 10', waiter: 'Anita', items: 'Pizza, Wine', type: 'Bar', amount: '₹950', status: 'Pending', time: '1.8 hours ago' },
-  { id: '#T-1009', table: 'Table 12', waiter: 'Raj', items: 'Fish and Chips', type: 'Cafe', amount: '₹680', status: 'Preparing', time: '2 hours ago' },
-  { id: '#T-1008', table: 'Table 11', waiter: 'Priya', items: 'Mocktails x4', type: 'Bar', amount: '₹560', status: 'Served', time: '2.2 hours ago' },
-  { id: '#T-1007', table: 'Table 4', waiter: 'Sam', items: 'Chocolate Cake', type: 'Cafe', amount: '₹350', status: 'Served', time: '2.5 hours ago' },
-  { id: '#T-1006', table: 'Table 7', waiter: 'Anita', items: 'Gin Tonic x2', type: 'Bar', amount: '₹640', status: 'Cancelled', time: '2.8 hours ago' },
-  { id: '#T-1005', table: 'Table 2', waiter: 'Raj', items: 'Bruschetta', type: 'Cafe', amount: '₹280', status: 'Served', time: '3 hours ago' },
-  { id: '#T-1004', table: 'Table 9', waiter: 'Priya', items: 'Truffle Risotto', type: 'Cafe', amount: '₹680', status: 'Served', time: '3.2 hours ago' },
-  { id: '#T-1003', table: 'Bar', waiter: 'Sam', items: 'Whiskey Sour', type: 'Bar', amount: '₹440', status: 'Preparing', time: '3.5 hours ago' },
-  { id: '#T-1002', table: 'Table 1', waiter: 'Anita', items: 'Lobster Bisque', type: 'Cafe', amount: '₹520', status: 'Served', time: '3.8 hours ago' },
-];
+const ORDERS = [{}];
 
 const STATUS_MAP = {
   Served: 'd-chip-green',
@@ -44,9 +22,9 @@ export default function Orders() {
   const [filter, setFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
+  const [editingStatusId, setEditingStatusId] = useState(null);
   const itemsPerPage = 10;
   const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Cancelled'];
   const orderData = orders.length > 0 ? orders : ORDERS;
@@ -69,22 +47,23 @@ export default function Orders() {
     loadData();
   }, []);
 
-  const handleSave = async (formData) => {
+  const handleStatusUpdate = async (orderId, newStatus) => {
     try {
-      if (currentItem) {
-        await ordersAPI.update(currentItem._id, formData);
-      } else {
-        await ordersAPI.create(formData);
-      }
+      const order = orders.find(o => o._id === orderId);
+      if (!order) return;
+      
+      // Now we use MongoDB _id for updates!
+      await ordersAPI.update(orderId, { ...order, status: newStatus });
       loadData();
-      setShowForm(false);
+      setEditingStatusId(null);
     } catch (err) {
-      console.error(err);
+      console.error('Error updating status:', err);
     }
   };
 
   const handleDelete = async () => {
     try {
+      // Now we use MongoDB _id for deletes too!
       await ordersAPI.delete(currentItem._id);
       loadData();
       setShowDelete(false);
@@ -93,38 +72,10 @@ export default function Orders() {
     }
   };
 
-  const openEdit = (item) => {
-    setCurrentItem(item);
-    setShowForm(true);
-  };
-
   const openDelete = (item) => {
     setCurrentItem(item);
     setShowDelete(true);
   };
-
-  const formFields = [
-    { name: 'id', label: 'Order ID', type: 'text', required: true },
-    { name: 'table', label: 'Table', type: 'text', required: true },
-    { name: 'waiter', label: 'Waiter', type: 'text', required: true },
-    { name: 'items', label: 'Items', type: 'text', required: true },
-    {
-      name: 'type', label: 'Type', type: 'select', required: true, options: [
-        { label: 'Cafe', value: 'Cafe' },
-        { label: 'Bar', value: 'Bar' }
-      ]
-    },
-    { name: 'amount', label: 'Amount', type: 'text', required: true },
-    {
-      name: 'status', label: 'Status', type: 'select', required: true, options: [
-        { label: 'Pending', value: 'Pending' },
-        { label: 'Preparing', value: 'Preparing' },
-        { label: 'Served', value: 'Served' },
-        { label: 'Cancelled', value: 'Cancelled' }
-      ]
-    },
-    { name: 'time', label: 'Time', type: 'text', required: true }
-  ];
 
   const stats = {
     active: orders.filter(o => ['Pending', 'Preparing'].includes(o.status)).length,
@@ -143,9 +94,6 @@ export default function Orders() {
         </div>
         <div className="d-flex gap-2">
           <button className="d-btn-outline" onClick={loadData}><MdRefresh /> Refresh Feed</button>
-          <button className="d-btn-gold" onClick={() => { setCurrentItem(null); setShowForm(true); }}>
-            <MdReceipt /> New KOT
-          </button>
         </div>
       </div>
 
@@ -207,81 +155,169 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody>
-              {(currentData.length > 0 ? currentData : filtered).map(o => (
-                <tr key={o._id || o.id}>
-                  <td><strong>{o.id}</strong></td>
-
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                      {o.type === 'Cafe' ? (
-                        <MdLocalCafe className="text-success" />
-                      ) : (
-                        <MdLocalBar className="text-primary" />
-                      )}
-                      <span>{o.table}</span>
-                    </div>
-                  </td>
-
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                      <MdPerson style={{ color: 'var(--d-text-light)' }} />
-                      <span>{o.waiter}</span>
-                    </div>
-                  </td>
-
-                  <td>
-                    {Array.isArray(o.items) ? (
-                      o.items.map((item, index) => (
-                        <span key={index} className="d-block">
-                          {item.name} x {item.qty}
-                        </span>
-                      ))
-                    ) : (
-                      o.items
-                    )}
-                  </td>
-
-                  <td>
-                    <strong>₹{typeof o.amount === 'number' ? o.amount.toLocaleString() : o.amount}</strong>
-                  </td>
-
-                  <td>
-                    <span className={`d-chip ${STATUS_MAP[o.status]}`}>
-                      {o.status}
-                    </span>
-                  </td>
-
-                  <td>
-                    <div
-                      className="d-flex align-items-center gap-1"
-                      style={{
-                        color: 'var(--d-text-muted)',
-                        fontSize: '0.8rem'
-                      }}
-                    >
-                      <MdAccessTime /> {o.time}
-                    </div>
-                  </td>
-
-                  <td>
-                    <div className="d-flex gap-1">
-                      <button
-                        className="d-navbar-icon-btn"
-                        onClick={() => openEdit(o)}
-                      >
-                        <MdEdit />
-                      </button>
-
-                      <button
-                        className="d-navbar-icon-btn"
-                        onClick={() => openDelete(o)}
-                      >
-                        <MdDelete />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {(currentData.length > 0 ? currentData : filtered).flatMap(order => {
+                const items = Array.isArray(order.items) ? order.items : [];
+                
+                // If there are no items, still show the order row
+                if (items.length === 0) {
+                  return (
+                    <tr key={`${order._id}-empty`}>
+                      <td><strong>{order.id}</strong></td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                          {order.type === 'Cafe' ? (
+                            <MdLocalCafe className="text-success" />
+                          ) : (
+                            <MdLocalBar className="text-primary" />
+                          )}
+                          <span>{order.table}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                          <MdPerson style={{ color: 'var(--d-text-light)' }} />
+                          <span>{order.waiter}</span>
+                        </div>
+                      </td>
+                      <td>-</td>
+                      <td><strong>₹{typeof order.amount === 'number' ? order.amount.toLocaleString() : order.amount}</strong></td>
+                      <td>
+                        {editingStatusId === order._id ? (
+                          <Form.Select
+                            size="sm"
+                            value={order.status}
+                            onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                            onBlur={() => setEditingStatusId(null)}
+                            autoFocus
+                            className="d-status-select"
+                          >
+                            {['Pending', 'Preparing', 'Served', 'Cancelled'].map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </Form.Select>
+                        ) : (
+                          <span 
+                            className={`d-chip ${STATUS_MAP[order.status]}`}
+                            onClick={() => setEditingStatusId(order._id)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {order.status}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <div
+                          className="d-flex align-items-center gap-1"
+                          style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }}
+                        >
+                          <MdAccessTime /> {order.time}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="d-flex gap-1">
+                          <button
+                            className="d-navbar-icon-btn"
+                            onClick={() => openDelete(order)}
+                          >
+                            <MdDelete />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+                
+                // Otherwise, create a row for each individual item
+                return items.map((item, index) => {
+                  // Only show order ID, table, waiter, etc., on first item
+                  const isFirstItem = index === 0;
+                  
+                  return (
+                    <tr key={`${order._id}-${index}`}>
+                      <td>{isFirstItem ? <strong>{order.id}</strong> : ''}</td>
+                      <td>
+                        {isFirstItem ? (
+                          <div className="d-flex align-items-center gap-2">
+                            {order.type === 'Cafe' ? (
+                              <MdLocalCafe className="text-success" />
+                            ) : (
+                              <MdLocalBar className="text-primary" />
+                            )}
+                            <span>{order.table}</span>
+                          </div>
+                        ) : ''}
+                      </td>
+                      <td>
+                        {isFirstItem ? (
+                          <div className="d-flex align-items-center gap-2">
+                            <MdPerson style={{ color: 'var(--d-text-light)' }} />
+                            <span>{order.waiter}</span>
+                          </div>
+                        ) : ''}
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                          <span>{item.name} x {item.qty}</span>
+                          {item.status && (
+                            <span className={`d-chip ${STATUS_MAP[item.status]}`} style={{ fontSize: '0.7rem', padding: '3px 8px' }}>
+                              {item.status}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>{isFirstItem ? <strong>₹{typeof order.amount === 'number' ? order.amount.toLocaleString() : order.amount}</strong> : ''}</td>
+                      <td>
+                        {isFirstItem ? (
+                          editingStatusId === order._id ? (
+                            <Form.Select
+                              size="sm"
+                              value={order.status}
+                              onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                              onBlur={() => setEditingStatusId(null)}
+                              autoFocus
+                              className="d-status-select"
+                            >
+                              {['Pending', 'Preparing', 'Served', 'Cancelled'].map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </Form.Select>
+                          ) : (
+                            <span 
+                              className={`d-chip ${STATUS_MAP[order.status]}`}
+                              onClick={() => setEditingStatusId(order._id)}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {order.status}
+                            </span>
+                          )
+                        ) : ''}
+                      </td>
+                      <td>
+                        {isFirstItem ? (
+                          <div
+                            className="d-flex align-items-center gap-1"
+                            style={{ color: 'var(--d-text-muted)', fontSize: '0.8rem' }}
+                          >
+                            <MdAccessTime /> {order.time}
+                          </div>
+                        ) : ''}
+                      </td>
+                      <td>
+                        {isFirstItem ? (
+                          <div className="d-flex gap-1">
+                            <button
+                              className="d-navbar-icon-btn"
+                              onClick={() => openDelete(order)}
+                            >
+                              <MdDelete />
+                            </button>
+                          </div>
+                        ) : ''}
+                      </td>
+                    </tr>
+                  );
+                });
+              })}
             </tbody>
           </table>
         </div>
@@ -295,15 +331,6 @@ export default function Orders() {
           )}
         </div>
       </div>
-
-      <FormModal
-        show={showForm}
-        onHide={() => setShowForm(false)}
-        onSave={handleSave}
-        title={currentItem ? 'Edit Order' : 'New KOT'}
-        initialData={currentItem || {}}
-        fields={formFields}
-      />
 
       <DeleteModal
         show={showDelete}

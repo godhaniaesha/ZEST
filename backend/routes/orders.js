@@ -43,18 +43,20 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// Update to use _id instead of custom id
 router.put('/:id', auth, async (req, res) => {
   try {
-    const order = await Order.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(order);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
+// Delete to use _id instead of custom id
 router.delete('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
   try {
-    await Order.findOneAndDelete({ id: req.params.id });
+    await Order.findByIdAndDelete(req.params.id);
     res.json({ message: 'Order deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -3,6 +3,18 @@ import { api } from '../api';
 
 const AuthContext = createContext();
 
+// Helper function to decode token
+const decodeToken = (token) => {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload;
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,8 +27,19 @@ export const AuthProvider = ({ children }) => {
         try {
           const res = await api.get('/auth/me');
           setUser(res.data);
+          // Store role in localStorage
+          if (res.data.role) {
+            localStorage.setItem('user_role', res.data.role);
+          } else {
+            // Try decode token for role if not in user data
+            const tokenPayload = decodeToken(token);
+            if (tokenPayload?.role) {
+              localStorage.setItem('user_role', tokenPayload.role);
+            }
+          }
         } catch (error) {
           localStorage.removeItem('token');
+          localStorage.removeItem('user_role');
           setToken(null);
           delete api.defaults.headers.common['Authorization'];
         }
@@ -32,6 +55,16 @@ export const AuthProvider = ({ children }) => {
       setToken(res.data.token);
       setUser(res.data.user);
       localStorage.setItem('token', res.data.token);
+      // Store user role in localStorage
+      if (res.data.user?.role) {
+        localStorage.setItem('user_role', res.data.user.role);
+      } else {
+        // Try decode token
+        const tokenPayload = decodeToken(res.data.token);
+        if (tokenPayload?.role) {
+          localStorage.setItem('user_role', tokenPayload.role);
+        }
+      }
       api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       return { success: true };
     } catch (error) {
@@ -45,6 +78,12 @@ export const AuthProvider = ({ children }) => {
       setToken(res.data.token);
       setUser(res.data.user);
       localStorage.setItem('token', res.data.token);
+      // Store role in localStorage
+      if (role) {
+        localStorage.setItem('user_role', role);
+      } else if (res.data.user?.role) {
+        localStorage.setItem('user_role', res.data.user.role);
+      }
       api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       return { success: true };
     } catch (error) {
@@ -56,6 +95,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user_role');
     delete api.defaults.headers.common['Authorization'];
     window.location.href = '/';
   };
