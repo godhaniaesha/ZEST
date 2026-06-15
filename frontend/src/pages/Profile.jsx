@@ -15,12 +15,13 @@ import {
   Phone,
   Settings,
   ShieldCheck,
+  ShoppingBag,
   Star,
   User,
 } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { reservationsAPI } from "../api";
+import { ordersAPI, ratingsAPI, reservationsAPI } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/profile.css";
 import { MdOutlineCancel } from "react-icons/md";
@@ -37,6 +38,26 @@ const formatDate = (date, options) => {
   if (Number.isNaN(parsed.getTime())) return "";
   return parsed.toLocaleDateString("en-US", options);
 };
+
+const formatOrderDate = (date) =>
+  formatDate(date, { month: "short", day: "numeric", year: "numeric" }) || "—";
+
+const StarRating = ({ value = 0, onRate, disabled = false, size = 18 }) => (
+  <div className="x_star_rating">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <button
+        key={star}
+        type="button"
+        className={`x_star_btn ${star <= value ? "x_star_filled" : ""}`}
+        disabled={disabled}
+        onClick={() => !disabled && onRate?.(star)}
+        aria-label={`Rate ${star} stars`}
+      >
+        <Star size={size} fill={star <= value ? "currentColor" : "none"} />
+      </button>
+    ))}
+  </div>
+);
 
 const mapBooking = (booking) => {
   const date = formatDate(booking.date, {
@@ -77,6 +98,9 @@ const Profile = () => {
   const [avatarFile, setAvatarFile] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ratingSubmitting, setRatingSubmitting] = useState(null);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -103,9 +127,7 @@ const Profile = () => {
     if (!user) return;
     try {
       setBookingsLoading(true);
-      console.log('Fetching reservations for user:', user._id || user.id);
       const res = await reservationsAPI.getMy();
-      console.log('Reservations received:', res.data);
       setBookings((res.data || []).map(mapBooking));
     } catch (error) {
       console.error("Failed to load reservations:", error);
@@ -113,6 +135,49 @@ const Profile = () => {
       setBookingsLoading(false);
     }
   }, [user]);
+
+  const loadOrders = useCallback(async () => {
+    if (!user) return;
+    try {
+      setOrdersLoading(true);
+      const res = await ordersAPI.getMy();
+      setOrders(res.data || []);
+    } catch (error) {
+      console.error("Failed to load orders:", error);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [user]);
+
+  const handleRateItem = async (orderId, item, rating) => {
+    const key = `${orderId}-${item._id}`;
+    try {
+      setRatingSubmitting(key);
+      await ratingsAPI.submit({
+        orderId,
+        itemId: item._id,
+        menuItemId: item.menuItemId,
+        rating,
+      });
+      setOrders((prev) =>
+        prev.map((order) => {
+          if (order._id !== orderId) return order;
+          return {
+            ...order,
+            items: order.items.map((orderItem) =>
+              orderItem._id === item._id
+                ? { ...orderItem, userRating: { rating, itemName: item.name } }
+                : orderItem
+            ),
+          };
+        })
+      );
+    } catch (error) {
+      alert(error.response?.data?.message || "Could not submit rating.");
+    } finally {
+      setRatingSubmitting(null);
+    }
+  };
 
   useEffect(() => {
     AOS.init({
@@ -147,6 +212,14 @@ const Profile = () => {
     const interval = setInterval(loadBookings, 20000);
     return () => clearInterval(interval);
   }, [activeTab, user, loadBookings]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    if (activeTab !== "orders") return undefined;
+    loadOrders();
+    const interval = setInterval(loadOrders, 20000);
+    return () => clearInterval(interval);
+  }, [activeTab, user, loadOrders]);
 
   const handleLogout = () => setShowLogoutConfirm(true);
 
@@ -311,6 +384,11 @@ const Profile = () => {
               <button className={`x_profile_menu_item ${activeTab === "bookings" ? "x_active" : ""}`} onClick={() => setActiveTab("bookings")}>
                 <div className="x_menu_icon_wrap"><CalendarDays size={20} /></div>
                 <span>Reservations</span>
+                <ChevronRight className="x_arrow" size={18} />
+              </button>
+              <button className={`x_profile_menu_item ${activeTab === "orders" ? "x_active" : ""}`} onClick={() => setActiveTab("orders")}>
+                <div className="x_menu_icon_wrap"><ShoppingBag size={20} /></div>
+                <span>My Orders</span>
                 <ChevronRight className="x_arrow" size={18} />
               </button>
               <button className={`x_profile_menu_item ${activeTab === "changepassword" ? "x_active" : ""}`} onClick={() => setActiveTab("changepassword")}>
@@ -555,6 +633,101 @@ const Profile = () => {
                     <p>You have not booked a table yet. Reserve your next ZEST dining experience anytime.</p>
                     <button className="x_btn_primary_premium" onClick={() => navigate("/reservations")}>
                       Book A Table Now
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "orders" && (
+              <div className="x_profile_tab">
+                <div className="x_tab_header_simple">
+                  <h2>My Orders</h2>
+                  <p>View your past orders and rate the dishes you enjoyed.</p>
+                </div>
+
+                {ordersLoading && orders.length === 0 ? (
+                  <div className="x_empty_premium">
+                    <div className="x_empty_art"><ShoppingBag size={80} /></div>
+                    <h3>Loading Orders</h3>
+                    <p>Please wait while we fetch your order history.</p>
+                  </div>
+                ) : orders.length > 0 ? (
+                  <div className="x_orders_container_premium">
+                    {orders.map((order, index) => (
+                      <div key={order._id} className="x_order_card" data-aos="fade-up" data-aos-delay={index * 100}>
+                        <div className="x_order_header">
+                          <div>
+                            <span className="x_order_id">{order.id}</span>
+                            <h4 className="x_order_table">{order.table}</h4>
+                          </div>
+                          <div className="x_order_meta">
+                            <span className={`x_res_status_tag ${order.status?.toLowerCase()}`}>
+                              {order.status}
+                            </span>
+                            <span className="x_order_date">{formatOrderDate(order.createdAt)}</span>
+                          </div>
+                        </div>
+
+                        <div className="x_order_items">
+                          {order.items?.map((item) => {
+                            const canRate = item.status === "Served";
+                            const existingRating = item.userRating?.rating || 0;
+                            const isSubmitting = ratingSubmitting === `${order._id}-${item._id}`;
+
+                            return (
+                              <div key={item._id} className="x_order_item_row">
+                                <div className="x_order_item_info">
+                                  <span className="x_order_item_name">{item.name}</span>
+                                  <span className="x_order_item_qty">x{item.qty}</span>
+                                  <span className={`x_order_item_status ${item.status?.toLowerCase()}`}>
+                                    {item.status}
+                                  </span>
+                                </div>
+                                <div className="x_order_item_price">₹{item.price * item.qty}</div>
+                                <div className="x_order_item_rating">
+                                  {canRate ? (
+                                    existingRating > 0 ? (
+                                      <div className="x_rated_badge">
+                                        <StarRating value={existingRating} disabled size={16} />
+                                        <span>Rated</span>
+                                      </div>
+                                    ) : (
+                                      <div className="x_rate_prompt">
+                                        <span>Rate this dish</span>
+                                        <StarRating
+                                          value={0}
+                                          disabled={isSubmitting}
+                                          onRate={(rating) => handleRateItem(order._id, item, rating)}
+                                          size={16}
+                                        />
+                                      </div>
+                                    )
+                                  ) : (
+                                    <span className="x_rate_unavailable">
+                                      {item.status === "Cancelled" ? "Cancelled" : "Rate after served"}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="x_order_footer">
+                          <span className="x_order_type">{order.type}</span>
+                          <span className="x_order_total">Total: ₹{order.amount}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="x_empty_premium" data-aos="zoom-in">
+                    <div className="x_empty_art"><ShoppingBag size={80} /></div>
+                    <h3>No Orders Yet</h3>
+                    <p>Your dining orders will appear here once you visit ZEST.</p>
+                    <button className="x_btn_primary_premium" onClick={() => navigate("/menu")}>
+                      Explore Menu
                     </button>
                   </div>
                 )}

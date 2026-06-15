@@ -1,7 +1,43 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
+const Reservation = require('../models/Reservation');
+const ItemRating = require('../models/ItemRating');
 const { auth, authorizeRoles } = require('../middleware/auth');
+
+router.get('/my', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const reservations = await Reservation.find({ userId });
+    const reservationIds = reservations.map((r) => r._id);
+
+    const orders = await Order.find({
+      $or: [
+        { userId },
+        { reservationId: { $in: reservationIds } }
+      ]
+    }).sort({ createdAt: -1 });
+
+    const ratings = await ItemRating.find({ userId });
+    const ratingMap = {};
+    ratings.forEach((r) => {
+      ratingMap[`${r.orderId}_${r.itemId}`] = r;
+    });
+
+    const ordersWithRatings = orders.map((order) => {
+      const orderObj = order.toObject();
+      orderObj.items = orderObj.items.map((item) => ({
+        ...item,
+        userRating: ratingMap[`${order._id}_${item._id}`] || null
+      }));
+      return orderObj;
+    });
+
+    res.json(ordersWithRatings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 router.get('/', auth, async (req, res) => {
   try {

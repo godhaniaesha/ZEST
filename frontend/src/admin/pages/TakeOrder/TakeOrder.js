@@ -88,7 +88,8 @@ export default function TakeOrder() {
       items: cart.map(item => ({
         name: item.name,
         qty: item.qty,
-        price: item.price
+        price: item.price,
+        menuItemId: item._id
       })),
       type: activeTab === 'cafe' ? 'Dine-in' : 'Bar',
       amount: Number(cartTotal), // Ensure amount is a number
