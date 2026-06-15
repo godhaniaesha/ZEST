@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Row, Col, Badge } from "react-bootstrap";
+import React, { useState, useEffect, useRef } from "react";
+import { Row, Col } from "react-bootstrap";
 import {
-  MdLocalAtm,
-  MdReceipt,
   MdShoppingCart,
   MdPayment,
   MdSearch,
@@ -12,36 +10,64 @@ import {
   MdTableRestaurant,
 } from "react-icons/md";
 import { menuAPI, ordersAPI, reservationsAPI } from "../../../api";
+import { payBill, mountCardElement } from "../../../utils/stripePay";
+
+const ADVANCE_AMOUNT = 200;
 
 export default function POS() {
   const [menuItems, setMenuItems] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [selectedReservation, setSelectedReservation] = useState("");
+  const [selectedReservationData, setSelectedReservationData] = useState(null);
+  const [reservationOrders, setReservationOrders] = useState([]);
   const [cart, setCart] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
-  const [loading, setLoading] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState("Card");
+  const [upiVpa, setUpiVpa] = useState("");
+  const [cardComplete, setCardComplete] = useState(false);
+  const [cardError, setCardError] = useState("");
+  const [paying, setPaying] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const cardMountRef = useRef(null);
+  const cardElementRef = useRef(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
         const [menuRes, resRes] = await Promise.all([
           menuAPI.getAll(),
           reservationsAPI.getAll(),
         ]);
+
         setMenuItems(Array.isArray(menuRes.data) ? menuRes.data : []);
-        setReservations(
-          Array.isArray(resRes.data)
-            ? resRes.data.filter((r) => r.status === "Confirmed")
-            : []
-        );
+
+        const confirmedReservations = Array.isArray(resRes.data)
+          ? resRes.data.filter((r) => r.status === "Confirmed")
+          : [];
+
+        const eligibleReservations = [];
+
+        for (const reservation of confirmedReservations) {
+          const orderRes = await ordersAPI.getByReservationId(reservation._id);
+
+          const orders = Array.isArray(orderRes.data) ? orderRes.data : [];
+          const allItems = orders.flatMap((o) => o.items || []);
+
+          const allServed =
+            allItems.length > 0 &&
+            allItems.every((item) => item.status === "Served");
+
+          if (allServed) {
+            eligibleReservations.push(reservation);
+          }
+        }
+
+        setReservations(eligibleReservations);
       } catch (error) {
         console.error("Error loading data:", error);
-      } finally {
-        setLoading(false);
       }
     };
+
     loadData();
   }, []);
 
@@ -49,13 +75,19 @@ export default function POS() {
     const loadOrdersForReservation = async () => {
       if (!selectedReservation) {
         setCart([]);
+        setReservationOrders([]);
+        setSelectedReservationData(null);
         return;
       }
 
       try {
         const res = await ordersAPI.getByReservationId(selectedReservation);
         const orders = Array.isArray(res.data) ? res.data : [];
-        
+        setReservationOrders(orders);
+
+        const reservation = reservations.find((r) => r._id === selectedReservation);
+        setSelectedReservationData(reservation || null);
+
         const combinedItems = [];
         orders.forEach((order) => {
           if (Array.isArray(order.items)) {
@@ -76,33 +108,129 @@ export default function POS() {
     };
 
     loadOrdersForReservation();
-  }, [selectedReservation]);
-
-  const filteredMenuItems = menuItems.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  }, [selectedReservation, reservations]);
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
   const tax = subtotal * 0.05;
-  const total = subtotal + tax;
+  const grossTotal = subtotal + tax;
+  const advanceDeducted = selectedReservationData?.advancePaid || 0;
+  const total = Math.max(0, grossTotal - advanceDeducted);
 
-  const addToCart = (item) => {
-    setCart((prevCart) => {
-      const existing = prevCart.find((i) => i._id === item._id || i.name === item.name);
-      if (existing) {
-        return prevCart.map((i) =>
-          (i._id === item._id || i.name === item.name) ? { ...i, qty: i.qty + 1 } : i,
-        );
+  useEffect(() => {
+    if (!selectedReservation || total <= 0 || paymentMethod !== "Card") {
+      return undefined;
+    }
+
+    let active = true;
+    let frameId = 0;
+
+    const setupCard = async () => {
+      if (!cardMountRef.current) {
+        frameId = requestAnimationFrame(() => {
+          if (active) setupCard();
+        });
+        return;
       }
-      return [...prevCart, { ...item, qty: 1, id: item._id || item.name }];
-    });
+
+      try {
+        cardElementRef.current?.unmount();
+        cardElementRef.current = null;
+        setCardComplete(false);
+        setCardError("");
+
+        const { cardElement } = await mountCardElement(cardMountRef.current, (event) => {
+          setCardComplete(event.complete);
+          setCardError(event.error?.message || "");
+        });
+
+        if (active) {
+          cardElementRef.current = cardElement;
+        } else {
+          cardElement.unmount();
+        }
+      } catch (err) {
+        if (active) {
+          setCardError(err.message || "Could not load card payment form.");
+        }
+      }
+    };
+
+    setupCard();
+
+    return () => {
+      active = false;
+      cancelAnimationFrame(frameId);
+      cardElementRef.current?.unmount();
+      cardElementRef.current = null;
+    };
+  }, [selectedReservation, total, paymentMethod]);
+
+  const getTableLabel = (reservation) => {
+    if (!reservation) return "";
+    if (reservation.table?.displayId) return reservation.table.displayId;
+    if (reservation.table?.number) return `Table ${reservation.table.number}`;
+    return `Table ${reservation.tableNumber || ""}`;
+  };
+
+  const handlePayment = async () => {
+    if (!selectedReservation || cart.length === 0) return;
+
+    setPaymentError("");
+
+    if (total > 0) {
+      if (paymentMethod === "Card" && !cardComplete) {
+        setPaymentError(cardError || "Please enter complete card details.");
+        return;
+      }
+      if (paymentMethod === "UPI" && !upiVpa.trim()) {
+        setPaymentError("Enter a valid UPI ID.");
+        return;
+      }
+    }
+
+    try {
+      setPaying(true);
+
+      const orderIds = reservationOrders.map((o) => o._id);
+
+      const result = await payBill({
+        paymentMethod,
+        cardElement: paymentMethod === "Card" ? cardElementRef.current : null,
+        upiVpa: upiVpa.trim(),
+        reservationId: selectedReservation,
+        subtotal,
+        tax,
+        orderIds,
+      });
+
+      if (result.redirected) return;
+
+      alert(
+        result.message ||
+          `Payment of ₹${(result.amountPaid ?? total).toLocaleString()} completed` +
+            (advanceDeducted > 0 ? ` (₹${advanceDeducted} advance deducted)` : "") +
+            ` via ${paymentMethod}`,
+      );
+
+      setCart([]);
+      setSelectedReservation("");
+      setSelectedReservationData(null);
+      setReservationOrders([]);
+      setUpiVpa("");
+    } catch (error) {
+      setPaymentError(
+        error.response?.data?.message || "Payment failed. Please try again.",
+      );
+    } finally {
+      setPaying(false);
+    }
   };
 
   const updateQty = (id, delta) => {
     setCart((prevCart) =>
       prevCart
         .map((item) =>
-          (item.id === id || item._id === id)
+          item.id === id || item._id === id
             ? { ...item, qty: Math.max(1, item.qty + delta) }
             : item,
         )
@@ -112,18 +240,6 @@ export default function POS() {
 
   const removeFromCart = (id) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== id && item._id !== id));
-  };
-
-  const handlePayment = () => {
-    alert(
-      `Payment of ₹${total.toLocaleString()} completed via ${paymentMethod}`,
-    );
-    setCart([]);
-    setSelectedReservation("");
-  };
-
-  const handlePrintBill = () => {
-    alert("Bill sent to printer");
   };
 
   return (
@@ -154,9 +270,9 @@ export default function POS() {
                   style={{ width: "250px" }}
                 >
                   <MdSearch className="d-search-icon" />
-                  <input 
-                    type="text" 
-                    placeholder="Search items..." 
+                  <input
+                    type="text"
+                    placeholder="Search items..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -169,52 +285,16 @@ export default function POS() {
                     style={{ minWidth: "200px" }}
                   >
                     <option value="">Select Table for Billing</option>
+
                     {reservations.map((r) => (
                       <option key={r._id} value={r._id}>
-                        {r.table || `Table ${r.tableNumber}`} -{" "}
-                        {r.customerName || r.name}
+                        {getTableLabel(r)} - {r.customerName || r.name}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
             </div>
-            {/* <Row className="g-3">
-              {loading ? (
-                <div className="text-center py-5 w-100">Loading menu...</div>
-              ) : filteredMenuItems.length === 0 ? (
-                <div className="text-center py-5 w-100" style={{ color: "var(--d-text-muted)" }}>
-                  No menu items found
-                </div>
-              ) : (
-                filteredMenuItems.map((item) => (
-                  <Col key={item._id} xs={6} sm={4} xl={3}>
-                    <div
-                      className="d-menu-item-pos p-3 border rounded text-center"
-                      style={{
-                        cursor: "pointer",
-                        background: "var(--d-bg)",
-                        transition: "var(--d-transition)",
-                      }}
-                      onClick={() => addToCart(item)}
-                    >
-                      <div className="fw-bold" style={{ fontSize: "0.9rem" }}>
-                        {item.name}
-                      </div>
-                      <div className="text-gold fw-bold">₹{item.price}</div>
-                      <Badge
-                        bg="light"
-                        text="dark"
-                        className="mt-2"
-                        style={{ fontSize: "0.65rem" }}
-                      >
-                        {Array.isArray(item.type) ? item.type.join(", ") : item.type || "Menu"}
-                      </Badge>
-                    </div>
-                  </Col>
-                ))
-              )}
-            </Row> */}
           </div>
 
           <div className="d-card">
@@ -298,6 +378,14 @@ export default function POS() {
                   <span className="text-muted">Tax (GST 5%)</span>
                   <span>₹{tax.toLocaleString()}</span>
                 </div>
+                {advanceDeducted > 0 && (
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Reservation Advance</span>
+                    <span style={{ color: "var(--d-green, #2ecc71)" }}>
+                      − ₹{advanceDeducted.toLocaleString()}
+                    </span>
+                  </div>
+                )}
                 <div className="d-flex justify-content-between mb-4">
                   <span className="text-muted">Service Charge</span>
                   <span>₹0.00</span>
@@ -320,46 +408,66 @@ export default function POS() {
                   </strong>
                 </div>
 
-                <div className="d-payment-methods mb-4">
-                  <div className="text-muted small mb-2">Payment Method</div>
-                  <div className="d-flex gap-3">
-                    <button
-                      className={`d-btn-outline flex-grow-1 ${
-                        paymentMethod === "Card" ? "active" : ""
-                      }`}
-                      style={{ fontSize: "0.75rem" }}
-                      onClick={() => setPaymentMethod("Card")}
-                    >
-                      Card
-                    </button>
-                    <button
-                      className={`d-btn-outline flex-grow-1 ${
-                        paymentMethod === "UPI" ? "active" : ""
-                      }`}
-                      style={{ fontSize: "0.75rem" }}
-                      onClick={() => setPaymentMethod("UPI")}
-                    >
-                      UPI
-                    </button>
-                  </div>
-                </div>
+                {total > 0 && (
+                  <>
+                    <div className="d-payment-methods mb-3">
+                      <div className="text-muted small mb-2">Payment Method</div>
+                      <div className="d-flex gap-3">
+                        <button
+                          className={`d-btn-outline flex-grow-1 ${paymentMethod === "Card" ? "active" : ""}`}
+                          style={{ fontSize: "0.75rem" }}
+                          onClick={() => setPaymentMethod("Card")}
+                        >
+                          Card
+                        </button>
+                        <button
+                          className={`d-btn-outline flex-grow-1 ${paymentMethod === "UPI" ? "active" : ""}`}
+                          style={{ fontSize: "0.75rem" }}
+                          onClick={() => setPaymentMethod("UPI")}
+                        >
+                          UPI
+                        </button>
+                      </div>
+                    </div>
+
+                    {paymentMethod === "Card" ? (
+                      <div className="mb-3">
+                        <div className="text-muted small mb-2">Card Details</div>
+                        <div
+                          ref={cardMountRef}
+                          className="form-control"
+                          style={{ minHeight: "42px", paddingTop: "10px" }}
+                        />
+                        {cardError && (
+                          <div className="text-danger small mt-2">{cardError}</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mb-3">
+                        <input
+                          className="form-control"
+                          placeholder="UPI ID (e.g. success@upi)"
+                          value={upiVpa}
+                          onChange={(e) => setUpiVpa(e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {paymentError && (
+                  <div className="alert alert-danger py-2 small mb-3">{paymentError}</div>
+                )}
 
                 <button
                   className="d-btn-gold w-100 "
                   style={{ justifyContent: "center", fontSize: "1rem" }}
                   onClick={handlePayment}
-                  disabled={cart.length === 0}
+                  disabled={cart.length === 0 || paying}
                 >
-                  <MdPayment className="me-2" /> Complete Payment
+                  <MdPayment className="me-2" />
+                  {paying ? "Processing..." : total === 0 ? "Settle Bill" : "Complete Payment"}
                 </button>
-                {/* <button
-                  className="d-btn-outline w-100 mt-3"
-                  style={{ justifyContent: "center" }}
-                  onClick={handlePrintBill}
-                  disabled={cart.length === 0}
-                >
-                  <MdReceipt className="me-2" /> Print Bill
-                </button> */}
               </div>
             ) : (
               <div className="text-center py-5" style={{ color: "var(--d-text-muted)" }}>

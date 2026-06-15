@@ -297,15 +297,28 @@ export default function Orders() {
                             size="sm"
                             value={item.status}
                             autoFocus
-                            onBlur={() => setEditingItem(null)}
-                            onChange={(e) =>
-                              handleItemStatusUpdate(
-                                order._id,
-                                item._id,
-                                e.target.value
-                              )
-                            }
-                            className='d-status-select text-nowrap'
+                            className="d-status-select text-nowrap"
+                            onChange={async (e) => {
+                              const newStatus = e.target.value;
+
+                              // 1. instant UI update (NO flicker)
+                              setOrders((prev) =>
+                                prev.map((order) => ({
+                                  ...order,
+                                  items: order.items.map((it) =>
+                                    it._id === item._id
+                                      ? { ...it, status: newStatus }
+                                      : it
+                                  ),
+                                }))
+                              );
+
+                              // 2. API call
+                              await handleItemStatusUpdate(order._id, item._id, newStatus);
+
+                              // 3. IMPORTANT: exit edit mode instantly
+                              setEditingItem(null);
+                            }}
                           >
                             <option value="Pending">Pending</option>
                             <option value="Preparing">Preparing</option>

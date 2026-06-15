@@ -2385,6 +2385,14 @@ body {
   box-shadow: 0 0 0 0.2rem rgba(201, 168, 76, 0.25);
 
 }
+.d-status-select:focus {
+  box-shadow: none !important;
+  border-color: var(--bs-border-color) !important;
+}
+
+.d-status-select {
+  transition: all 0.15s ease;
+}
 
 @keyframes fadeIn {
   from {

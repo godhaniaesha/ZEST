@@ -4,9 +4,13 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+const stripe = require('stripe')(process.env.STRIPE_SECRET);
+
+console.log("Stripe PK:", process.env.STRIPE_PUBLISHABLE_KEY);
+
 const crypto = require('crypto');
 
-const dns = require ('node:dns');
+const dns = require('node:dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 const STAFF_ROLES = [
   'superadmin',
@@ -84,7 +88,7 @@ app.use("/api/payment", paymentRoutes);
 mongoose
   .connect(
     process.env.MONGODB_URI ||
-      'mongodb://localhost:27017/zest-restaurant'
+    'mongodb://localhost:27017/zest-restaurant'
   )
   .then(async () => {
     console.log('MongoDB connected');

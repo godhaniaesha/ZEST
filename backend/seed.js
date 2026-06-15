@@ -350,8 +350,34 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/zest-rest
   console.log('Inserted inventory items:', inventoryItems.length);
 
   const reservations = await Reservation.insertMany([
-    { customerName: 'Amit Patel', email: 'amit@example.com', phone: '9876543210', date: new Date(Date.now() + 86400000), time: '19:00', guests: 4, tableNumber: 3, status: 'Confirmed' },
-    { customerName: 'Riya Singh', email: 'riya@example.com', phone: '9812345678', date: new Date(Date.now() + 172800000), time: '20:00', guests: 2, tableNumber: 6, status: 'Pending' }
+    {
+      customerName: 'Amit Patel',
+      email: 'amit@example.com',
+      phone: '9876543210',
+      date: new Date(Date.now() + 86400000),
+      time: '19:00',
+      guests: 4,
+      table: tables[2]._id,
+      advanceAmount: 200,
+      advancePaid: 200,
+      advancePaymentStatus: 'Paid',
+      advancePaymentMethod: 'Card',
+      status: 'Confirmed',
+    },
+    {
+      customerName: 'Riya Singh',
+      email: 'riya@example.com',
+      phone: '9812345678',
+      date: new Date(Date.now() + 172800000),
+      time: '20:00',
+      guests: 2,
+      table: tables[5]._id,
+      advanceAmount: 200,
+      advancePaid: 200,
+      advancePaymentStatus: 'Paid',
+      advancePaymentMethod: 'UPI',
+      status: 'Pending',
+    },
   ]);
   console.log('Inserted reservations:', reservations.length);
 

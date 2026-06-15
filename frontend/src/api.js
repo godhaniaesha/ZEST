@@ -104,6 +104,19 @@ export const reservationsAPI = {
   create: (data) => api.post('/reservations', data),
   update: (id, data) => api.put(`/reservations/${id}`, data),
   delete: (id) => api.delete(`/reservations/${id}`),
+  updateStatus: (id, status) =>  api.patch(`/reservations/${id}/status`, { status,}),
+};
+
+export const paymentAPI = {
+  getConfig: () => api.get('/payment/config'),
+  createAdvanceIntent: (data) => api.post('/payment/reservation-advance-intent', data),
+  createBillIntent: (data) => api.post('/payment/bill-intent', data),
+  completeBill: (data) => api.post('/payment/bill/complete', data),
+  createPaymentIntent: (data) => api.post('/payment/create-payment-intent', data),
+};
+
+export const publicTablesAPI = {
+  getCafeTables: () => axios.get(`${API_BASE_URL}/tables/public`),
 };
 
 export const categoriesAPI = {

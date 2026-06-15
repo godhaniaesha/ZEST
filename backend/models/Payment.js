@@ -5,7 +5,6 @@ const paymentSchema = new mongoose.Schema(
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
-      required: true,
     },
 
     reservationId: {
@@ -16,6 +15,17 @@ const paymentSchema = new mongoose.Schema(
     amount: {
       type: Number,
       required: true,
+    },
+
+    advanceDeducted: {
+      type: Number,
+      default: 0,
+    },
+
+    paymentType: {
+      type: String,
+      enum: ["Advance", "Bill", "Order"],
+      default: "Order",
     },
 
     paymentMethod: {
@@ -30,19 +40,11 @@ const paymentSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: [
-        "Pending",
-        "Succeeded",
-        "Failed",
-        "Cancelled",
-      ],
+      enum: ["Pending", "Succeeded", "Failed", "Cancelled"],
       default: "Pending",
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model(
-  "Payment",
-  paymentSchema
-);
+module.exports = mongoose.model("Payment", paymentSchema);

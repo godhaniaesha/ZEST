@@ -13,7 +13,10 @@ import {
   FiPhone,
 } from "react-icons/fi";
 import { useAuth } from "../contexts/AuthContext";
-import { reservationsAPI } from "../api";
+import { reservationsAPI, publicTablesAPI } from "../api";
+import { payReservationAdvance, mountCardElement } from "../utils/stripePay";
+
+const ADVANCE_AMOUNT = 200;
 
 const h_res_css = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
@@ -336,6 +339,15 @@ const h_res_css = `
   .h_input_box input::placeholder { color: rgba(11,25,21,0.22); font-weight: 400; }
   .h_input_box textarea::placeholder { color: rgba(11,25,21,0.22); font-weight: 400; }
   .h_input_box.mb0 { margin-bottom: 0; }
+
+  .h_stripe_card_wrap {
+    width: 100%;
+    padding: 0.35rem 0;
+  }
+
+  .h_stripe_card_wrap .StripeElement {
+    width: 100%;
+  }
 
   .h_two_col_grid {
     display: grid;
@@ -720,11 +732,6 @@ const STEPS = [
   { id: 5, label: "Review", sub: "Final Check", icon: <FiShield /> },
 ];
 
-const TABLES = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  cap: i % 4 === 0 ? 6 : i % 2 === 0 ? 4 : 2,
-  occ: [3, 7, 10].includes(i + 1),
-}));
 
 const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
@@ -734,6 +741,8 @@ export default function ZestReservation() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [tables, setTables] = useState([]);
+  const [tablesLoading, setTablesLoading] = useState(true);
   const [form, setForm] = useState({
     guests: 2,
     date: new Date().toISOString().split("T")[0],
@@ -745,10 +754,36 @@ export default function ZestReservation() {
     specialOccasion: "none",
     specialRequests: "",
     agreePolicy: false,
-    card: "",
-    expiry: "",
-    cvv: "",
+    paymentMethod: "Card",
+    upiVpa: "",
   });
+
+  const [selHour, setSelHour] = useState(7);
+  const [selMin, setSelMin] = useState(30);
+  const [selPeriod, setSelPeriod] = useState("PM");
+  const [activeView, setActiveView] = useState("hour");
+  const [clockSize, setClockSize] = useState(240);
+  const [cardComplete, setCardComplete] = useState(false);
+  const [cardError, setCardError] = useState("");
+  const clockRef = useRef(null);
+  const cardMountRef = useRef(null);
+  const cardElementRef = useRef(null);
+
+  useEffect(() => {
+    const loadTables = async () => {
+      try {
+        setTablesLoading(true);
+        const res = await publicTablesAPI.getCafeTables();
+        setTables(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Failed to load tables:", err);
+        setError("Could not load tables. Please refresh the page.");
+      } finally {
+        setTablesLoading(false);
+      }
+    };
+    loadTables();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -761,13 +796,6 @@ export default function ZestReservation() {
     }
   }, [user]);
 
-  const [selHour, setSelHour] = useState(7);
-  const [selMin, setSelMin] = useState(30);
-  const [selPeriod, setSelPeriod] = useState("PM");
-  const [activeView, setActiveView] = useState("hour");
-  const [clockSize, setClockSize] = useState(240);
-  const clockRef = useRef(null);
-
   const update = (k, v) => {
     setError("");
     setForm((p) => ({ ...p, [k]: v }));
@@ -775,14 +803,17 @@ export default function ZestReservation() {
   const updateGuests = (n) => {
     const s = Math.max(1, Math.min(20, n));
     setError("");
-    setForm((p) => ({
-      ...p,
-      guests: s,
-      table:
-        p.table && TABLES.find((t) => t.id === p.table && t.cap >= s)
-          ? p.table
-          : null,
-    }));
+    setForm((p) => {
+      const currentTable = tables.find((t) => t._id === p.table);
+      return {
+        ...p,
+        guests: s,
+        table:
+          currentTable && currentTable.capacity >= s && currentTable.status !== "Occupied"
+            ? p.table
+            : null,
+      };
+    });
   };
 
   const onNameChange = (v) =>
@@ -798,19 +829,6 @@ export default function ZestReservation() {
           : `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}`,
     );
   };
-  const onCardChange = (v) =>
-    update(
-      "card",
-      v
-        .replace(/\D/g, "")
-        .slice(0, 16)
-        .replace(/(\d{4})(?=\d)/g, "$1 "),
-    );
-  const onExpiryChange = (v) => {
-    const d = v.replace(/\D/g, "").slice(0, 4);
-    update("expiry", d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d);
-  };
-  const onCvvChange = (v) => update("cvv", v.replace(/\D/g, "").slice(0, 3));
 
   const selectHour = (h) => {
     setSelHour(h === 0 ? 12 : h);
@@ -861,21 +879,69 @@ export default function ZestReservation() {
   }, [step]);
 
   useEffect(() => {
+    if (step !== 4 || form.paymentMethod !== "Card") {
+      return undefined;
+    }
+
+    let active = true;
+    let frameId = 0;
+
+    const setupCard = async () => {
+      if (!cardMountRef.current) {
+        frameId = requestAnimationFrame(() => {
+          if (active) setupCard();
+        });
+        return;
+      }
+
+      try {
+        cardElementRef.current?.unmount();
+        cardElementRef.current = null;
+        setCardComplete(false);
+        setCardError("");
+
+        const { cardElement } = await mountCardElement(cardMountRef.current, (event) => {
+          setCardComplete(event.complete);
+          setCardError(event.error?.message || "");
+        });
+
+        if (active) {
+          cardElementRef.current = cardElement;
+        } else {
+          cardElement.unmount();
+        }
+      } catch (err) {
+        if (active) {
+          setCardError(err.message || "Could not load card payment form.");
+        }
+      }
+    };
+
+    setupCard();
+
+    return () => {
+      active = false;
+      cancelAnimationFrame(frameId);
+      cardElementRef.current?.unmount();
+      cardElementRef.current = null;
+    };
+  }, [step, form.paymentMethod]);
+
+  useEffect(() => {
     if (!form.table) return;
-    const t = TABLES.find((t) => t.id === form.table);
-    if (!t || t.cap < form.guests) update("table", null);
-  }, [form.guests]);
+    const t = tables.find((t) => t._id === form.table);
+    if (!t || t.capacity < form.guests || t.status === "Occupied") {
+      update("table", null);
+    }
+  }, [form.guests, form.table, tables]);
 
   const handleNext = async () => {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
     const phoneDigits = form.phone.replace(/\D/g, "");
-    const cardDigits = form.card.replace(/\D/g, "");
-    const expiryOk = /^(0[1-9]|1[0-2])\/\d{2}$/.test(form.expiry);
-    const cvvOk = /^\d{3}$/.test(form.cvv);
 
     if (step === 1 && !form.date) return setError("Please select a date.");
     if (step === 2 && !form.table) return setError("Please select a table.");
-    
+
     if (step === 3) {
       if (!form.name.trim()) return setError("Please enter your full name.");
       if (!emailOk) return setError("Please enter a valid email address.");
@@ -884,32 +950,62 @@ export default function ZestReservation() {
       if (!form.agreePolicy) return setError("You must accept the reservation policy.");
     }
 
-    if (step === 4 && (cardDigits.length !== 16 || !expiryOk || !cvvOk))
-      return setError("Enter valid card number, expiry (MM/YY), and CVV.");
+    if (step === 4) {
+      if (form.paymentMethod === "Card") {
+        if (!cardComplete) {
+          return setError(cardError || "Please enter complete card details.");
+        }
+      } else if (!form.upiVpa.trim()) {
+        return setError("Enter a valid UPI ID (e.g. success@upi).");
+      }
+    }
 
     if (step === 5) {
       try {
         setLoading(true);
+        setError("");
+
+        const paymentResult = await payReservationAdvance({
+          paymentMethod: form.paymentMethod,
+          cardElement: form.paymentMethod === "Card" ? cardElementRef.current : null,
+          upiVpa: form.upiVpa.trim(),
+        });
+
+        if (paymentResult.redirected) return;
+
         const reservationData = {
           customerName: form.name,
-          phone: form.phone,
+          phone: form.phone.replace(/\s/g, ""),
           email: form.email,
           userId: user?._id || user?.id || null,
           date: form.date,
           time: formattedTime,
           guests: form.guests,
-          tableNumber: form.table,
-          status: 'Pending'
+          table: form.table,
+          seatingArea: form.seatingArea,
+          specialOccasion: form.specialOccasion,
+          specialRequests: form.specialRequests,
+          paymentMethod: form.paymentMethod,
+          stripePaymentIntentId: paymentResult.paymentIntentId,
+          status: "Pending",
         };
-        
-        console.log('Sending reservation data:', reservationData);
+
         await reservationsAPI.create(reservationData);
-        
+        console.log("Reservation Payload:", reservationData);
+
         setLoading(false);
         setStep(6);
       } catch (err) {
+        console.error("Reservation Error:", err);
+        console.error("Response:", err.response?.data);
+
         setLoading(false);
-        setError(err.response?.data?.message || "Could not save reservation. Please try again.");
+
+        setError(
+          err.response?.data?.message ||
+          err.message ||
+          "Could not save reservation. Please try again."
+        );
       }
     } else setStep((p) => p + 1);
   };
@@ -1154,53 +1250,65 @@ export default function ZestReservation() {
             {step === 2 && (
               <div className="h_content_card">
                 <h2>Pick your Table</h2>
-                <div className="h_table_grid">
-                  {TABLES.map((t) => (
-                    <div
-                      key={t.id}
-                      className={`h_table_node ${t.occ ? "occupied" : ""} ${!t.occ && t.cap < form.guests ? "unavailable" : ""} ${form.table === t.id ? "selected" : ""}`}
-                      onClick={() =>
-                        !t.occ && t.cap >= form.guests && update("table", t.id)
-                      }
-                    >
-                      <span className="t_num">{t.id}</span>
-                      <span className="t_cap">{t.cap} pax</span>
+                {tablesLoading ? (
+                  <p style={{ opacity: 0.6 }}>Loading available tables...</p>
+                ) : tables.length === 0 ? (
+                  <p style={{ opacity: 0.6 }}>No tables available right now.</p>
+                ) : (
+                  <>
+                    <div className="h_table_grid">
+                      {tables.map((t) => {
+                        const occupied = t.status === "Occupied";
+                        const tooSmall = t.capacity < form.guests;
+                        return (
+                          <div
+                            key={t._id}
+                            className={`h_table_node ${occupied ? "occupied" : ""} ${!occupied && tooSmall ? "unavailable" : ""} ${form.table === t._id ? "selected" : ""}`}
+                            onClick={() =>
+                              !occupied && !tooSmall && update("table", t._id)
+                            }
+                          >
+                            <span className="t_num">{t.number}</span>
+                            <span className="t_cap">{t.capacity} pax</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-                <div className="h_table_legend">
-                  <div className="h_table_legend_item">
-                    <div
-                      className="h_legend_dot"
-                      style={{ background: "rgba(0,0,0,0.1)" }}
-                    />
-                    Available
-                  </div>
-                  <div className="h_table_legend_item">
-                    <div
-                      className="h_legend_dot"
-                      style={{ background: "var(--z-emerald)" }}
-                    />
-                    Selected
-                  </div>
-                  <div className="h_table_legend_item">
-                    <div
-                      className="h_legend_dot"
-                      style={{ background: "rgba(0,0,0,0.06)" }}
-                    />
-                    Occupied
-                  </div>
-                  <div className="h_table_legend_item">
-                    <div
-                      className="h_legend_dot"
-                      style={{
-                        background: "rgba(201,168,76,0.5)",
-                        border: "1px dashed rgba(201,168,76,0.6)",
-                      }}
-                    />
-                    Too small
-                  </div>
-                </div>
+                    <div className="h_table_legend">
+                      <div className="h_table_legend_item">
+                        <div
+                          className="h_legend_dot"
+                          style={{ background: "rgba(0,0,0,0.1)" }}
+                        />
+                        Available
+                      </div>
+                      <div className="h_table_legend_item">
+                        <div
+                          className="h_legend_dot"
+                          style={{ background: "var(--z-emerald)" }}
+                        />
+                        Selected
+                      </div>
+                      <div className="h_table_legend_item">
+                        <div
+                          className="h_legend_dot"
+                          style={{ background: "rgba(0,0,0,0.06)" }}
+                        />
+                        Occupied
+                      </div>
+                      <div className="h_table_legend_item">
+                        <div
+                          className="h_legend_dot"
+                          style={{
+                            background: "rgba(201,168,76,0.5)",
+                            border: "1px dashed rgba(201,168,76,0.6)",
+                          }}
+                        />
+                        Too small
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -1312,50 +1420,95 @@ export default function ZestReservation() {
             {step === 4 && (
               <div className="h_content_card">
                 <h2>Secure Checkout</h2>
-                <div className="h_input_box">
-                  <label>Card Number</label>
-                  <div className="h_input_field_wrap">
-                    <FiCreditCard className="h_input_icon" />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength="19"
-                      placeholder="0000 0000 0000 0000"
-                      value={form.card}
-                      onChange={(e) => onCardChange(e.target.value)}
-                    />
-                  </div>
+                <p style={{ fontSize: "0.85rem", opacity: 0.6, marginBottom: "1.5rem" }}>
+                  Pay ₹{ADVANCE_AMOUNT} advance to confirm your reservation. This amount will be
+                  deducted from your final bill.
+                </p>
+
+                <div className="h_payment_row" style={{ marginBottom: "1.5rem" }}>
+                  <button
+                    type="button"
+                    className={`h_btn_next ${form.paymentMethod === "Card" ? "" : ""}`}
+                    style={{
+                      flex: 1,
+                      justifyContent: "center",
+                      background: form.paymentMethod === "Card" ? "var(--z-emerald)" : "rgba(255,255,255,0.5)",
+                      color: form.paymentMethod === "Card" ? "var(--z-gold)" : "var(--z-dark)",
+                      padding: "0.9rem 1rem",
+                      fontSize: "0.7rem",
+                    }}
+                    onClick={() => update("paymentMethod", "Card")}
+                  >
+                    Card
+                  </button>
+                  <button
+                    type="button"
+                    className="h_btn_next"
+                    style={{
+                      flex: 1,
+                      justifyContent: "center",
+                      background: form.paymentMethod === "UPI" ? "var(--z-emerald)" : "rgba(255,255,255,0.5)",
+                      color: form.paymentMethod === "UPI" ? "var(--z-gold)" : "var(--z-dark)",
+                      padding: "0.9rem 1rem",
+                      fontSize: "0.7rem",
+                    }}
+                    onClick={() => update("paymentMethod", "UPI")}
+                  >
+                    UPI
+                  </button>
                 </div>
-                <div className="h_payment_row">
-                  <div className="h_input_box" style={{ flex: 1 }}>
-                    <label>Expiry</label>
+
+                {form.paymentMethod === "Card" ? (
+                  <div className="h_input_box">
+                    <label>Card Details</label>
                     <div className="h_input_field_wrap">
-                      <FiCalendar className="h_input_icon" />
+                      <FiCreditCard className="h_input_icon" />
+                      <div ref={cardMountRef} className="h_stripe_card_wrap" />
+                    </div>
+                    {cardError && (
+                      <p style={{ fontSize: "0.72rem", color: "#C0392B", marginTop: "0.5rem" }}>
+                        {cardError}
+                      </p>
+                    )}
+                    <p style={{ fontSize: "0.68rem", opacity: 0.45, marginTop: "0.5rem" }}>
+                      Test card: 4242 4242 4242 4242, any future expiry, any CVC
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h_input_box">
+                    <label>UPI ID (VPA)</label>
+                    <div className="h_input_field_wrap">
+                      <FiCreditCard className="h_input_icon" />
                       <input
                         type="text"
-                        inputMode="numeric"
-                        placeholder="MM/YY"
-                        maxLength="5"
-                        value={form.expiry}
-                        onChange={(e) => onExpiryChange(e.target.value)}
+                        placeholder="yourname@upi"
+                        value={form.upiVpa}
+                        onChange={(e) => update("upiVpa", e.target.value.trim())}
                       />
                     </div>
+                    <p style={{ fontSize: "0.68rem", opacity: 0.45, marginTop: "0.5rem" }}>
+                      Test mode: use success@upi
+                    </p>
                   </div>
-                  <div className="h_input_box" style={{ flex: 1 }}>
-                    <label>CVV</label>
-                    <div className="h_input_field_wrap">
-                      <FiShield className="h_input_icon" />
-                      <input
-                        type="password"
-                        inputMode="numeric"
-                        placeholder="***"
-                        maxLength="3"
-                        value={form.cvv}
-                        onChange={(e) => onCvvChange(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                )}
+
+                <div
+                  style={{
+                    background: "rgba(17,41,35,0.06)",
+                    borderRadius: "16px",
+                    padding: "1rem 1.2rem",
+                    marginTop: "1rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>Advance Payment</span>
+                  <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "1.6rem", color: "var(--z-emerald)", fontWeight: 600 }}>
+                    ₹{ADVANCE_AMOUNT}
+                  </span>
                 </div>
+
                 <p
                   style={{
                     fontSize: "0.68rem",
@@ -1368,7 +1521,7 @@ export default function ZestReservation() {
                     gap: "5px",
                   }}
                 >
-                  <FiShield /> Your payment is encrypted and secure.
+                  <FiShield /> Your payment is encrypted and secure via Stripe.
                 </p>
               </div>
             )}
@@ -1392,7 +1545,10 @@ export default function ZestReservation() {
                   </div>
                   <div className="h_summary_row">
                     <label>Table</label>
-                    <span>Table #{form.table}</span>
+                    <span>
+                      Table #
+                      {tables.find((t) => t._id === form.table)?.number || form.table}
+                    </span>
                   </div>
                   <div className="h_summary_row">
                     <label>Patron</label>
@@ -1413,6 +1569,10 @@ export default function ZestReservation() {
                   <div className="h_summary_row">
                     <label>Requests</label>
                     <span>{form.specialRequests || "No special requests"}</span>
+                  </div>
+                  <div className="h_summary_row">
+                    <label>Advance Paid</label>
+                    <span>₹{ADVANCE_AMOUNT} via {form.paymentMethod}</span>
                   </div>
                 </div>
               </div>
@@ -1461,9 +1621,8 @@ export default function ZestReservation() {
                         specialOccasion: "none",
                         specialRequests: "",
                         agreePolicy: false,
-                        card: "",
-                        expiry: "",
-                        cvv: "",
+                        paymentMethod: "Card",
+                        upiVpa: "",
                       });
                     }}
                   >
