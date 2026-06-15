@@ -114,8 +114,8 @@ const PrivacyPolicy = () => {
 
   return (
     <main className="x_privacy_page">
-      <div className="x_privacy_glow x_privacy_glow_one" />
-      <div className="x_privacy_glow x_privacy_glow_two" />
+      {/* <div className="x_privacy_glow x_privacy_glow_one" /> */}
+      {/* <div className="x_privacy_glow x_privacy_glow_two" /> */}
 
       {/* Hero Section */}
       <section className="x_privacy_hero container">

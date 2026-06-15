@@ -1054,6 +1054,14 @@ const STYLE = `
     box-shadow: 0 16px 40px rgba(0,0,0,0.3);
   }
 
+  .d_menu_category_card {
+    min-height: 420px;
+  }
+
+  .d_menu_category_card .d_menu_img {
+    aspect-ratio: 4/3;
+  }
+
   .d_menu_img {
     width: 100%;
     aspect-ratio: 16/10;
@@ -2486,6 +2494,7 @@ export default function Home() {
               alignItems: "flex-end",
               flexWrap: "wrap",
               gap: 24,
+              marginBottom: 40,
             }}
           >
             <div>
@@ -2506,56 +2515,23 @@ export default function Home() {
               journey through flavour.
             </p>
           </div>
-          <div className="d_menu_tabs">
-            {["food", "drinks", "coffee"].map((t) => (
-              <button
-                key={t}
-                className={`d_menu_tab ${activeTab === t ? "d_active" : ""}`}
-                onClick={() => setActiveTab(t)}
-              >
-                {t === "food"
-                  ? "🍽 Food"
-                  : t === "drinks"
-                    ? "🍸 Bar"
-                    : "☕ Coffee"}
-              </button>
-            ))}
-          </div>
           <div className="d_menu_grid">
-            {menuItems[activeTab] && menuItems[activeTab].length > 0 ? (
-              menuItems[activeTab].map((item) => (
-                <div className="d_menu_card" key={item.name}>
-                  <div className="d_menu_img_wrap">
-                    <img className="d_menu_img" src={item.img} alt={item.name} />
-                    <span className="d_menu_tag_badge">{item.tag}</span>
-                  </div>
-                  <div className="d_menu_card_body">
-                    <div className="d_menu_card_name">{item.name}</div>
-                    <div className="d_menu_card_desc">{item.desc}</div>
-                    <div className="d_menu_card_footer">
-                      <span className="d_menu_price">{item.price}</span>
-                      <button
-                        className="d_order_btn"
-                        onClick={() =>
-                          showToast(`✓ "${item.name}" added to your order!`)
-                        }
-                      >
-                        + Add to Order
-                      </button>
-                    </div>
+            {/* Combine all menu items from all categories */}
+            {[...menuItems.food, ...menuItems.drinks, ...menuItems.coffee].slice(0, 3).map((item, index) => (
+              <div className="d_menu_card" key={`${item.name}-${index}`}>
+                <div className="d_menu_img_wrap">
+                  <img className="d_menu_img" src={item.img} alt={item.name} />
+                  <span className="d_menu_tag_badge">{item.tag}</span>
+                </div>
+                <div className="d_menu_card_body">
+                  <div className="d_menu_card_name">{item.name}</div>
+                  <div className="d_menu_card_desc">{item.desc}</div>
+                  <div className="d_menu_card_footer">
+                    <span className="d_menu_price">{item.price}</span>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div style={{ 
-                gridColumn: '1 / -1', 
-                textAlign: 'center', 
-                padding: '40px',
-                color: 'rgba(224,224,224,0.6)' 
-              }}>
-                No items available in this category
               </div>
-            )}
+            ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
             <button className="bg-transparent border-0"
@@ -2794,7 +2770,7 @@ export default function Home() {
           </div>
 
           <div className="d_events_grid">
-            {blogs.map((blog) => (
+            {blogs.slice(0, 3).map((blog) => (
 
               <div className="d_event_card" key={blog._id}>
                 <div className="d_event_img_wrap">
