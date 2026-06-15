@@ -13,12 +13,12 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const quickLinks = [
-    { label: "Home", to: "/" },
     { label: "Menu", to: "/menu" },
-    { label: "About Us", to: "/aboutus" },
-    { label: "Gallery", to: "/gallery" },
     { label: "Contact", to: "/contactus" },
     { label: "Reservations", to: "/reservations" },
+    { label: "Blog", to: "/blog" },
+    { label: "Services", to: "/services" },
+    { label: "FAQ", to: "/faq" },
   ];
 
   const hours = [
@@ -29,8 +29,8 @@ export default function Footer() {
   ];
 
   const legalLinks = [
-    { label: "Privacy Policy", to: "/privacy-policy" },
-    { label: "Terms & Conditions", to: "/terms" },
+    { label: "Privacy Policy", to: "/privacy" },
+    { label: "Terms & Conditions", to: "/termss" },
   ];
 
   return (

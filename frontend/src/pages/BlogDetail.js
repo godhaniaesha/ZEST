@@ -68,53 +68,73 @@ const BlogDetail = () => {
     <main className="x_blogdetail_page">
       {/* Article Header */}
       <section className="x_blogdetail_header">
-        <div className="container">
+        <div className="x_blogdetail_header_container">
           <button className="x_blog_back_btn" onClick={() => navigate('/blog')}>
             <ChevronLeft size={18} />
             Back to Blog
           </button>
-          <div className="x_blogdetail_header_content">
-            <div className="x_blogdetail_category">{post.category}</div>
-            <h1 className="x_blogdetail_title">{post.title}</h1>
-            <p className="x_blogdetail_excerpt">{post.excerpt}</p>
-            <div className="x_blogdetail_meta">
-              <div className="x_blogdetail_author">
-                {post.authorImage ? (
-                  <img src={post.authorImage} alt={post.author} className="x_author_avatar" />
-                ) : (
-                  <div className="x_author_avatar_fallback">
-                    <User size={20} />
-                  </div>
-                )}
-                <div>
-                  <p className="x_author_name">{post.author}</p>
-                  <div className="x_blogdetail_date_time">
-                    <Calendar size={14} />
-                    <span>{formatBlogDate(post.createdAt)}</span>
-                    <Clock size={14} />
-                    <span>{post.readTime} min read</span>
+          
+          <div className="x_blogdetail_header_grid">
+            <div className="x_blogdetail_header_left">
+              <div className="x_blogdetail_hero_label">
+                <span className="x_blogdetail_hero_label_line"></span>
+                <span className="x_blogdetail_hero_label_text">Stories &amp; Insights</span>
+              </div>
+              
+              <div className="x_blogdetail_category">{post.category}</div>
+              <h1 className="x_blogdetail_title">{post.title}</h1>
+              <p className="x_blogdetail_excerpt">{post.excerpt}</p>
+              
+              <div className="x_blogdetail_meta">
+                <div className="x_blogdetail_author">
+                  {post.authorImage ? (
+                    <img src={post.authorImage} alt={post.author} className="x_author_avatar" />
+                  ) : (
+                    <div className="x_author_avatar_fallback">
+                      <User size={20} />
+                    </div>
+                  )}
+                  <div className="x_author_info">
+                    <p className="x_author_name">{post.author}</p>
+                    <div className="x_blogdetail_date_time">
+                      <Calendar size={14} />
+                      <span>{formatBlogDate(post.createdAt)}</span>
+                      <span className="x_dot">•</span>
+                      <Clock size={14} />
+                      <span>{post.readTime} min read</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="x_blogdetail_share">
-                <button className="x_share_btn" title="Share">
-                  <Share2 size={18} />
-                </button>
-                <button className="x_comment_btn" title="Comments">
-                  <MessageCircle size={18} />
-                </button>
+                
+                <div className="x_blogdetail_share">
+                  <button className="x_share_btn" title="Share">
+                    <Share2 size={18} />
+                  </button>
+                  <button className="x_comment_btn" title="Comments">
+                    <MessageCircle size={18} />
+                  </button>
+                </div>
               </div>
             </div>
+            
+            {post.image && (
+              <div className="x_blogdetail_header_right">
+                <div className="x_blogdetail_image_frame">
+                  <img src={post.image} alt={post.title} className="x_blogdetail_hero_image" />
+                  <div className="x_blogdetail_image_border"></div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Featured Image */}
-      {post.image && (
-        <section className="x_blogdetail_image">
-          <img src={post.image} alt={post.title} />
-        </section>
+      {/* Featured Image (if not in header) */}
+      {!post.image && (
+        <section className="x_blogdetail_image"></section>
       )}
+
+
 
       {/* Article Content */}
       <article className="x_blogdetail_content container">
