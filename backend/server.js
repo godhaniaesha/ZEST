@@ -22,6 +22,7 @@ if (!global.crypto) {
 
 const menuRoutes = require('./routes/menu');
 const orderRoutes = require('./routes/orders');
+const ratingRoutes = require('./routes/ratings');
 const tableRoutes = require('./routes/tables');
 const staffRoutes = require('./routes/staff');
 const inventoryRoutes = require('./routes/inventory');
@@ -66,6 +67,7 @@ app.get('/api/tables/public', async (req, res) => {
 });
 
 app.use('/api/orders', orderRoutes);
+app.use('/api/ratings', ratingRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/inventory', inventoryRoutes);

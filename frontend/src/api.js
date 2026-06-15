@@ -63,10 +63,17 @@ export const menuAPI = {
 
 export const ordersAPI = {
   getAll: () => api.get('/orders'),
+  getMy: () => api.get('/orders/my'),
   getByReservationId: (reservationId) => api.get(`/orders/reservation/${reservationId}`),
   create: (data) => api.post('/orders', data),
   update: (id, data) => api.put(`/orders/${id}`, data),
   delete: (id) => api.delete(`/orders/${id}`),
+};
+
+export const ratingsAPI = {
+  getMy: () => api.get('/ratings/my'),
+  getAll: () => api.get('/ratings'),
+  submit: (data) => api.post('/ratings', data),
 };
 
 export const tablesAPI = {

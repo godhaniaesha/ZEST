@@ -1320,3 +1320,236 @@
     font-size: 20px;
   }
 }
+
+/* ── MY ORDERS ── */
+.x_orders_container_premium {
+  display: grid;
+  gap: 24px;
+}
+
+.x_order_card {
+  background: var(--p-pearl);
+  border-radius: var(--p-radius-lg);
+  border: 1px solid var(--p-silver);
+  overflow: hidden;
+  transition: var(--p-transition);
+}
+
+.x_order_card:hover {
+  border-color: var(--p-gold);
+  box-shadow: var(--p-shadow-premium);
+}
+
+.x_order_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 30px;
+  background: rgba(10, 31, 26, 0.02);
+  border-bottom: 1px solid var(--p-silver);
+}
+
+.x_order_id {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--p-gold-deep);
+}
+
+.x_order_table {
+  font-family: "Playfair Display", serif;
+  font-size: 20px;
+  color: var(--p-emerald);
+  margin-top: 4px;
+}
+
+.x_order_meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.x_order_date {
+  font-size: 12px;
+  color: var(--p-text-light);
+}
+
+.x_order_items {
+  padding: 8px 0;
+}
+
+.x_order_item_row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 30px;
+  border-bottom: 1px solid rgba(226, 224, 218, 0.6);
+}
+
+.x_order_item_row:last-child {
+  border-bottom: none;
+}
+
+.x_order_item_info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.x_order_item_name {
+  font-weight: 600;
+  color: var(--p-emerald);
+}
+
+.x_order_item_qty {
+  font-size: 13px;
+  color: var(--p-text-muted);
+}
+
+.x_order_item_status {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 50px;
+  background: rgba(10, 31, 26, 0.06);
+  color: var(--p-text-muted);
+}
+
+.x_order_item_status.served {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.x_order_item_status.preparing {
+  background: rgba(201, 168, 76, 0.15);
+  color: var(--p-gold-deep);
+}
+
+.x_order_item_status.cancelled {
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+}
+
+.x_order_item_price {
+  font-weight: 700;
+  color: var(--p-emerald);
+  white-space: nowrap;
+}
+
+.x_order_item_rating {
+  min-width: 140px;
+  text-align: right;
+}
+
+.x_star_rating {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.x_star_btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--p-silver);
+  transition: var(--p-transition);
+  line-height: 0;
+}
+
+.x_star_btn.x_star_filled,
+.x_star_btn:hover:not(:disabled) {
+  color: var(--p-gold);
+  transform: scale(1.1);
+}
+
+.x_star_btn:disabled {
+  cursor: default;
+}
+
+.x_rate_prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.x_rate_prompt span {
+  font-size: 11px;
+  color: var(--p-text-light);
+}
+
+.x_rated_badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.x_rated_badge span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--p-gold-deep);
+}
+
+.x_rate_unavailable {
+  font-size: 11px;
+  color: var(--p-text-light);
+  font-style: italic;
+}
+
+.x_order_footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 30px;
+  background: rgba(10, 31, 26, 0.03);
+  border-top: 1px solid var(--p-silver);
+}
+
+.x_order_type {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--p-text-muted);
+}
+
+.x_order_total {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  color: var(--p-emerald);
+}
+
+@media (max-width: 768px) {
+  .x_order_item_row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .x_order_item_rating {
+    text-align: left;
+  }
+
+  .x_rate_prompt,
+  .x_rated_badge {
+    align-items: flex-start;
+  }
+
+  .x_order_header {
+    flex-direction: column;
+  }
+
+  .x_order_meta {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
