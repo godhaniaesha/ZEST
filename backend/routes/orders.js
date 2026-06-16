@@ -116,6 +116,13 @@ router.patch('/:orderId/items/:itemId/status', auth, async (req, res) => {
   try {
     const { status } = req.body;
 
+    const validStatuses = ['Pending', 'Preparing', 'Served', 'Cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: 'Invalid item status'
+      });
+    }
+
     const order = await Order.findOneAndUpdate(
       {
         _id: req.params.orderId,
@@ -128,6 +135,12 @@ router.patch('/:orderId/items/:itemId/status', auth, async (req, res) => {
       },
       { new: true }
     );
+
+    if (!order) {
+      return res.status(404).json({
+        message: 'Order or item not found'
+      });
+    }
 
     res.json(order);
   } catch (err) {

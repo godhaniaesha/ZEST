@@ -8,56 +8,13 @@ import {
   MdFilterList, MdDoneAll, MdDragIndicator, MdMoreVert,
   MdRadioButtonUnchecked, MdCheckCircleOutline, MdClose
 } from 'react-icons/md';
+import { ordersAPI, api } from '../../../api';
 
-const INITIAL_ORDERS = [
-  {
-    id: '#K-102',
-    table: 'Table 4',
-    items: [
-      { name: 'Cappuccino x2', status: 'pending' },
-      { name: 'Butter Croissant x1', status: 'pending' }
-    ],
-    startTime: new Date(Date.now() - 5 * 60000),
-    status: 'Preparing',
-    type: 'Cafe',
-    priority: 'Medium'
-  },
-  {
-    id: '#K-103',
-    table: 'Table 7',
-    items: [
-      { name: 'Old Fashioned x1', status: 'pending' },
-      { name: 'Classic Mojito x1', status: 'pending' }
-    ],
-    startTime: new Date(Date.now() - 2 * 60000),
-    status: 'New',
-    type: 'Bar',
-    priority: 'High'
-  },
-  {
-    id: '#K-104',
-    table: 'Bar Counter',
-    items: [
-      { name: 'Draft Beer x2', status: 'pending' }
-    ],
-    startTime: new Date(Date.now() - 15 * 60000),
-    status: 'Delayed',
-    type: 'Bar',
-    priority: 'Urgent'
-  },
-  {
-    id: '#K-105',
-    table: 'Table 2',
-    items: [
-      { name: 'Truffle Risotto x1', status: 'pending' },
-      { name: 'Caesar Salad x1', status: 'pending' }
-    ],
-    startTime: new Date(Date.now() - 12 * 60000),
-    status: 'Preparing',
-    type: 'Kitchen',
-    priority: 'Medium'
-  },
-];
+// We'll fetch live orders from the backend. Start with empty list.
+const INITIAL_ORDERS = [];
+
+// Match backend Order model item status enum
+const ITEM_STATUSES = ['Pending', 'Preparing', 'Served', 'Cancelled'];
 
 const Timer = ({ startTime, isDelayed }) => {
   const [elapsed, setElapsed] = useState('');
@@ -85,27 +42,109 @@ export default function KitchenDisplay() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('All');
   const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Helpers to map backend values to UI-friendly values
+  const mapType = (t) => {
+    if (!t) return 'Kitchen';
+    if (t === 'Dine-in') return 'Kitchen';
+    if (t === 'Bar') return 'Bar';
+    return t;
+  };
+
+  const derivePriority = (createdAt) => {
+    if (!createdAt) return 'Medium';
+    const ageMin = (Date.now() - new Date(createdAt).getTime()) / 60000;
+    if (ageMin > 10) return 'Urgent';
+    if (ageMin > 5) return 'High';
+    return 'Medium';
+  };
+
+  const mapOrderToUI = (o) => ({
+    _id: o._id,
+    id: o.id || `#${String(o._id).slice(-6)}`,
+    table: o.table || 'Unknown',
+    items: (o.items || []).map((it) => ({
+      _id: it._id,
+      name: it.name + (it.qty && it.qty > 1 ? ` x${it.qty}` : ''),
+      status: ITEM_STATUSES.includes(it.status) ? it.status : 'Pending'
+    })),
+    startTime: o.createdAt ? new Date(o.createdAt) : new Date(),
+    status: o.status || 'Pending',
+    type: mapType(o.type),
+    priority: derivePriority(o.createdAt)
+  });
+
+  // Fetch orders from backend and map to local UI shape
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await ordersAPI.getAll();
+      const data = res.data || [];
+
+      const mapped = data.map(mapOrderToUI);
+
+      setOrders(mapped);
+    } catch (err) {
+      console.error('Failed to fetch orders', err);
+      setError(err.message || 'Failed to load orders');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleItem = (orderId, itemIndex) => {
-    setOrders(orders.map(order => {
-      if (order.id === orderId) {
-        const newItems = [...order.items];
-        newItems[itemIndex].status = newItems[itemIndex].status === 'completed' ? 'pending' : 'completed';
-        return { ...order, items: newItems };
+    const order = orders.find((o) => o._id === orderId);
+    const item = order?.items[itemIndex];
+    if (!order || !item?._id) return;
+
+    const kitchenFlow = ['Pending', 'Preparing', 'Served'];
+    const currentIdx = kitchenFlow.indexOf(item.status);
+    const nextStatus = kitchenFlow[(currentIdx + 1) % kitchenFlow.length] || 'Pending';
+
+    (async () => {
+      try {
+        const res = await ordersAPI.updateItemStatus(order._id, item._id, { status: nextStatus });
+        const mapped = mapOrderToUI(res.data);
+        setOrders((cur) => cur.map((o) => (o._id === mapped._id ? mapped : o)));
+      } catch (err) {
+        console.error('Failed to update item status', err);
+        setError(err.response?.data?.message || err.message || 'Failed to update item status');
       }
-      return order;
-    }));
+    })();
   };
 
   const handleMarkReady = (id) => {
-    setOrders(orders.filter(o => o.id !== id));
+    // Mark order payment/status as Paid on backend and remove locally
+    const order = orders.find(o => o.id === id || o._id === id);
+    if (!order) return;
+
+    (async () => {
+      try {
+        await api.patch(`/orders/${order._id}/payment-status`, { status: 'Paid' });
+      } catch (err) {
+        console.error('Failed to mark order ready', err);
+      }
+      setOrders((cur) => cur.filter(o => o._id !== order._id));
+    })();
   };
 
   const handleClearAll = () => {
-    setOrders(orders.filter(o => !o.items.every(item => item.status === 'completed')));
+    // remove completed orders locally
+    setOrders((cur) => cur.filter(o => !o.items.every(item => item.status === 'Served')));
   };
 
   const filteredOrders = filter === 'All' ? orders : orders.filter(o => o.type === filter);
+
+  // Polling for live updates
+  useEffect(() => {
+    fetchOrders();
+    const iv = setInterval(fetchOrders, 5000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="d-kot-page">
@@ -168,7 +207,15 @@ export default function KitchenDisplay() {
 
       {/* Orders Grid */}
       <div className="d-kds-orders-container">
-        {filteredOrders.length === 0 ? (
+        {loading ? (
+          <div className="d-empty-state">
+            <p>Loading orders…</p>
+          </div>
+        ) : error ? (
+          <div className="d-empty-state">
+            <p>Error: {error}</p>
+          </div>
+        ) : filteredOrders.length === 0 ? (
           <div className="d-empty-state">
             <MdKitchen fontSize="3rem" />
             <p>No orders to display</p>
@@ -203,15 +250,20 @@ export default function KitchenDisplay() {
                     <div className="d-kot-items-header">ITEMS TO PREPARE</div>
                     {order.items.map((item, idx) => (
                       <div
-                        key={idx}
-                        className={`d-kot-item ${item.status === 'completed' ? 'completed' : ''}`}
-                        onClick={() => toggleItem(order.id, idx)}
+                        key={item._id || idx}
+                        className={`d-kot-item ${item.status === 'Served' ? 'completed' : ''} ${item.status === 'Cancelled' ? 'cancelled' : ''}`}
+                        onClick={() => item.status !== 'Cancelled' && toggleItem(order._id, idx)}
                       >
                         <div className="d-kot-item-check">
-                          {item.status === 'completed' ?
-                            <MdCheckCircleOutline className="text-success" fontSize="1.3rem" /> :
+                          {item.status === 'Served' ? (
+                            <MdCheckCircleOutline className="text-success" fontSize="1.3rem" />
+                          ) : item.status === 'Preparing' ? (
+                            <MdTimer className="text-warning" fontSize="1.3rem" />
+                          ) : item.status === 'Cancelled' ? (
+                            <MdClose className="text-danger" fontSize="1.3rem" />
+                          ) : (
                             <MdRadioButtonUnchecked className="text-muted" fontSize="1.3rem" />
-                          }
+                          )}
                         </div>
                         <span className="d-kot-item-name">{item.name}</span>
                       </div>
@@ -592,6 +644,12 @@ export default function KitchenDisplay() {
           text-decoration: line-through;
         }
 
+        .d-kot-item.cancelled {
+          opacity: 0.4;
+          text-decoration: line-through;
+          cursor: default;
+        }
+
         .d-kot-item-check {
           flex-shrink: 0;
         }
@@ -730,3 +788,4 @@ export default function KitchenDisplay() {
     </div>
   );
 }
+  
