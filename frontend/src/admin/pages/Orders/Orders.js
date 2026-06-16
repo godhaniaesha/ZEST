@@ -109,7 +109,7 @@ export default function Orders() {
               </div>
               <div>
                 <div className="d-stat-value" style={{ fontSize: '1.4rem' }}>{v}</div>
-                <div className="d-stat-label">{l}</div>
+                <div className="d-stat-label">{l}</div> 
               </div>
             </div>
           </Col>
@@ -381,7 +381,7 @@ export default function Orders() {
                 });
               })}
             </tbody>
-          </table>
+          </table>  
         </div>
         <div className="px-4">
           {totalPages > 1 && (

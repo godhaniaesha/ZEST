@@ -222,6 +222,7 @@ export default function Staff() {
           ))
         ) : (
           filtered.map((s) => (
+            console.log(s,"salary"),
             <Col key={s._id} xs={12} sm={6} xl={4}>
               <div className="d-card h-100">
                 <div className="d-flex justify-content-between align-items-start mb-3">
