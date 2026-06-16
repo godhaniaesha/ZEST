@@ -12,11 +12,13 @@ const loadStripeScript = () =>
       return;
     }
 
-    const existing = document.querySelector('script[src="https://js.stripe.com/v3/"]');
+    const existing = document.querySelector(
+      'script[src="https://js.stripe.com/v3/"]',
+    );
     if (existing) {
       existing.addEventListener("load", () => resolve(window.Stripe));
       existing.addEventListener("error", () =>
-        reject(new Error("Failed to load Stripe.js"))
+        reject(new Error("Failed to load Stripe.js")),
       );
       return;
     }
@@ -36,7 +38,7 @@ export const getStripePublishableKey = async () => {
   if (!data?.publishableKey) {
     throw new Error(
       data?.message ||
-      "Stripe publishable key is missing. Add STRIPE_PUBLISHABLE_KEY to backend .env"
+        "Stripe publishable key is missing. Add STRIPE_PUBLISHABLE_KEY to backend .env",
     );
   }
 
@@ -82,7 +84,11 @@ export const mountCardElement = async (domNode, onChange) => {
   return { stripe, cardElement };
 };
 
-export const payReservationAdvance = async ({ paymentMethod, cardElement, upiVpa }) => {
+export const payReservationAdvance = async ({
+  paymentMethod,
+  cardElement,
+  upiVpa,
+}) => {
   const stripe = await getStripe();
 
   // 1. Create the payment intent on the backend
@@ -106,7 +112,11 @@ export const payReservationAdvance = async ({ paymentMethod, cardElement, upiVpa
       throw new Error("Payment could not be completed.");
     }
 
-    return { paymentIntentId: result.paymentIntent.id, amount, redirected: false };
+    return {
+      paymentIntentId: result.paymentIntent.id,
+      amount,
+      redirected: false,
+    };
   }
 
   // UPI flow
@@ -129,6 +139,55 @@ export const payReservationAdvance = async ({ paymentMethod, cardElement, upiVpa
     amount,
     redirected: false,
   };
+};
+
+const confirmStripePayment = async ({
+  paymentMethod,
+  clientSecret,
+  cardElement,
+  upiVpa,
+}) => {
+  const stripe = await getStripe();
+
+  if (paymentMethod === "Card") {
+    if (!cardElement) {
+      throw new Error("Please enter your card details.");
+    }
+
+    const result = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: { card: cardElement },
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message || "Card payment failed.");
+    }
+
+    const paymentIntent = result.paymentIntent;
+
+    if (paymentIntent && paymentIntent.status === "requires_action") {
+      const redirectUrl = paymentIntent.next_action?.redirect_to_url?.url;
+      return { requiresAction: true, redirectUrl, paymentIntentId: paymentIntent.id };
+    }
+
+    return { paymentIntentId: paymentIntent.id, requiresAction: false };
+  }
+
+  // UPI flow
+  if (!upiVpa) {
+    throw new Error("Please enter a valid UPI ID.");
+  }
+
+  const upiResult = await stripe.confirmUpiPayment(clientSecret, {
+    payment_method: {
+      upi: { vpa: upiVpa },
+    },
+  });
+
+  if (upiResult.error) {
+    throw new Error(upiResult.error.message || "UPI payment failed.");
+  }
+
+  return { paymentIntentId: upiResult.paymentIntent?.id, requiresAction: false };
 };
 
 export const payBill = async ({
