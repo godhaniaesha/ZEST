@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChefHat, Clock, Coffee, Martini, Music, Sparkles, Star, Utensils } from 'lucide-react';
+import { ChefHat, Clock, Coffee, Martini, Moon, Music, Sparkles, Utensils } from 'lucide-react';
 import '../styles/menu_style.css';
 
 const z_highlights = [
@@ -26,11 +26,11 @@ const z_stats = [
   { value: '4.8', label: 'Guest Love' },
 ];
 
-const z_rituals = [
-  'House coffee',
-  'Fresh brunch',
-  'Craft cocktails',
-  'Late plates',
+const z_day_arc = [
+  { icon: <Coffee size={18} />, label: 'House coffee', time: 'Morning' },
+  { icon: <Utensils size={18} />, label: 'Fresh brunch', time: 'Midday' },
+  { icon: <Martini size={18} />, label: 'Craft cocktails', time: 'Evening' },
+  { icon: <Moon size={18} />, label: 'Late plates', time: 'Night' },
 ];
 
 const z_menu_moods = [
@@ -63,37 +63,111 @@ const AboutUs = () => {
               Zest blends the comfort of a modern cafe with the energy of a polished bar. Come for coffee, stay for food, and return when the lights turn low.
             </p>
 
-            <div className="x_menu_stats" aria-label="Cafe and bar specialties" style={{ marginTop: '32px' }}>
-              {z_rituals.map((item) => (
-                <div className="x_menu_stats_item" key={item} style={{ flex: '0 0 auto', paddingRight: '0' }}>
-                  <strong style={{ fontSize: '1.1rem', letterSpacing: '0.05em' }}>{item}</strong>
-                </div>
-              ))}
+            <div 
+              aria-label="A day at Zest, from morning to night" 
+              style={{ display: 'flex', flexWrap: 'wrap', gap: '26px', marginTop: '36px' }}
+            >
+              {z_day_arc.map((item, idx) => {
+                const isNight = idx === z_day_arc.length - 1;
+                return (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: '0',
+                      background: isNight ? 'var(--d-primary-dark)' : 'var(--d-bg-card)',
+                      border: isNight ? 'none' : '1.5px solid var(--d-gold-light)',
+                      color: isNight ? 'var(--d-gold-light)' : 'var(--d-gold-dark)'
+                    }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <div style={{ 
+                        fontFamily: '"Playfair Display", serif', 
+                        fontSize: '0.95rem', 
+                        fontWeight: '700', 
+                        color: 'var(--d-primary-dark)' 
+                      }}>
+                        {item.label}
+                      </div>
+                      <div style={{ 
+                        fontFamily: '"Playfair Display", serif', 
+                        fontSize: '0.65rem', 
+                        letterSpacing: '0.14em', 
+                        textTransform: 'uppercase', 
+                        color: 'var(--d-text-muted)' 
+                      }}>
+                        {item.time}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           <div className="x_menu_hero_right">
-            <div className="x_menu_simple_showcase">
-              <div className="x_simple_frame">
-                <div 
-                  className="x_simple_main_img" 
-                  style={{ 
-                    backgroundImage: 'url(https://i1-e.pinimg.com/736x/af/b6/de/afb6de59cd10b1c7a31653aab893a7f2.jpg)',
+            <div style={{ position: 'relative', width: '100%', maxWidth: '400px', margin: '0 auto 30px' }}>
+
+              {/* Arched window frame, like stepping through Zest's doorway */}
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                aspectRatio: '3 / 4',
+                borderRadius: '170px 170px 6px 6px',
+                overflow: 'hidden',
+                border: '10px solid var(--d-bg-card)',
+                outline: '1px solid var(--d-gold-light)',
+                boxShadow: '0 24px 50px rgba(22, 48, 43, 0.22)'
+              }}>
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    backgroundImage: 'url(https://i.pinimg.com/736x/12/cc/2e/12cc2e2ccf8250bb35c1081adaee5521.jpg)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'
-                  }} 
-                  role="img" 
-                  aria-label="Warm cafe and bar counter" 
+                  }}
+                  role="img"
+                  aria-label="Warm cafe and bar ambiance at Zest"
                 />
-                <div className="x_simple_frame_border"></div>
               </div>
 
-              <div className="x_simple_label" style={{ bottom: '10px', right: '10px' }}>
-                <span className="x_simple_tag">
-                  <Star size={14} style={{ marginRight: '4px' }} />
-                  Crafted daily
-                </span>
+              {/* Floating day-to-night badge, bridging the frame's base */}
+              <div style={{
+                position: 'absolute',
+                bottom: '-26px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                background: 'var(--d-bg-card)',
+                border: '1px solid var(--d-gold-light)',
+                borderRadius: '40px',
+                padding: '12px 24px',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 14px 32px rgba(22, 48, 43, 0.16)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  <Coffee size={16} style={{ color: 'var(--d-gold-dark)' }} />
+                  <span style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.78rem', fontWeight: '700', color: 'var(--d-primary-dark)' }}>
+                    Day
+                  </span>
+                </div>
+                <div style={{ width: '22px', height: '1.5px', background: 'linear-gradient(90deg, var(--d-gold), var(--d-primary-dark))' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  <Martini size={16} style={{ color: 'var(--d-primary-dark)' }} />
+                  <span style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.78rem', fontWeight: '700', color: 'var(--d-primary-dark)' }}>
+                    Night
+                  </span>
+                </div>
               </div>
+
             </div>
           </div>
         </section>
