@@ -105,7 +105,7 @@ const BlogDetail = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="x_blogdetail_share">
                   <button className="x_share_btn" title="Share">
                     <Share2 size={18} />
@@ -116,7 +116,7 @@ const BlogDetail = () => {
                 </div>
               </div>
             </div>
-            
+
             {post.image && (
               <div className="x_blogdetail_header_right">
                 <div className="x_blogdetail_image_frame">
