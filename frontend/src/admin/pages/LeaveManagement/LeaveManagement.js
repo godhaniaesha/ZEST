@@ -13,117 +13,7 @@ import {
 } from "react-icons/md";
 import DeleteModal from "../../components/DeleteModal";
 import FormModal from "../../components/FormModal";
-import { leaveAPI, staffAPI } from "../../../api";
-
-// Mock data for demo
-const MOCK_LEAVES = [
-  {
-    _id: "1",
-    staffId: "1",
-    staffName: "Rajesh Kumar",
-    role: "Head Chef",
-    startDate: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
-    endDate: new Date(Date.now() + 86400000 * 5).toISOString().split("T")[0],
-    type: "vacation",
-    reason: "Going on vacation with family",
-    status: "pending",
-    days: 3,
-  },
-  {
-    _id: "2",
-    staffId: "2",
-    staffName: "Priya Sharma",
-    role: "Waiter",
-    startDate: new Date(Date.now() - 86400000 * 1).toISOString().split("T")[0],
-    endDate: new Date(Date.now() - 86400000 * 1).toISOString().split("T")[0],
-    type: "sick",
-    reason: "Feeling unwell",
-    status: "approved",
-    days: 1,
-  },
-  {
-    _id: "3",
-    staffId: "3",
-    staffName: "Sam D'Souza",
-    role: "Bartender",
-    startDate: new Date(Date.now() + 86400000 * 7).toISOString().split("T")[0],
-    endDate: new Date(Date.now() + 86400000 * 10).toISOString().split("T")[0],
-    type: "personal",
-    reason: "Personal work",
-    status: "pending",
-    days: 4,
-  },
-  {
-    _id: "4",
-    staffId: "5",
-    staffName: "Dev Malhotra",
-    role: "Sous Chef",
-    startDate: new Date(Date.now() - 86400000 * 10).toISOString().split("T")[0],
-    endDate: new Date(Date.now() - 86400000 * 8).toISOString().split("T")[0],
-    type: "sick",
-    reason: "High fever",
-    status: "rejected",
-    rejectionReason: "Staff shortage, please reschedule",
-    days: 2,
-  },
-];
-
-const MOCK_STAFF = [
-  {
-    _id: "1",
-    name: "Rajesh Kumar",
-    role: "Head Chef",
-    initials: "RK",
-    color: "#C9A84C",
-    leavesTotal: 15,
-    leavesTaken: 2,
-  },
-  {
-    _id: "2",
-    name: "Priya Sharma",
-    role: "Waiter",
-    initials: "PS",
-    color: "#3498db",
-    leavesTotal: 12,
-    leavesTaken: 5,
-  },
-  {
-    _id: "3",
-    name: "Sam D'Souza",
-    role: "Bartender",
-    initials: "SD",
-    color: "#2ecc71",
-    leavesTotal: 12,
-    leavesTaken: 8,
-  },
-  {
-    _id: "4",
-    name: "Anita Verma",
-    role: "Cashier",
-    initials: "AV",
-    color: "#9b59b6",
-    leavesTotal: 12,
-    leavesTaken: 3,
-  },
-  {
-    _id: "5",
-    name: "Dev Malhotra",
-    role: "Sous Chef",
-    initials: "DM",
-    color: "#e74c3c",
-    leavesTotal: 15,
-    leavesTaken: 1,
-  },
-  {
-    _id: "6",
-    name: "Leena Nair",
-    role: "Manager",
-    initials: "LN",
-    color: "#16302B",
-    leavesTotal: 20,
-    leavesTaken: 0,
-  },
-];
+import { leaveAPI, usersAPI } from "../../../api";
 
 export default function LeaveManagement() {
   const [leaves, setLeaves] = useState([]);
@@ -149,21 +39,24 @@ export default function LeaveManagement() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // In real app, use API calls
-      // const [leavesRes, staffRes] = await Promise.all([
-      //   leaveAPI.getAll(),
-      //   staffAPI.getAll()
-      // ]);
-      // setLeaves(Array.isArray(leavesRes.data) ? leavesRes.data : []);
-      // setStaffList(Array.isArray(staffRes.data) ? staffRes.data : []);
-
-      // For demo, use mock data
-      setLeaves(MOCK_LEAVES);
-      setStaffList(MOCK_STAFF);
+      const [leavesRes, staffRes] = await Promise.all([
+        leaveAPI.getAll(),
+        usersAPI.getAll()
+      ]);
+      setLeaves(Array.isArray(leavesRes.data) ? leavesRes.data : []);
+      setStaffList(Array.isArray(staffRes.data) ? staffRes.data.filter(staff => staff.role !== 'customer').map(staff => ({
+        _id: staff._id,
+        name: staff.name,
+        role: staff.role,
+        initials: staff.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+        color: '#C9A84C',
+        leavesTotal: staff.leavesTotal || 12,
+        leavesTaken: staff.leavesTaken || 0
+      })) : []);
     } catch (error) {
       console.error("Error loading data:", error);
-      setLeaves(MOCK_LEAVES);
-      setStaffList(MOCK_STAFF);
+      setLeaves([]);
+      setStaffList([]);
     } finally {
       setLoading(false);
     }
@@ -213,13 +106,9 @@ export default function LeaveManagement() {
 
   const handleApprove = async (item) => {
     try {
-      // await leaveAPI.approve(item._id);
-      setLeaves(
-        leaves.map((l) =>
-          l._id === item._id ? { ...l, status: "approved" } : l,
-        ),
-      );
+      await leaveAPI.approve(item._id);
       alert("Leave approved successfully");
+      loadData();
     } catch (error) {
       console.error("Error approving leave:", error);
       alert("Failed to approve leave");
@@ -234,16 +123,10 @@ export default function LeaveManagement() {
 
   const handleReject = async () => {
     try {
-      // await leaveAPI.reject(currentItem._id, rejectionReason);
-      setLeaves(
-        leaves.map((l) =>
-          l._id === currentItem._id
-            ? { ...l, status: "rejected", rejectionReason }
-            : l,
-        ),
-      );
+      await leaveAPI.reject(currentItem._id, rejectionReason);
       setShowReject(false);
       alert("Leave rejected");
+      loadData();
     } catch (error) {
       console.error("Error rejecting leave:", error);
       alert("Failed to reject leave");
@@ -269,41 +152,14 @@ export default function LeaveManagement() {
         return;
       }
 
-      const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
       if (currentItem) {
-        // Update existing leave
-        // const response = await leaveAPI.update(currentItem._id, formData);
-        const staff = staffList.find((s) => s._id === formData.staffId);
-        setLeaves(
-          leaves.map((l) =>
-            l._id === currentItem._id
-              ? {
-                  ...currentItem,
-                  ...formData,
-                  staffName: staff?.name || currentItem.staffName,
-                  role: staff?.role || currentItem.role,
-                  days,
-                }
-              : l,
-          ),
-        );
+        await leaveAPI.update(currentItem._id, formData);
       } else {
-        // Create new leave
-        // const response = await leaveAPI.create(formData);
-        const staff = staffList.find((s) => s._id === formData.staffId);
-        const newLeave = {
-          _id: Date.now().toString(),
-          ...formData,
-          staffName: staff?.name || "",
-          role: staff?.role || "",
-          status: "pending",
-          days,
-        };
-        setLeaves([newLeave, ...leaves]);
+        await leaveAPI.create(formData);
       }
 
       setShowForm(false);
+      loadData();
     } catch (error) {
       console.error("Error saving leave:", error);
       alert("Failed to save leave request");
@@ -312,9 +168,9 @@ export default function LeaveManagement() {
 
   const confirmDelete = async () => {
     try {
-      // await leaveAPI.delete(currentItem._id);
-      setLeaves(leaves.filter((l) => l._id !== currentItem._id));
+      await leaveAPI.delete(currentItem._id);
       setShowDelete(false);
+      loadData();
     } catch (error) {
       console.error("Error deleting leave:", error);
       alert("Failed to delete leave request");
@@ -687,7 +543,7 @@ export default function LeaveManagement() {
                 <option value="">Select Staff</option>
                 {staffList.map((staff) => (
                   <option key={staff._id} value={staff._id}>
-                    {staff.name} - {staff.role}
+                    {staff.name}
                   </option>
                 ))}
               </Form.Select>

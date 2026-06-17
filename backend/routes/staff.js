@@ -6,6 +6,8 @@ const { auth, authorizeRoles } = require('../middleware/auth');
 router.get('/', auth, async (req, res) => {
   try {
     const staff = await Staff.find();
+
+    console.log("staff", staff);
     res.json(staff);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -22,6 +24,7 @@ router.post('/', auth, authorizeRoles('manager', 'superadmin'), async (req, res)
     color: req.body.color,
     phone: req.body.phone,
     email: req.body.email,
+    address: req.body.address,
     salary: req.body.salary,
     leavesTaken: req.body.leavesTaken,
     leavesTotal: req.body.leavesTotal,

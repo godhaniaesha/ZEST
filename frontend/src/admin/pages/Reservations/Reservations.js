@@ -244,7 +244,11 @@ export default function Reservations() {
                   <td>
                     <div className="d-flex align-items-center gap-1">
                       <MdEventSeat style={{ color: 'var(--d-gold)' }} />
-                      <span>{r.table}</span>
+                      <span>
+                        {typeof r.table === 'object' && r.table !== null 
+                          ? `Table ${r.table.number}` 
+                          : r.table}
+                      </span>
                     </div>
                   </td>
                   <td title={r.phone}>

@@ -1,81 +1,112 @@
-import React, { useState, useEffect } from 'react';
-import { Row, Col, Form } from 'react-bootstrap';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Row, Col, Modal } from 'react-bootstrap';
 import {
-  MdAdd, MdPhone, MdEmail, MdSearch,
-  MdMoreVert, MdBadge, MdAccessTime, MdFiberManualRecord,
-  MdEdit, MdDelete,
-  MdPeople
+  MdAdd, MdSearch,
+  MdBadge, MdAccessTime, MdFiberManualRecord,
+  MdEdit, MdDelete, MdVisibility, MdPeople
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-import { staffAPI } from '../../../api';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchStaffUsers,
+  addStaffUser,
+  updateStaffUser,
+  deleteStaffUser
+} from '../../../store/slices/usersSlice';
 import { useAuth } from '../../../contexts/AuthContext';
 
-const STAFF = [
-  { id: 1, name: 'Rajesh Kumar', role: 'Head Chef', shift: 'Morning', status: 'On Duty', initials: 'RK', color: '#C9A84C', phone: '+91 98765 43210', email: 'rajesh@breva.com', salary: '45000', leavesTaken: 2, leavesTotal: 15, joiningDate: '2023-01-10' },
-  { id: 2, name: 'Priya Sharma', role: 'Waiter', shift: 'Evening', status: 'On Duty', initials: 'PS', color: '#3498db', phone: '+91 91234 56789', email: 'priya@breva.com', salary: '20000', leavesTaken: 5, leavesTotal: 12, joiningDate: '2023-03-15' },
-  { id: 3, name: 'Sam D\'Souza', role: 'Bartender', shift: 'Evening', status: 'On Leave', initials: 'SD', color: '#2ecc71', phone: '+91 98001 11222', email: 'sam@breva.com', salary: '28000', leavesTaken: 8, leavesTotal: 12, joiningDate: '2022-11-20' },
-  { id: 4, name: 'Anita Verma', role: 'Cashier', shift: 'Morning', status: 'Off Duty', initials: 'AV', color: '#9b59b6', phone: '+91 77654 32109', email: 'anita@breva.com', salary: '22000', leavesTaken: 3, leavesTotal: 12, joiningDate: '2023-05-01' },
-  { id: 5, name: 'Dev Malhotra', role: 'Sous Chef', shift: 'Morning', status: 'On Duty', initials: 'DM', color: '#e74c3c', phone: '+91 88001 99882', email: 'dev@breva.com', salary: '35000', leavesTaken: 1, leavesTotal: 15, joiningDate: '2023-02-28' },
-  { id: 6, name: 'Leena Nair', role: 'Manager', shift: 'Both', status: 'On Duty', initials: 'LN', color: '#16302B', phone: '+91 99999 11111', email: 'leena@breva.com', salary: '55000', leavesTaken: 0, leavesTotal: 20, joiningDate: '2022-06-10' },
+const COLORS = ['#C9A84C', '#3498db', '#2ecc71', '#9b59b6', '#e74c3c', '#16302B', '#1abc9c', '#f39c12'];
+
+const STAFF_ROLE_OPTIONS = [
+  { label: 'Super Admin', value: 'superadmin' },
+  { label: 'Manager', value: 'manager' },
+  { label: 'Chef', value: 'chef' },
+  { label: 'Waiter', value: 'waiter' },
+  { label: 'Cashier', value: 'cashier' },
+  { label: 'Bartender', value: 'bartender' },
 ];
+  
+const getInitials = (name = '') =>
+  name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+const getStaffColor = (member, index) =>
+  COLORS[(member?.name?.length || index) % COLORS.length];
+
+const formatRole = (role = '') =>
+  role.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase());
+
+const formatSalary = (salary) => {
+  if (salary == null || salary === '') return '-';
+  const amount = Number(salary);
+  const formatted = Number.isNaN(amount) ? salary : amount.toLocaleString('en-IN');
+  return `₹${formatted}`;
+};
+
+const buildStaffPayload = (formData) => {
+  const { confirmPassword, ...data } = formData;
+
+  if (data.salary === '' || data.salary == null || Number.isNaN(data.salary)) {
+    delete data.salary;
+  } else {
+    data.salary = String(data.salary);
+  } 
+
+  if (data.leavesTaken === '' || data.leavesTaken == null || Number.isNaN(data.leavesTaken)) {
+    data.leavesTaken = 0;
+  }
+  if (data.leavesTotal === '' || data.leavesTotal == null || Number.isNaN(data.leavesTotal)) {
+    data.leavesTotal = 12;
+  }
+
+  if (!data.password) {
+    delete data.password;
+  }
+
+  return data;
+};
 
 export default function Staff() {
-  const [staffList, setStaffList] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  // Modal States
-  const [showForm, setShowForm] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [currentItem, setCurrentItem] = useState(null);
-  const [formData, setFormData] = useState({ name: '', role: '', shift: 'Morning', status: 'On Duty', phone: '', email: '', salary: '', leavesTaken: 0, leavesTotal: 12, joiningDate: '' });
+  const dispatch = useDispatch();
+  const { staffList, staffLoading } = useSelector((state) => state.users);
   const { user } = useAuth();
   const userRole = user?.role || 'staff';
-
   const canAddEditDelete = userRole === 'manager' || userRole === 'superadmin';
 
-  const filtered = staffList.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.role.toLowerCase().includes(searchTerm.toLowerCase()));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [showView, setShowView] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const response = await staffAPI.getAll();
-      setStaffList(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      console.error('Error fetching staff:', error);
-      setStaffList(STAFF);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filtered = useMemo(() =>
+    staffList
+      .filter(s => s.role !== 'customer')
+      .filter(s =>
+        s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.role?.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [staffList, searchTerm]
+  );
+
+  const staffMembers = useMemo(
+    () => staffList.filter(s => s.role !== 'customer'),
+    [staffList]
+  );
 
   useEffect(() => {
-    loadData();
-  }, []);
+    dispatch(fetchStaffUsers());
+  }, [dispatch]);
 
   const handleAdd = () => {
     if (!canAddEditDelete) return;
     setCurrentItem(null);
-    setFormData({ name: '', role: '', shift: 'Morning', status: 'On Duty', phone: '', email: '', salary: '', leavesTaken: 0, leavesTotal: 12, joiningDate: '' });
     setShowForm(true);
   };
 
   const handleEdit = (item) => {
     if (!canAddEditDelete) return;
     setCurrentItem(item);
-    setFormData({
-      name: item.name,
-      role: item.role,
-      shift: item.shift,
-      status: item.status,
-      phone: item.phone || '',
-      email: item.email || '',
-      salary: item.salary || '',
-      leavesTaken: item.leavesTaken || 0,
-      leavesTotal: item.leavesTotal || 12,
-      joiningDate: item.joiningDate || ''
-    });
     setShowForm(true);
   };
 
@@ -85,59 +116,96 @@ export default function Staff() {
     setShowDelete(true);
   };
 
- const handleSave = async () => {
-  try {
-    // Validation
-    if (!formData.name || !formData.role) {
+  const handleViewClick = (item) => {
+    setCurrentItem(item);
+    setShowView(true);
+  };
+
+  const handleSave = async (formData) => {
+    if (!formData.name || !formData.email || !formData.role) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const initials = formData.name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-
-    if (currentItem) {
-      // Update existing staff
-      const response = await staffAPI.update(
-        currentItem._id,
-        { ...formData, initials }
-      );
-
-      setStaffList(
-        staffList.map(s =>
-          s._id === currentItem._id ? response.data : s
-        )
-      );
-    } else {
-      // Create new staff
-      const response = await staffAPI.create({
-        ...formData,
-        initials
-      });
-
-      setStaffList([...staffList, response.data]);
+    if (!currentItem) {
+      if (!formData.password || formData.password.length < 6) {
+        alert('Please enter a password (minimum 6 characters)');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match');
+        return;
+      }
     }
 
-    setShowForm(false);
-  } catch (error) {
-    console.error('Error saving staff:', error);
-    alert('Failed to save staff member');
-  }
-};
+    const payload = buildStaffPayload(formData);
+
+    try {
+      if (currentItem) {
+        await dispatch(updateStaffUser({ id: currentItem._id, userData: payload })).unwrap();
+      } else {
+        await dispatch(addStaffUser({ ...payload, password: formData.password })).unwrap();
+      }
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving staff:', error);
+      alert(error?.message || 'Failed to save staff member');
+    }
+  };
 
   const confirmDelete = async () => {
     try {
-      await staffAPI.delete(currentItem._id);
-      setStaffList(staffList.filter(s => s._id !== currentItem._id));
+      await dispatch(deleteStaffUser(currentItem._id)).unwrap();
       setShowDelete(false);
     } catch (error) {
       console.error('Error deleting staff:', error);
       alert('Failed to delete staff member');
     }
   };
+
+  const formFields = [
+    { name: 'name', label: 'Full Name', type: 'text', required: true, col: 12 },
+    { name: 'email', label: 'Email Address', type: 'email', required: true, col: 6 },
+    { name: 'phone', label: 'Phone Number', type: 'text', col: 6 },
+    { name: 'address', label: 'Address', type: 'text', col: 12 },
+    {
+      name: 'role', label: 'Role', type: 'select', required: true, col: 6,
+      options: STAFF_ROLE_OPTIONS
+    },
+    {
+      name: 'status', label: 'Status', type: 'select', required: true, col: 6, options: [
+        { label: 'Active', value: 'Active' },
+        { label: 'Inactive', value: 'Inactive' },
+        { label: 'On Duty', value: 'On Duty' }
+      ]
+    },
+    {
+      name: 'shift', label: 'Shift', type: 'select', required: true, col: 6, options: [
+        { label: 'Morning', value: 'Morning' },
+        { label: 'Evening', value: 'Evening' },
+        { label: 'Both', value: 'Both' }
+      ]
+    },
+    { name: 'salary', label: 'Salary (₹)', type: 'number', col: 4 },
+    { name: 'leavesTaken', label: 'Leaves Taken', type: 'number', col: 4, min: 0 },
+    { name: 'leavesTotal', label: 'Total Leaves', type: 'number', col: 4, min: 0 },
+    { name: 'joiningDate', label: 'Joining Date', type: 'date', col: 6 },
+    {
+      name: 'password',
+      label: currentItem ? 'Password (leave empty to keep current)' : 'Password',
+      type: 'password',
+      required: !currentItem,
+      col: 6
+    },
+    ...(!currentItem ? [{ name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true, col: 6 }] : []),
+  ];
+
+  const statCards = [
+    { label: 'Total Staff', value: staffMembers.length, icon: <MdBadge />, color: 'd-gold' },
+    { label: 'On Duty', value: staffMembers.filter(s => s.status === 'On Duty').length, icon: <MdFiberManualRecord />, color: 'd-green' },
+    { label: 'Morning Shift', value: staffMembers.filter(s => s.shift === 'Morning').length, icon: <MdAccessTime />, color: 'd-blue' },
+    { label: 'Evening Shift', value: staffMembers.filter(s => s.shift === 'Evening').length, icon: <MdAccessTime />, color: 'd-blue' }
+  ];
 
   return (
     <>
@@ -155,7 +223,7 @@ export default function Staff() {
       </div>
 
       <Row className="g-3 mb-4">
-        {loading ? (
+        {staffLoading ? (
           Array(4).fill(0).map((_, i) => (
             <Col key={i} xs={12} sm={6} xl={3}>
               <div className="d-stat-card">
@@ -168,12 +236,7 @@ export default function Staff() {
             </Col>
           ))
         ) : (
-          [
-            { label: 'Total Staff', value: staffList.length, icon: <MdBadge />, color: 'd-gold' },
-            { label: 'On Duty', value: staffList.filter(s => s.status === 'On Duty').length, icon: <MdFiberManualRecord />, color: 'd-green' },
-            { label: 'Morning Shift', value: staffList.filter(s => s.shift === 'Morning').length, icon: <MdAccessTime />, color: 'd-blue' },
-            { label: 'Evening Shift', value: staffList.filter(s => s.shift === 'Evening').length, icon: <MdAccessTime />, color: 'd-blue' }
-          ].map((s, i) => (
+          statCards.map((s, i) => (
             <Col key={i} xs={12} sm={6} xl={3}>
               <div className="d-stat-card">
                 <div className={`d-stat-icon ${s.color}`} style={{ width: '42px', height: '42px', fontSize: '1.1rem' }}>
@@ -199,231 +262,228 @@ export default function Staff() {
         />
       </div>
 
-      <Row className="g-3">
-        {loading ? (
+      <Row className="g-4">
+        {staffLoading ? (
           Array(3).fill(0).map((_, i) => (
             <Col key={i} xs={12} sm={6} xl={4}>
-              <div className="d-card h-100">
-                <div className="d-flex justify-content-between align-items-start mb-3">
-                  <div className="d-flex gap-3 align-items-center">
-                    <div style={{
-                      width: 52, height: 52, borderRadius: 'var(--d-radius-md)',
-                      background: '#C9A84C15',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}></div>
+              <div className="d-card h-100" style={{ borderRadius: '16px', overflow: 'hidden', border: 'none' }}>
+                <div style={{ background: 'var(--d-bg)', padding: '24px', borderBottom: '1px solid var(--d-border)' }}>
+                  <div className="d-flex gap-4 align-items-center">
+                    <div style={{ width: 70, height: 70, borderRadius: '18px', background: 'var(--d-border)', opacity: 0.5 }}></div>
                     <div>
-                      <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>Loading...</h5>
-                      <div className="d-page-sub m-0">...</div>
+                      <div style={{ width: '120px', height: '20px', background: 'var(--d-border)', borderRadius: '4px', marginBottom: '8px', opacity: 0.5 }}></div>
+                      <div style={{ width: '80px', height: '16px', background: 'var(--d-border)', borderRadius: '4px', opacity: 0.5 }}></div>
                     </div>
                   </div>
                 </div>
               </div>
             </Col>
           ))
-        ) : (
-          filtered.map((s) => (
-            console.log(s,"salary"),
-            <Col key={s._id} xs={12} sm={6} xl={4}>
-              <div className="d-card h-100">
-                <div className="d-flex justify-content-between align-items-start mb-3">
-                  <div className="d-flex gap-3 align-items-center">
-                    <div style={{
-                      width: 52, height: 52, borderRadius: 'var(--d-radius-md)',
-                      background: `${s.color}15`, color: s.color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 800, fontSize: '1rem', flexShrink: 0
-                    }}>{s.initials}</div>
-                    <div>
-                      <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{s.name}</h5>
-                      <div className="d-page-sub m-0">{s.role}</div>
-                    </div>
-                  </div>
-                  {canAddEditDelete && (
-                    <div className="d-flex gap-1">
-                      <button className="d-navbar-icon-btn" onClick={() => handleEdit(s)}><MdEdit /></button>
-                      <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(s)}><MdDelete /></button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-2 rounded mb-3" style={{ background: 'var(--d-bg)', fontSize: '0.85rem' }}>
-                  <div className="d-flex justify-content-between mb-1">
-                    <span className="text-muted">Shift:</span>
-                    <span style={{ fontWeight: 600 }}>{s.shift}</span>
-                  </div>
-                  <div className="d-flex justify-content-between">
-                    <span className="text-muted">Status:</span>
-                    <span className={`d-chip ${s.status === 'On Duty' ? 'd-chip-green' :
-                        s.status === 'On Leave' ? 'd-chip-gold' :
-                          'd-chip-gray'
-                      }`} style={{ fontSize: '0.65rem' }}>
-                      {s.status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="text-muted">Salary:</span>
-                  <span style={{ fontWeight: 600 }}>₹{s.salary}</span>
-                </div>
-
-                <div className="d-flex justify-content-between mb-3">
-                  <span className="text-muted">Leaves:</span>
-                  <span style={{ fontWeight: 600 }}>{s.leavesTaken}/{s.leavesTotal}</span>
-                </div>
-
-                {s.joiningDate && (
-                  <div className="mb-2" style={{ fontSize: '0.8rem', color: 'var(--d-text-muted)' }}>
-                    <span className="text-muted">Joining:</span> {new Date(s.joiningDate).toLocaleDateString('en-IN')}
-                  </div>
-                )}
-
-                {s.phone && (
-                  <div className="mb-1" style={{ fontSize: '0.85rem', color: 'var(--d-text-muted)' }}>
-                    <MdPhone className="me-1" /> {s.phone}
-                  </div>
-                )}
-
-                {s.email && (
-                  <div className="mb-3" style={{ fontSize: '0.85rem', color: 'var(--d-text-muted)' }}>
-                    <MdEmail className="me-1" /> {s.email}
-                  </div>
-                )}
-
-                <div className="d-flex gap-2">
-                  <button className="d-btn-outline flex-grow-1" style={{ padding: '6px', fontSize: '0.8rem' }}><MdPhone /> Call</button>
-                  <button className="d-btn-outline flex-grow-1" style={{ padding: '6px', fontSize: '0.8rem' }}><MdEmail /> Mail</button>
-                </div>
-              </div>
+        ) : filtered.length === 0 ? (
+          <Col xs={12}>
+            <div className="d-card text-center py-5 text-muted">No staff members found</div>
           </Col>
-        )))}
-    </Row >
+        ) : (
+          filtered.map((s, index) => {
+            const color = getStaffColor(s, index);
+            const initials = getInitials(s.name);
 
-      {/* Modals */}
+            return (
+              <Col key={s._id} xs={12} sm={6} xl={4}>
+                <div
+                  className="d-card h-100"
+                  style={{ borderRadius: '16px', overflow: 'hidden', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: 'none' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <div style={{ background: `linear-gradient(135deg, ${color}20 0%, ${color}05 100%)`, padding: '24px', borderBottom: '1px solid var(--d-border)' }}>
+                    <div className="d-flex justify-content-between align-items-start">
+                      <div className="d-flex gap-4 align-items-center">
+                        <div style={{
+                          width: 70, height: 70, borderRadius: '18px',
+                          background: `${color}25`, color,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 800, fontSize: '1.5rem', flexShrink: 0,
+                          boxShadow: `0 4px 12px ${color}15`
+                        }}>{initials}</div>
+                        <div>
+                          <h5 className="d-section-title mb-1" style={{ fontSize: '1.15rem', margin: 0 }}>{s.name}</h5>
+                          <div className="d-page-sub text-capitalize" style={{ fontSize: '0.95rem', margin: 0 }}>{formatRole(s.role)}</div>
+                        </div>
+                      </div>
+                      <div className="d-flex gap-1">
+                        <button className="d-navbar-icon-btn" style={{ width: '38px', height: '38px', borderRadius: '10px' }} onClick={() => handleViewClick(s)}><MdVisibility /></button>
+                        {canAddEditDelete && (
+                          <>
+                            <button className="d-navbar-icon-btn" style={{ width: '38px', height: '38px', borderRadius: '10px' }} onClick={() => handleEdit(s)}><MdEdit /></button>
+                            <button className="d-navbar-icon-btn text-danger" style={{ width: '38px', height: '38px', borderRadius: '10px' }} onClick={() => handleDeleteClick(s)}><MdDelete /></button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '20px' }}>
+                    <div className="d-flex gap-3 mb-4">
+                      <div className="flex-grow-1" style={{ background: 'var(--d-bg)', padding: '12px 16px', borderRadius: '12px' }}>
+                        <div className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '4px' }}>Shift</div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>{s.shift || '-'}</div>
+                      </div>
+                      <div className="flex-grow-1" style={{ background: 'var(--d-bg)', padding: '12px 16px', borderRadius: '12px' }}>
+                        <div className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '4px' }}>Status</div>
+                        <span className={`d-chip ${s.status === 'On Duty' || s.status === 'Active' ? 'd-chip-green' : 'd-chip-gray'}`} style={{ fontSize: '0.75rem', padding: '4px 10px' }}>
+                          {s.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="row g-3 mb-4">
+                      <div className="col-6">
+                        <div className="text-muted" style={{ fontSize: '0.8rem' }}>Salary</div>
+                        <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--d-primary)' }}>{formatSalary(s.salary)}</div>
+                      </div>
+                      <div className="col-6">
+                        <div className="text-muted" style={{ fontSize: '0.8rem' }}>Leaves</div>
+                        <div style={{ fontSize: '1.15rem', fontWeight: 700 }}>{s.leavesTaken || 0}<span style={{ fontSize: '0.9rem', color: 'var(--d-text-muted)', fontWeight: 400 }}>/{s.leavesTotal || 12}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            );
+          })
+        )}
+      </Row>
+
+      <Modal show={showView} onHide={() => setShowView(false)} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Staff Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {currentItem && (() => {
+            const color = getStaffColor(currentItem, 0);
+            const initials = getInitials(currentItem.name);
+
+            return (
+              <Row className="g-4">
+                <Col xs={12} md={4} className="d-flex flex-column align-items-center">
+                  <div style={{
+                    width: 100, height: 100, borderRadius: 'var(--d-radius-md)',
+                    background: `${color}15`, color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, fontSize: '2.5rem', flexShrink: 0
+                  }}>{initials}</div>
+                  <h4 className="mt-3 mb-0">{currentItem.name}</h4>
+                  <p className="text-muted mb-0 text-capitalize">{formatRole(currentItem.role)}</p>
+                  <span className={`d-chip mt-2 ${currentItem.status === 'On Duty' || currentItem.status === 'Active' ? 'd-chip-green' : 'd-chip-gray'}`}>
+                    {currentItem.status}
+                  </span>
+                </Col>
+                <Col xs={12} md={8}>
+                  <Row className="g-3">
+                    {currentItem.email && (
+                      <Col xs={12} sm={6}>
+                        <div className="d-flex flex-column">
+                          <span className="text-muted small">Email</span>
+                          <span className="fw-medium">{currentItem.email}</span>
+                        </div>
+                      </Col>
+                    )}
+                    {currentItem.phone && (
+                      <Col xs={12} sm={6}>
+                        <div className="d-flex flex-column">
+                          <span className="text-muted small">Phone</span>
+                          <span className="fw-medium">{currentItem.phone}</span>
+                        </div>
+                      </Col>
+                    )}
+                    {currentItem.address && (
+                      <Col xs={12}>
+                        <div className="d-flex flex-column">
+                          <span className="text-muted small">Address</span>
+                          <span className="fw-medium">{currentItem.address}</span>
+                        </div>
+                      </Col>
+                    )}
+                    <Col xs={12} sm={6}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small">Shift</span>
+                        <span className="fw-medium">{currentItem.shift || '-'}</span>
+                      </div>
+                    </Col>
+                    {currentItem.salary && (
+                      <Col xs={12} sm={6}>
+                        <div className="d-flex flex-column">
+                          <span className="text-muted small">Salary</span>
+                          <span className="fw-medium">₹{currentItem.salary}</span>
+                        </div>
+                      </Col>
+                    )}
+                    <Col xs={12} sm={6}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small">Leaves Taken</span>
+                        <span className="fw-medium">{currentItem.leavesTaken || 0}/{currentItem.leavesTotal || 12}</span>
+                      </div>
+                    </Col>
+                    {currentItem.joiningDate && (
+                      <Col xs={12} sm={6}>
+                        <div className="d-flex flex-column">
+                          <span className="text-muted small">Joining Date</span>
+                          <span className="fw-medium">{new Date(currentItem.joiningDate).toLocaleDateString('en-IN')}</span>
+                        </div>
+                      </Col>
+                    )}
+                    {currentItem.createdAt && (
+                      <Col xs={12} sm={6}>
+                        <div className="d-flex flex-column">
+                          <span className="text-muted small">Created At</span>
+                          <span className="fw-medium">{new Date(currentItem.createdAt).toLocaleString('en-IN')}</span>
+                        </div>
+                      </Col>
+                    )}
+                    {currentItem.updatedAt && (
+                      <Col xs={12} sm={6}>
+                        <div className="d-flex flex-column">
+                          <span className="text-muted small">Updated At</span>
+                          <span className="fw-medium">{new Date(currentItem.updatedAt).toLocaleString('en-IN')}</span>
+                        </div>
+                      </Col>
+                    )}
+                  </Row>
+                </Col>
+              </Row>
+            );
+          })()}
+        </Modal.Body>
+        <Modal.Footer>
+          <button className="d-btn-outline" onClick={() => setShowView(false)}>Close</button>
+          {canAddEditDelete && (
+            <button className="d-btn-gold" onClick={() => {
+              setShowView(false);
+              handleEdit(currentItem);
+            }}>
+              <MdEdit /> Edit
+            </button>
+          )}
+        </Modal.Footer>
+      </Modal>
+
       <FormModal
         show={showForm}
         onHide={() => setShowForm(false)}
-        title={currentItem ? "Edit Staff Member" : "Add New Staff Member"}
-        onSubmit={handleSave}
-      >
-        <Row className="g-3">
-          <Col xs={12}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Full Name *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="e.g. Rajesh Kumar"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Role *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="e.g. Head Chef"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Shift</Form.Label>
-              <Form.Select
-                value={formData.shift}
-                onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
-              >
-                <option value="Morning">Morning</option>
-                <option value="Evening">Evening</option>
-                <option value="Both">Both</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Phone Number</Form.Label>
-              <Form.Control
-                type="tel"
-                placeholder="+91 98765 43210"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Email</Form.Label>
-              <Form.Control
-                type="email"
-                placeholder="staff@breva.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={4}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Salary (₹)</Form.Label>
-              <Form.Control
-                type="number"
-                placeholder="25000"
-                value={formData.salary}
-                onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={4}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Leaves Taken</Form.Label>
-              <Form.Control
-                type="number"
-                min="0"
-                value={formData.leavesTaken}
-                onChange={(e) => setFormData({ ...formData, leavesTaken: parseInt(e.target.value) || 0 })}
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={4}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Total Leaves</Form.Label>
-              <Form.Control
-                type="number"
-                min="0"
-                value={formData.leavesTotal}
-                onChange={(e) => setFormData({ ...formData, leavesTotal: parseInt(e.target.value) || 12 })}
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Joining Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={formData.joiningDate}
-                onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Status</Form.Label>
-              <Form.Select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              >
-                <option value="On Duty">On Duty</option>
-                <option value="Off Duty">Off Duty</option>
-                <option value="On Leave">On Leave</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-        </Row>
-      </FormModal>
+        title={currentItem ? 'Edit Staff Member' : 'Add New Staff Member'}
+        initialData={currentItem ? {
+          ...currentItem,
+          salary: currentItem.salary ?? '',
+          leavesTaken: currentItem.leavesTaken ?? 0,
+          leavesTotal: currentItem.leavesTotal ?? 12,
+          joiningDate: currentItem.joiningDate
+            ? new Date(currentItem.joiningDate).toISOString().split('T')[0]
+            : ''
+        } : { name: '', email: '', role: 'waiter', status: 'Active', shift: 'Morning', salary: '', leavesTotal: 12, leavesTaken: 0 }}
+        onSave={handleSave}
+        fields={formFields}
+      />
 
       <DeleteModal
         show={showDelete}

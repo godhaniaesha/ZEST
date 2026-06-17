@@ -68,7 +68,7 @@ export default function Orders() {
       setShowDelete(false);
     } catch (err) {
       console.error(err);
-    }
+    }   
   };
 
   const openDelete = (item) => {

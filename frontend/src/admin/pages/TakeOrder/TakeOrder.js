@@ -83,7 +83,11 @@ export default function TakeOrder() {
     const reservation = reservations.find(r => r._id === selectedTable);
     const orderData = {
       id: `ORD-${Date.now()}`,
-      table: reservation ? (reservation.table || `Table ${reservation.tableNumber}`) : selectedTable,
+      table: reservation 
+        ? (typeof reservation.table === 'object' && reservation.table !== null 
+            ? `Table ${reservation.table.number}` 
+            : reservation.table || (reservation.tableNumber ? `Table ${reservation.tableNumber}` : selectedTable)) 
+        : selectedTable,
       waiter: user?.name || 'Staff',
       items: cart.map(item => ({
         name: item.name,
@@ -167,11 +171,18 @@ export default function TakeOrder() {
                   onChange={(e) => setSelectedTable(e.target.value)}
                 >
                   <option value="">Select Confirmed Table</option>
-                  {reservations.map(r => (
-                    <option key={r._id} value={r._id}>
-                      {r.table || `Table ${r.tableNumber}`} - {r.customerName || r.name}
-                    </option>
-                  ))}
+                  {reservations.map(r => {
+                    // If r.table is an object (populated), get its number; otherwise use it as-is
+                    const tableDisplay = typeof r.table === 'object' && r.table !== null 
+                      ? `Table ${r.table.number}` 
+                      : r.table || (r.tableNumber ? `Table ${r.tableNumber}` : '');
+                    
+                    return (
+                      <option key={r._id} value={r._id}>
+                        {tableDisplay} - {r.customerName || r.name}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>

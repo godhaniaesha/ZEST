@@ -10,6 +10,10 @@ const menuSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category'
+  },
 
   price: {
     type: Number,
@@ -30,6 +34,10 @@ const menuSchema = new mongoose.Schema({
   cuisine: {
     type: String,
     required: true
+  },
+  cuisineId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Cuisine'
   },
 
   description: {
