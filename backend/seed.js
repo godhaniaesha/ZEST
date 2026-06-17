@@ -13,6 +13,8 @@ const Contact = require('./models/Contact');
 const Gallery = require('./models/Gallery');
 const ItemRating = require('./models/ItemRating');
 const Payment = require('./models/Payment');
+const Attendance = require('./models/Attendance');
+const Leave = require('./models/Leave');
 require('dotenv').config();
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/zest-restaurant')
@@ -604,7 +606,121 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/zest-rest
     }
   ]);
   console.log('Inserted payments:', payments.length);
-  
+
+  // Insert Attendance Records
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const attendances = await Attendance.insertMany([
+    {
+      staffId: users[0]._id, // admin@zest.com
+      staffName: users[0].name,
+      role: users[0].role,
+      date: today,
+      status: 'present',
+      checkIn: '09:00 AM',
+      checkOut: '06:00 PM'
+    },
+    {
+      staffId: users[1]._id, // john@zest.com
+      staffName: users[1].name,
+      role: users[1].role,
+      date: today,
+      status: 'present',
+      checkIn: '08:30 AM',
+      checkOut: null
+    },
+    {
+      staffId: users[2]._id, // marco@zest.com
+      staffName: users[2].name,
+      role: users[2].role,
+      date: today,
+      status: 'late',
+      checkIn: '10:15 AM',
+      checkOut: null
+    },
+    {
+      staffId: users[3]._id, // sam@zest.com
+      staffName: users[3].name,
+      role: users[3].role,
+      date: yesterday,
+      status: 'present',
+      checkIn: '02:00 PM',
+      checkOut: '10:00 PM'
+    },
+    {
+      staffId: users[4]._id, // sarah@zest.com
+      staffName: users[4].name,
+      role: users[4].role,
+      date: yesterday,
+      status: 'absent',
+      checkIn: null,
+      checkOut: null
+    }
+  ]);
+  console.log('Inserted attendance records:', attendances.length);
+
+  // Insert Leave Requests
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const nextWeekPlus2 = new Date(nextWeek);
+  nextWeekPlus2.setDate(nextWeekPlus2.getDate() + 2);
+
+  const lastWeek = new Date(today);
+  lastWeek.setDate(lastWeek.getDate() - 7);
+  const lastWeekPlus1 = new Date(lastWeek);
+  lastWeekPlus1.setDate(lastWeekPlus1.getDate() + 1);
+
+  const leaves = await Leave.insertMany([
+    {
+      staffId: users[1]._id, // john@zest.com
+      staffName: users[1].name,
+      role: users[1].role,
+      startDate: nextWeek,
+      endDate: nextWeekPlus2,
+      type: 'vacation',
+      reason: 'Family vacation to Goa',
+      status: 'pending',
+      days: 3
+    },
+    {
+      staffId: users[3]._id, // sam@zest.com
+      staffName: users[3].name,
+      role: users[3].role,
+      startDate: lastWeek,
+      endDate: lastWeekPlus1,
+      type: 'sick',
+      reason: 'Food poisoning',
+      status: 'approved',
+      days: 2
+    },
+    {
+      staffId: users[4]._id, // sarah@zest.com
+      staffName: users[4].name,
+      role: users[4].role,
+      startDate: new Date(today.getTime() + 86400000 * 3),
+      endDate: new Date(today.getTime() + 86400000 * 4),
+      type: 'personal',
+      reason: 'Personal family matter',
+      status: 'pending',
+      days: 2
+    },
+    {
+      staffId: users[2]._id, // marco@zest.com
+      staffName: users[2].name,
+      role: users[2].role,
+      startDate: lastWeek,
+      endDate: lastWeek,
+      type: 'sick',
+      reason: 'High fever',
+      status: 'rejected',
+      rejectionReason: 'Staff shortage, please reschedule',
+      days: 1
+    }
+  ]);
+  console.log('Inserted leave requests:', leaves.length);
+
   console.log('Default admin created: email: admin@zest.com, password: admin123');
   console.log('Database seeded completely!');
   process.exit();

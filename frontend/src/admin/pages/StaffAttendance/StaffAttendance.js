@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Form } from 'react-bootstrap';
 import {
   MdAccessTime, MdCheckCircle, MdCancel, MdSearch,
@@ -6,30 +6,14 @@ import {
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
-import { attendanceAPI, staffAPI } from '../../../api';
-
-// Mock data for demo
-const MOCK_ATTENDANCE = [
-  { _id: '1', staffId: '1', staffName: 'Rajesh Kumar', role: 'Head Chef', date: new Date().toISOString().split('T')[0], status: 'present', checkIn: '09:00 AM', checkOut: '06:00 PM' },
-  { _id: '2', staffId: '2', staffName: 'Priya Sharma', role: 'Waiter', date: new Date().toISOString().split('T')[0], status: 'present', checkIn: '02:00 PM', checkOut: null },
-  { _id: '3', staffId: '3', staffName: 'Sam D\'Souza', role: 'Bartender', date: new Date().toISOString().split('T')[0], status: 'absent', checkIn: null, checkOut: null },
-  { _id: '4', staffId: '4', staffName: 'Anita Verma', role: 'Cashier', date: new Date().toISOString().split('T')[0], status: 'present', checkIn: '08:30 AM', checkOut: '05:30 PM' },
-  { _id: '5', staffId: '5', staffName: 'Dev Malhotra', role: 'Sous Chef', date: new Date().toISOString().split('T')[0], status: 'present', checkIn: '09:15 AM', checkOut: null },
-  { _id: '6', staffId: '6', staffName: 'Leena Nair', role: 'Manager', date: new Date().toISOString().split('T')[0], status: 'present', checkIn: '08:00 AM', checkOut: null },
-];
-
-const MOCK_STAFF = [
-  { _id: '1', name: 'Rajesh Kumar', role: 'Head Chef', initials: 'RK', color: '#C9A84C' },
-  { _id: '2', name: 'Priya Sharma', role: 'Waiter', initials: 'PS', color: '#3498db' },
-  { _id: '3', name: 'Sam D\'Souza', role: 'Bartender', initials: 'SD', color: '#2ecc71' },
-  { _id: '4', name: 'Anita Verma', role: 'Cashier', initials: 'AV', color: '#9b59b6' },
-  { _id: '5', name: 'Dev Malhotra', role: 'Sous Chef', initials: 'DM', color: '#e74c3c' },
-  { _id: '6', name: 'Leena Nair', role: 'Manager', initials: 'LN', color: '#16302B' },
-];
+import { attendanceAPI } from '../../../api';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchStaff } from '../../../store/slices/staffSlice';
 
 export default function StaffAttendance() {
+  const dispatch = useDispatch();
+  const staffRedux = useSelector((state) => state.staff.list);
   const [attendance, setAttendance] = useState([]);
-  const [staffList, setStaffList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
@@ -40,32 +24,37 @@ export default function StaffAttendance() {
   const [currentItem, setCurrentItem] = useState(null);
   const [formData, setFormData] = useState({ staffId: '', date: selectedDate, status: 'present', checkIn: '', checkOut: '' });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      // In real app, use API calls
-      // const [attendanceRes, staffRes] = await Promise.all([
-      //   attendanceAPI.getAll({ date: selectedDate }),
-      //   staffAPI.getAll()
-      // ]);
-      // setAttendance(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
-      // setStaffList(Array.isArray(staffRes.data) ? staffRes.data : []);
-      
-      // For demo, use mock data
-      setAttendance(MOCK_ATTENDANCE);
-      setStaffList(MOCK_STAFF);
+      const attendanceRes = await attendanceAPI.getAll({ date: selectedDate });
+      setAttendance(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
     } catch (error) {
       console.error('Error loading data:', error);
-      setAttendance(MOCK_ATTENDANCE);
-      setStaffList(MOCK_STAFF);
+      setAttendance([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate]);
+
+  // Transform staff data from Redux to match component format
+  const staffList = staffRedux.filter(staff => staff.role !== 'customer').map(staff => ({
+    _id: staff._id,
+    name: staff.name,
+    role: staff.role,
+    initials: staff.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+    color: '#C9A84C',
+    leavesTotal: staff.leavesTotal || 12,
+    leavesTaken: staff.leavesTaken || 0
+  }));
+
+  useEffect(() => {
+    dispatch(fetchStaff());
+  }, [dispatch]);
 
   useEffect(() => {
     loadData();
-  }, [selectedDate]);
+  }, [loadData]);
 
   const filtered = attendance.filter(a => 
     a.staffName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -97,8 +86,9 @@ export default function StaffAttendance() {
 
   const handleMarkPresent = async (staffId) => {
     try {
-      // await attendanceAPI.markPresent(staffId);
-      alert(`Marked as present`);
+      const staff = staffList.find(s => s._id === staffId);
+      await attendanceAPI.markPresent(staffId, selectedDate);
+      alert(`${staff?.name || 'Staff'} marked as present`);
       loadData();
     } catch (error) {
       console.error('Error marking present:', error);
@@ -108,8 +98,9 @@ export default function StaffAttendance() {
 
   const handleMarkAbsent = async (staffId) => {
     try {
-      // await attendanceAPI.markAbsent(staffId);
-      alert(`Marked as absent`);
+      const staff = staffList.find(s => s._id === staffId);
+      await attendanceAPI.markAbsent(staffId, selectedDate);
+      alert(`${staff?.name || 'Staff'} marked as absent`);
       loadData();
     } catch (error) {
       console.error('Error marking absent:', error);
@@ -125,23 +116,13 @@ export default function StaffAttendance() {
       }
 
       if (currentItem) {
-        // Update existing attendance
-        // const response = await attendanceAPI.update(currentItem._id, formData);
-        setAttendance(attendance.map(a => a._id === currentItem._id ? { ...currentItem, ...formData, staffName: staffList.find(s => s._id === formData.staffId)?.name || currentItem.staffName, role: staffList.find(s => s._id === formData.staffId)?.role || currentItem.role } : a));
+        await attendanceAPI.update(currentItem._id, formData);
       } else {
-        // Create new attendance
-        // const response = await attendanceAPI.create(formData);
-        const staff = staffList.find(s => s._id === formData.staffId);
-        const newAttendance = {
-          _id: Date.now().toString(),
-          ...formData,
-          staffName: staff?.name || '',
-          role: staff?.role || ''
-        };
-        setAttendance([...attendance, newAttendance]);
+        await attendanceAPI.create(formData);
       }
 
       setShowForm(false);
+      loadData();
     } catch (error) {
       console.error('Error saving attendance:', error);
       alert('Failed to save attendance');
@@ -150,9 +131,9 @@ export default function StaffAttendance() {
 
   const confirmDelete = async () => {
     try {
-      // await attendanceAPI.delete(currentItem._id);
-      setAttendance(attendance.filter(a => a._id !== currentItem._id));
+      await attendanceAPI.delete(currentItem._id);
       setShowDelete(false);
+      loadData();
     } catch (error) {
       console.error('Error deleting attendance:', error);
       alert('Failed to delete attendance');
@@ -367,7 +348,7 @@ export default function StaffAttendance() {
           })
         )}
       </Row>
-
+        
       {/* Modals */}
       <FormModal
         show={showForm}
@@ -386,7 +367,7 @@ export default function StaffAttendance() {
               >
                 <option value="">Select Staff</option>
                 {staffList.map(staff => (
-                  <option key={staff._id} value={staff._id}>{staff.name} - {staff.role}</option>
+                  <option key={staff._id} value={staff._id}>{staff.name}</option>
                 ))}
               </Form.Select>
             </Form.Group>

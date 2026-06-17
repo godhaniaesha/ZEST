@@ -9,10 +9,26 @@ export const fetchUsers = createAsyncThunk(
   }
 );
 
+export const fetchStaffUsers = createAsyncThunk(
+  'users/fetchStaffUsers',
+  async () => {
+    const response = await usersAPI.getStaff();
+    return response.data;
+  }
+);
+
 export const addUser = createAsyncThunk(
   'users/addUser',
   async (userData) => {
     const response = await usersAPI.create(userData);
+    return response.data;
+  }
+);
+
+export const addStaffUser = createAsyncThunk(
+  'users/addStaffUser',
+  async (userData) => {
+    const response = await usersAPI.createStaff(userData);
     return response.data;
   }
 );
@@ -25,6 +41,14 @@ export const updateUser = createAsyncThunk(
   }
 );
 
+export const updateStaffUser = createAsyncThunk(
+  'users/updateStaffUser',
+  async ({ id, userData }) => {
+    const response = await usersAPI.updateStaff(id, userData);
+    return response.data;
+  }
+);
+
 export const deleteUser = createAsyncThunk(
   'users/deleteUser',
   async (id) => {
@@ -33,11 +57,21 @@ export const deleteUser = createAsyncThunk(
   }
 );
 
+export const deleteStaffUser = createAsyncThunk(
+  'users/deleteStaffUser',
+  async (id) => {
+    await usersAPI.deleteStaff(id);
+    return id;
+  }
+);
+
 const usersSlice = createSlice({
   name: 'users',
   initialState: {
     list: [],
+    staffList: [],
     loading: false,
+    staffLoading: false,
     error: null,
   },
   reducers: {},
@@ -56,9 +90,26 @@ const usersSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
+      // Fetch Staff Users
+      .addCase(fetchStaffUsers.pending, (state) => {
+        state.staffLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchStaffUsers.fulfilled, (state, action) => {
+        state.staffLoading = false;
+        state.staffList = Array.isArray(action.payload) ? action.payload : [];
+      })
+      .addCase(fetchStaffUsers.rejected, (state, action) => {
+        state.staffLoading = false;
+        state.error = action.error.message;
+      })
       // Add User
       .addCase(addUser.fulfilled, (state, action) => {
         state.list.push(action.payload);
+      })
+      // Add Staff User
+      .addCase(addStaffUser.fulfilled, (state, action) => {
+        state.staffList.push(action.payload);
       })
       // Update User
       .addCase(updateUser.fulfilled, (state, action) => {
@@ -67,9 +118,20 @@ const usersSlice = createSlice({
           state.list[index] = action.payload;
         }
       })
+      // Update Staff User
+      .addCase(updateStaffUser.fulfilled, (state, action) => {
+        const index = state.staffList.findIndex(u => u._id === action.payload._id);
+        if (index !== -1) {
+          state.staffList[index] = action.payload;
+        }
+      })
       // Delete User
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.list = state.list.filter(u => u._id !== action.payload);
+      })
+      // Delete Staff User
+      .addCase(deleteStaffUser.fulfilled, (state, action) => {
+        state.staffList = state.staffList.filter(u => u._id !== action.payload);
       });
   },
 });

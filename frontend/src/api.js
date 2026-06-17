@@ -2,8 +2,6 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
-const withSource = (_source, config = {}) => config;
-
 export const api = axios.create({
   baseURL: API_BASE_URL,
 });
@@ -135,10 +133,14 @@ export const cuisinesAPI = {
 
 export const usersAPI = {
   getAll: () => api.get('/users'),
+  getStaff: () => api.get('/users', { params: { staffOnly: true } }),
   getById: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
+  createStaff: (data) => api.post('/users/staff', data),
   update: (id, data) => api.put(`/users/${id}`, data),
+  updateStaff: (id, data) => api.put(`/users/staff/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
+  deleteStaff: (id) => api.delete(`/users/staff/${id}`),
 };
 
 export const authAPI = {
@@ -148,24 +150,26 @@ export const authAPI = {
 };
 
 export const attendanceAPI = {
-  getAll: (params) => api.get('/attendance', withSource('Attendance.getAll', { params })),
-  getByStaff: (staffId) => api.get(`/attendance/staff/${staffId}`, withSource('Attendance.getByStaff')),
-  create: (data) => api.post('/attendance', data, withSource('Attendance.create')),
-  update: (id, data) => api.put(`/attendance/${id}`, data, withSource('Attendance.update')),
-  delete: (id) => api.delete(`/attendance/${id}`, withSource('Attendance.delete')),
-  markPresent: (staffId) => api.post(`/attendance/mark-present`, { staffId }, withSource('Attendance.markPresent')),
-  markAbsent: (staffId) => api.post(`/attendance/mark-absent`, { staffId }, withSource('Attendance.markAbsent')),
+  getAll: (params) => api.get('/attendance', { params }),
+  getById: (id) => api.get(`/attendance/${id}`),
+  create: (data) => api.post('/attendance', data),
+  update: (id, data) => api.put(`/attendance/${id}`, data),
+  delete: (id) => api.delete(`/attendance/${id}`),
+  markPresent: (staffId, date) => api.post(`/attendance/mark-present/${staffId}`, { date }),
+  markAbsent: (staffId, date) => api.post(`/attendance/mark-absent/${staffId}`, { date }),
+  getStats: (params) => api.get('/attendance/stats/summary', { params }),
 };
 
 export const leaveAPI = {
-  getAll: (params) => api.get('/leaves', withSource('Leaves.getAll', { params })),
-  getByStaff: (staffId) => api.get(`/leaves/staff/${staffId}`, withSource('Leaves.getByStaff')),
-  getMyLeaves: () => api.get('/leaves/my', withSource('Leaves.getMyLeaves')),
-  create: (data) => api.post('/leaves', data, withSource('Leaves.create')),
-  update: (id, data) => api.put(`/leaves/${id}`, data, withSource('Leaves.update')),
-  delete: (id) => api.delete(`/leaves/${id}`, withSource('Leaves.delete')),
-  approve: (id) => api.patch(`/leaves/${id}/approve`, {}, withSource('Leaves.approve')),
-  reject: (id, reason) => api.patch(`/leaves/${id}/reject`, { reason }, withSource('Leaves.reject')),
+  getAll: (params) => api.get('/leave', { params }),
+  getById: (id) => api.get(`/leave/${id}`),
+  create: (data) => api.post('/leave', data),
+  update: (id, data) => api.put(`/leave/${id}`, data),
+  delete: (id) => api.delete(`/leave/${id}`),
+  approve: (id) => api.post(`/leave/approve/${id}`),
+  reject: (id, rejectionReason) => api.post(`/leave/reject/${id}`, { rejectionReason }),
+  getStats: () => api.get('/leave/stats/summary'),
+  getStaffBalance: (staffId) => api.get(`/leave/staff/${staffId}/balance`),
 };
 
 export const contactAPI = {

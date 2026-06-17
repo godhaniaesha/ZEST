@@ -21,9 +21,10 @@ const FormModal = ({
     if (show) {
       setFormData(initialData || {});
     } else {
+      setFormData({});
       setFileData(null);
     }
-  }, [show]);
+  }, [show, initialData]);
 
   const handleChange = (name, value) => {
     setFormData(prev => ({
