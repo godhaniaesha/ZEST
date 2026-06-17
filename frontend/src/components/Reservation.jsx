@@ -105,10 +105,6 @@ const h_res_css = `
   .h_res_steps {
     display: flex; flex-direction: column; gap: 0.6rem;
     padding: 1.2rem;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(201,168,76,0.12);
-    border-radius: 28px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.04);;
   }
 
   .h_res_step_node {
@@ -523,6 +519,10 @@ const h_res_css = `
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 28px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.04);;
   }
 
   .h_res_steps_wrap::-webkit-scrollbar {
@@ -541,7 +541,6 @@ const h_res_css = `
       grid-template-rows: auto 1fr;
       border-radius: 0;
       min-height: 100dvh;
-      height: 100dvh;
       overflow: visible;
     }
 
@@ -593,7 +592,6 @@ const h_res_css = `
       scrollbar-color: rgba(17,41,35,0.3) rgba(255,255,255,0.18);
       touch-action: pan-x;
       overscroll-behavior-x: contain;
-      padding-bottom: 10px;
       display: block;
     }
     .h_res_steps {

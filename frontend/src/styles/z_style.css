@@ -45,7 +45,7 @@ body {
   align-items: center;
   overflow: hidden;
   isolation: isolate;
-  min-height: 100vh;
+  /* min-height: 100vh; */
 }
 
 .d_hero_bg_pattern {
@@ -511,7 +511,7 @@ body {
   background: linear-gradient(135deg, var(--d-primary) 0%, var(--d-primary-light) 100%);
   position: relative;
   overflow: hidden;
-  padding: 100px 0;
+  /* padding: 100px 0; */
 }
 
 .d_testi_inner {

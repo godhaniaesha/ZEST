@@ -143,7 +143,7 @@ const Blog = () => {
         </section>
 
         {/* Section Head */}
-        <div className="x_gallery_section_head">
+        <div className="x_gallery_section_head m-0 pb-3">
           <div className="x_gallery_section_title_group">
             <span className="x_gallery_section_num">01</span>
             <h2 className="x_gallery_section_title">
