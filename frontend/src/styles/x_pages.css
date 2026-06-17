@@ -639,7 +639,7 @@ body {
 .x_contact_info_card:hover .x_contact_info_icon {
   background: var(--d-gold);
   color: var(--d-white);
-  transform: translateY(-4px) rotate(3deg);
+  /* transform: translateY(-4px) rotate(3deg); */
   box-shadow: var(--d-shadow-md);
 }
 
