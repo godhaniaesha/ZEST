@@ -14,7 +14,7 @@ const STATUS_MAP = {
   Served: 'd-chip-green',
   Preparing: 'd-chip-gold',
   Pending: 'd-chip-blue',
-  Cancelled: 'd-chip-red',
+  Ready: 'd-chip-gray',
 };
 
 export default function Orders() {
@@ -26,7 +26,7 @@ export default function Orders() {
   const [currentItem, setCurrentItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const itemsPerPage = 10;
-  const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Cancelled'];
+  const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Ready'];
   const orderData = orders.length > 0 ? orders : ORDERS;
   const filtered = filter === 'All' ? orderData : orderData.filter(o => o.status === filter);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -198,37 +198,6 @@ export default function Orders() {
                         </strong>
                       </td>
 
-                      {/* <td>
-                        {editingStatusId === order._id ? (
-                          <Form.Select
-                            size="sm"
-                            value={order.status}
-                            onChange={(e) =>
-                              handleStatusUpdate(order._id, e.target.value)
-                            }
-                            onBlur={() => setEditingStatusId(null)}
-                            autoFocus
-                            className="d-status-select"
-                          >
-                            {["Pending", "Preparing", "Served", "Cancelled"].map(
-                              (s) => (
-                                <option key={s} value={s}>
-                                  {s}
-                                </option>
-                              )
-                            )}
-                          </Form.Select>
-                        ) : (
-                          <span
-                            className={`d-chip ${STATUS_MAP[order.status]}`}
-                            onClick={() => setEditingStatusId(order._id)}
-                            style={{ cursor: "pointer" }}
-                          >
-                            {order.status}
-                          </span>
-                        )}
-                      </td> */}
-
                       <td>
                         <div
                           className="d-flex align-items-center gap-1"
@@ -323,7 +292,6 @@ export default function Orders() {
                             <option value="Pending">Pending</option>
                             <option value="Preparing">Preparing</option>
                             <option value="Served">Served</option>
-                            <option value="Cancelled">Cancelled</option>
                           </Form.Select>
                         ) : (
                           <span

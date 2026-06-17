@@ -6,7 +6,8 @@ import {
   MdNotificationsActive, MdHistory, MdRestaurantMenu,
   MdLocalBar, MdCoffee, MdArrowBack,
   MdFilterList, MdDoneAll, MdDragIndicator, MdMoreVert,
-  MdRadioButtonUnchecked, MdCheckCircleOutline, MdClose
+  MdRadioButtonUnchecked, MdCheckCircleOutline, MdClose,
+  MdRestaurant
 } from 'react-icons/md';
 import { ordersAPI, api } from '../../../api';
 
@@ -14,7 +15,7 @@ import { ordersAPI, api } from '../../../api';
 const INITIAL_ORDERS = [];
 
 // Match backend Order model item status enum
-const ITEM_STATUSES = ['Pending', 'Preparing', 'Served', 'Cancelled'];
+const ITEM_STATUSES = ['Pending', 'Preparing', 'Ready', 'Served'];
 
 const Timer = ({ startTime, isDelayed }) => {
   const [elapsed, setElapsed] = useState('');
@@ -100,7 +101,7 @@ export default function KitchenDisplay() {
     const item = order?.items[itemIndex];
     if (!order || !item?._id) return;
 
-    const kitchenFlow = ['Pending', 'Preparing', 'Served'];
+    const kitchenFlow = ['Pending', 'Preparing', 'Ready', 'Served'];
     const currentIdx = kitchenFlow.indexOf(item.status);
     const nextStatus = kitchenFlow[(currentIdx + 1) % kitchenFlow.length] || 'Pending';
 
@@ -251,16 +252,16 @@ export default function KitchenDisplay() {
                     {order.items.map((item, idx) => (
                       <div
                         key={item._id || idx}
-                        className={`d-kot-item ${item.status === 'Served' ? 'completed' : ''} ${item.status === 'Cancelled' ? 'cancelled' : ''}`}
-                        onClick={() => item.status !== 'Cancelled' && toggleItem(order._id, idx)}
+                        className={`d-kot-item ${item.status === 'Served' ? 'completed' : ''}`}
+                        onClick={() => toggleItem(order._id, idx)}
                       >
                         <div className="d-kot-item-check">
                           {item.status === 'Served' ? (
                             <MdCheckCircleOutline className="text-success" fontSize="1.3rem" />
                           ) : item.status === 'Preparing' ? (
                             <MdTimer className="text-warning" fontSize="1.3rem" />
-                          ) : item.status === 'Cancelled' ? (
-                            <MdClose className="text-danger" fontSize="1.3rem" />
+                          ) : item.status === 'Ready' ? (
+                            <MdRestaurant className="text-info" fontSize="1.3rem" />
                           ) : (
                             <MdRadioButtonUnchecked className="text-muted" fontSize="1.3rem" />
                           )}
@@ -272,19 +273,12 @@ export default function KitchenDisplay() {
 
                   {/* Card Footer - Actions */}
                   <div className="d-kot-card-footer">
-                    <button className="d-kot-action-btn d-kot-btn-more">
-                      <MdMoreVert fontSize="1.1rem" />
-                    </button>
-                    {order.priority === 'Urgent' && (
-                      <button className="d-kot-action-btn d-kot-btn-bump">
-                        <MdWarning fontSize="1rem" /> BUMP
-                      </button>
-                    )}
+
                     <button
                       className="d-kot-action-btn d-kot-btn-ready"
                       onClick={() => handleMarkReady(order.id)}
                     >
-                      <MdCheckCircle className="me-1" /> Mark Ready
+                      <MdCheckCircle className="me-1" /> Dome
                     </button>
                   </div>
                 </div>
@@ -788,4 +782,3 @@ export default function KitchenDisplay() {
     </div>
   );
 }
-  

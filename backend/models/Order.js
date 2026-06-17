@@ -8,7 +8,7 @@ const itemSchema = new mongoose.Schema({
   menuItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Menu' },
   status: { 
     type: String, 
-    enum: ['Pending', 'Preparing', 'Served', 'Cancelled'], 
+    enum: ['Pending', 'Preparing', 'Ready', 'Served'], 
     default: 'Pending' 
   }
 });

@@ -60,23 +60,57 @@ const StarRating = ({ value = 0, onRate, disabled = false, size = 18 }) => (
 );
 
 const mapBooking = (booking) => {
-  const date = formatDate(booking.date, {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const createdDate = new Date(booking.createdAt);
+
   const status = booking.status?.toLowerCase() || "pending";
+
+  // Handle table display with status
+  let tableDisplay = "Table Pending";
+  let tableStatus = "";
+
+  if (booking.table) {
+    const tableNumber = booking.table.number || booking.table.tableNumber;
+    const tableStatusValue = booking.table.status || "";
+
+    tableDisplay = `Table ${tableNumber}`;
+    tableStatus = tableStatusValue;
+  }
 
   return {
     id: booking._id,
-    date,
-    month: date ? date.split(" ")[0].slice(0, 3) : "TBD",
-    day: date ? date.split(" ")[1]?.replace(",", "") : "--",
-    time: booking.time || "TBD",
+
+    // createdAt mathi date extract karse
+    date: createdDate.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }),
+
+    month: createdDate.toLocaleString("en-US", {
+      month: "short",
+    }),
+
+    day: createdDate.getDate(),
+
+    time:
+      booking.time ||
+      createdDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+
     guests: booking.guests || 1,
+
     status,
-    table: booking.tableNumber ? `Table ${booking.tableNumber}` : "Table pending",
-    type: status === "confirmed" ? "Confirmed Dining" : "Dining Reservation",
+
+    table: tableDisplay,
+
+    tableStatus,
+
+    type:
+      status === "confirmed"
+        ? "Confirmed Dining"
+        : "Dining Reservation",
   };
 };
 
@@ -124,17 +158,20 @@ const Profile = () => {
   const rewardPoints = bookings.length * 100;
 
   const loadBookings = useCallback(async () => {
-    if (!user) return;
     try {
       setBookingsLoading(true);
+
       const res = await reservationsAPI.getMy();
+
+      console.log("Reservations:", res.data);
+
       setBookings((res.data || []).map(mapBooking));
     } catch (error) {
-      console.error("Failed to load reservations:", error);
+      console.error(error);
     } finally {
       setBookingsLoading(false);
     }
-  }, [user]);
+  }, []);
 
   const loadOrders = useCallback(async () => {
     if (!user) return;
@@ -212,6 +249,13 @@ const Profile = () => {
     const interval = setInterval(loadBookings, 20000);
     return () => clearInterval(interval);
   }, [activeTab, user, loadBookings]);
+
+  // Load bookings immediately when user logs in
+  useEffect(() => {
+    if (user) {
+      loadBookings();
+    }
+  }, [user, loadBookings]);
 
   useEffect(() => {
     if (!user) return undefined;
@@ -616,9 +660,13 @@ const Profile = () => {
                             <button className="x_res_cancel_link" onClick={() => handleCancelBooking(booking.id)}>
                               Cancel Reservation
                             </button>
+                          ) : booking.status === "reserved" || booking.status === "confirmed" ? (
+                            <span className="x_res_confirmed_msg">
+                              Reservation Confirmed
+                            </span>
                           ) : (
                             <span className="x_res_confirmed_msg">
-                              {booking.status === "cancelled" ? "Reservation Cancelled" : "Reservation Confirmed"}
+                              Reservation Cancelled
                             </span>
                           )}
                           <span className="x_res_details_btn">{booking.date}</span>

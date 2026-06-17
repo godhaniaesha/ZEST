@@ -31,11 +31,22 @@ const createPaymentIntent = async (amount, paymentMethod) => {
     throw new Error("Payment method must be Card or UPI.");
   }
 
-  return stripe.paymentIntents.create({
+  const paymentIntentConfig = {
     amount: Math.round(amount * 100),
     currency: "inr",
     payment_method_types: paymentMethod === "UPI" ? ["upi"] : ["card"],
-  });
+  };
+
+  // Add UPI-specific configuration
+  if (paymentMethod === "UPI") {
+    paymentIntentConfig.payment_method_options = {
+      upi: {
+        customer_reference: "ZEST_CAFE_BILL",
+      },
+    };
+  }
+
+  return stripe.paymentIntents.create(paymentIntentConfig);
 };
 
 const verifyPaymentIntent = async (paymentIntentId, expectedAmount) => {
@@ -153,6 +164,9 @@ router.post("/bill/complete", auth, async (req, res) => {
         await Order.updateMany({ _id: { $in: orderIds } }, { status: "Paid" });
       }
 
+      // Mark reservation as fully paid
+      await Reservation.findByIdAndUpdate(reservationId, { fullPaymentDone: true });
+
       if (reservation.table) {
         const Table = require("../models/Table");
         await Table.findByIdAndUpdate(reservation.table, { status: "Free" });
@@ -191,6 +205,9 @@ router.post("/bill/complete", auth, async (req, res) => {
     if (Array.isArray(orderIds) && orderIds.length) {
       await Order.updateMany({ _id: { $in: orderIds } }, { status: "Paid" });
     }
+
+    // Mark reservation as fully paid
+    await Reservation.findByIdAndUpdate(reservationId, { fullPaymentDone: true });
 
     if (reservation.table) {
       const Table = require("../models/Table");

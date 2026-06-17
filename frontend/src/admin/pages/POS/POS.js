@@ -182,16 +182,25 @@ export default function POS() {
       setPaying(true);
       setPaymentError("");
 
+      if (!selectedReservation) {
+        setPaymentError("Please select a reservation to pay");
+        return;
+      }
+
       const result = await payBill({
-        amount: total,
         paymentMethod,
         upiVpa,
         cardElement: cardElementRef.current,
+        reservationId: selectedReservation,
+        subtotal: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
+        tax: 0,
+        orderIds: reservationOrders.map(order => order._id),
       });
 
       console.log("Payment Success:", result);
 
-      // order complete logic
+      // Redirect to dashboard after successful payment
+      window.location.href = "/admin/dashboard";
     } catch (err) {
       setPaymentError(err.message || "Payment failed");
     } finally {
@@ -261,7 +270,7 @@ export default function POS() {
                   >
                     <option value="">Select Table for Billing</option>
 
-                    {reservations.map((r) => (
+                    {reservations.filter(r => !r.fullPaymentDone).map((r) => (
                       <option key={r._id} value={r._id}>
                         {getTableLabel(r)} - {r.customerName || r.name}
                       </option>

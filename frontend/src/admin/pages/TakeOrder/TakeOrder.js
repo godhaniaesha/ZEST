@@ -34,7 +34,7 @@ export default function TakeOrder() {
           reservationsAPI.getAll()
         ]);
         setMenuItems(Array.isArray(menuRes.data) ? menuRes.data : []);
-        setReservations(Array.isArray(resRes.data) ? resRes.data.filter(r => r.status === 'Confirmed') : []);
+        setReservations(Array.isArray(resRes.data) ? resRes.data.filter(r => r.status === 'Confirmed' && !r.fullPaymentDone) : []);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -171,12 +171,12 @@ export default function TakeOrder() {
                   onChange={(e) => setSelectedTable(e.target.value)}
                 >
                   <option value="">Select Confirmed Table</option>
-                  {reservations.map(r => {
+                  {reservations.filter(r => !r.fullPaymentDone).map(r => {
                     // If r.table is an object (populated), get its number; otherwise use it as-is
-                    const tableDisplay = typeof r.table === 'object' && r.table !== null 
-                      ? `Table ${r.table.number}` 
+                    const tableDisplay = typeof r.table === 'object' && r.table !== null
+                      ? `Table ${r.table.number}`
                       : r.table || (r.tableNumber ? `Table ${r.tableNumber}` : '');
-                    
+
                     return (
                       <option key={r._id} value={r._id}>
                         {tableDisplay} - {r.customerName || r.name}

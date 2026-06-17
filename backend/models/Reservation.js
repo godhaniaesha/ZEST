@@ -35,6 +35,10 @@ const reservationSchema = new mongoose.Schema({
     enum: ['Confirmed', 'Pending', 'Cancelled'],
     default: 'Pending',
   },
+  fullPaymentDone: {
+    type: Boolean,
+    default: false,
+  },
 }, { timestamps: true });
 
 reservationSchema.statics.ADVANCE_AMOUNT = RESERVATION_ADVANCE_AMOUNT;
