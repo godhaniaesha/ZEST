@@ -129,7 +129,7 @@ const AboutUs = () => {
         </section>
 
         {/* OUR STORY SECTION */}
-        <div className="x_gallery_section_head" style={{ marginTop: '70px' }}>
+        <div className="x_gallery_section_head pb-0" style={{ marginTop: '70px' }}>
           <div className="x_gallery_section_title_group">
             <span className="x_gallery_section_num">01</span>
             <h2 className="x_gallery_section_title">
@@ -245,7 +245,7 @@ const AboutUs = () => {
         </section>
 
         {/* EXPERIENCE SECTION */}
-        <div className="x_gallery_section_head">
+        <div className="x_gallery_section_head mb-0">
           <div className="x_gallery_section_title_group">
             <span className="x_gallery_section_num">02</span>
             <h2 className="x_gallery_section_title">
@@ -254,7 +254,7 @@ const AboutUs = () => {
           </div>
         </div>
 
-        <div className="x_gallery_section_head" style={{ paddingTop: '0', marginBottom: '32px' }}>
+        <div className="x_gallery_section_head mt-0" style={{ paddingTop: '0', marginBottom: '32px' }}>
           <p style={{ 
             fontFamily: '"Playfair Display", serif', 
             fontSize: '1.05rem', 
@@ -500,13 +500,13 @@ const AboutUs = () => {
           padding-left: 4px;
         }
         @media (max-width: 1024px) {
-          .x_menu_hero { grid-template-columns: 1fr; text-align: center; }
           .x_menu_hero_left { align-items: center; }
           .x_menu_hero_sub { margin: 0 auto; }
           section[style*="gridTemplateColumns"] { grid-template-columns: 1fr !important; }
           section[style*="gridTemplateColumns"] > div:first-child { max-width: 500px; margin: 0 auto; }
         }
         @media (max-width: 768px) {
+          .x_menu_hero { grid-template-columns: 1fr; text-align: center; }
           .x_menu_inner { padding: 0 20px; }
           .x_menu_headline { font-size: 2.6rem; }
           .x_gallery_section_num { font-size: 1.8rem; }
