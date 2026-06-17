@@ -2193,7 +2193,11 @@ export default function Home() {
     occasion: "",
   });
   const [blogs, setBlogs] = useState([]);
-  const [menuItems, setMenuItems] = useState({ food: [], drinks: [], coffee: [] });
+  const [menuItems, setMenuItems] = useState({
+    food: [],
+    drinks: [],
+    coffee: [],
+  });
   const [galleryItems, setGalleryItems] = useState([]);
   const [heroSlides, setHeroSlides] = useState([]);
   const navigate = useNavigate();
@@ -2204,21 +2208,23 @@ export default function Home() {
       try {
         const response = await blogAPI.getAll();
         const data = Array.isArray(response.data) ? response.data : [];
-        const transformedBlogs = data.map((blog) => {
-          const normalized = normalizeBlogPost(blog);
-          if (!normalized) return null;
-          const date = new Date(normalized.createdAt);
-          return {
-            _id: normalized._id,
-            day: date.getDate().toString(),
-            month: date.toLocaleString('default', { month: 'short' }),
-            category: normalized.category,
-            title: normalized.title,
-            author: normalized.author,
-            readTime: `${normalized.readTime} min read`,
-            img: normalized.image,
-          };
-        }).filter(Boolean);
+        const transformedBlogs = data
+          .map((blog) => {
+            const normalized = normalizeBlogPost(blog);
+            if (!normalized) return null;
+            const date = new Date(normalized.createdAt);
+            return {
+              _id: normalized._id,
+              day: date.getDate().toString(),
+              month: date.toLocaleString("default", { month: "short" }),
+              category: normalized.category,
+              title: normalized.title,
+              author: normalized.author,
+              readTime: `${normalized.readTime} min read`,
+              img: normalized.image,
+            };
+          })
+          .filter(Boolean);
         setBlogs(transformedBlogs);
       } catch (error) {
         console.error("Error fetching blogs:", error);
@@ -2237,31 +2243,59 @@ export default function Home() {
         // Transform and categorize menu items
         const transformedMenu = {
           food: allMenuItems
-            .filter(item => item.category && item.category.toLowerCase().includes('food'))
-            .map(item => ({
+            .filter(
+              (item) =>
+                item.category && item.category.toLowerCase().includes("food"),
+            )
+            .map((item) => ({
               name: item.name,
-              desc: item.description || item.cuisine || '',
+              desc: item.description || item.cuisine || "",
               price: `₹${item.price}`,
-              tag: item.highlights && item.highlights.length > 0 ? item.highlights[0] : 'Special',
-              img: item.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80',
+              tag:
+                item.highlights && item.highlights.length > 0
+                  ? item.highlights[0]
+                  : "Special",
+              img:
+                item.img ||
+                "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80",
             })),
           drinks: allMenuItems
-            .filter(item => item.category && item.category.toLowerCase().includes('drink') || item.type && item.type.includes('Bar'))
-            .map(item => ({
+            .filter(
+              (item) =>
+                (item.category &&
+                  item.category.toLowerCase().includes("drink")) ||
+                (item.type && item.type.includes("Bar")),
+            )
+            .map((item) => ({
               name: item.name,
-              desc: item.description || item.cuisine || '',
+              desc: item.description || item.cuisine || "",
               price: `₹${item.price}`,
-              tag: item.highlights && item.highlights.length > 0 ? item.highlights[0] : 'Classic',
-              img: item.img || 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80',
+              tag:
+                item.highlights && item.highlights.length > 0
+                  ? item.highlights[0]
+                  : "Classic",
+              img:
+                item.img ||
+                "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80",
             })),
           coffee: allMenuItems
-            .filter(item => item.category && item.category.toLowerCase().includes('coffee') || item.type && item.type.includes('Cafe'))
-            .map(item => ({
+            .filter(
+              (item) =>
+                (item.category &&
+                  item.category.toLowerCase().includes("coffee")) ||
+                (item.type && item.type.includes("Cafe")),
+            )
+            .map((item) => ({
               name: item.name,
-              desc: item.description || item.cuisine || '',
+              desc: item.description || item.cuisine || "",
               price: `₹${item.price}`,
-              tag: item.highlights && item.highlights.length > 0 ? item.highlights[0] : 'Specialty',
-              img: item.img || 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
+              tag:
+                item.highlights && item.highlights.length > 0
+                  ? item.highlights[0]
+                  : "Specialty",
+              img:
+                item.img ||
+                "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80",
             })),
         };
 
@@ -2278,7 +2312,7 @@ export default function Home() {
     const fetchGalleryItems = async () => {
       try {
         const response = await galleryAPI.getAll();
-        const transformedGallery = response.data.map(item => ({
+        const transformedGallery = response.data.map((item) => ({
           _id: item._id,
           image: item.image,
           title: item.title,
@@ -2290,12 +2324,16 @@ export default function Home() {
         setGalleryItems(transformedGallery);
 
         // Set hero slides from featured gallery items or fallback to static
-        const featuredItems = transformedGallery.filter(item => item.featured);
+        const featuredItems = transformedGallery.filter(
+          (item) => item.featured,
+        );
         if (featuredItems.length > 0) {
-          setHeroSlides(featuredItems.slice(0, 4).map(item => ({
-            img: item.image,
-            alt: item.title,
-          })));
+          setHeroSlides(
+            featuredItems.slice(0, 4).map((item) => ({
+              img: item.image,
+              alt: item.title,
+            })),
+          );
         }
       } catch (error) {
         console.error("Error fetching gallery items:", error);
@@ -2323,6 +2361,36 @@ export default function Home() {
   const handlePostClick = (postId) => {
     navigate(`/blog/${postId}`);
   };
+  const HERO_SLIDES = [
+    {
+      title: "Cocktail Hour",
+      category: "drinks",
+      tag: "Cocktails",
+      description: "A selection of our finest cocktails.",
+      image:
+        "https://i.pinimg.com/1200x/e0/fd/56/e0fd566141751a4e6e1450f7e0242ac4.jpg",
+      featured: true,
+    },
+    {
+      title: "Truffle Risotto Plating",
+      category: "food",
+      tag: "Italian",
+      description: "Creamy truffle risotto garnished with parmesan.",
+      image:
+        "https://i.pinimg.com/736x/0f/47/73/0f477346220c233e896fa1c256ddc85e.jpg",
+      featured: true,
+    },
+
+    {
+      title: "Cozy Ambiance",
+      category: "ambiance",
+      tag: "Interior",
+      description: "Our beautiful restaurant interior.",
+      image:
+        "https://i.pinimg.com/1200x/d9/9d/8c/d99d8c15ffe75cedc9753bfbaac5e2d9.jpg",
+      featured: true,
+    },
+  ];
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: STYLE }} />
@@ -2342,9 +2410,9 @@ export default function Home() {
             autoplay={{ delay: 5200, disableOnInteraction: false }}
             pagination={{ clickable: true }}
           >
-            {(heroSlides.length > 0 ? heroSlides : HERO_SLIDES).map((slide) => (
-              <SwiperSlide key={slide.alt}>
-                <img src={slide.img} alt={slide.alt} />
+            {HERO_SLIDES.map((slide) => (
+              <SwiperSlide key={slide.title}>
+                <img src={slide.image} alt={slide.title} />
               </SwiperSlide>
             ))}
           </Swiper>
@@ -2516,28 +2584,37 @@ export default function Home() {
           </div>
           <div className="d_menu_grid">
             {/* Combine all menu items from all categories */}
-            {[...menuItems.food, ...menuItems.drinks, ...menuItems.coffee].slice(0, 3).map((item, index) => (
-              <div className="d_menu_card" key={`${item.name}-${index}`}>
-                <div className="d_menu_img_wrap">
-                  <img className="d_menu_img" src={item.img} alt={item.name} />
-                  <span className="d_menu_tag_badge">{item.tag}</span>
-                </div>
-                <div className="d_menu_card_body">
-                  <div className="d_menu_card_name">{item.name}</div>
-                  <div className="d_menu_card_desc">{item.desc}</div>
-                  <div className="d_menu_card_footer">
-                    <span className="d_menu_price">{item.price}</span>
+            {[...menuItems.food, ...menuItems.drinks, ...menuItems.coffee]
+              .slice(0, 3)
+              .map((item, index) => (
+                <div className="d_menu_card" key={`${item.name}-${index}`}>
+                  <div className="d_menu_img_wrap">
+                    <img
+                      className="d_menu_img"
+                      src={item.img}
+                      alt={item.name}
+                    />
+                    <span className="d_menu_tag_badge">{item.tag}</span>
+                  </div>
+                  <div className="d_menu_card_body">
+                    <div className="d_menu_card_name">{item.name}</div>
+                    <div className="d_menu_card_desc">{item.desc}</div>
+                    <div className="d_menu_card_footer">
+                      <span className="d_menu_price">{item.price}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
-            <button className="bg-transparent border-0"
+            <button
+              className="bg-transparent border-0"
               onClick={() => showToast("🧾 Full menu opening...")}
               href="menu"
             >
-              <Link to="/menu" className="d_btn_primary">View Full Menu →</Link>
+              <Link to="/menu" className="d_btn_primary">
+                View Full Menu →
+              </Link>
             </button>
           </div>
         </div>
@@ -2569,7 +2646,9 @@ export default function Home() {
               className="bg-transparent border-0"
               onClick={() => showToast("🛒 Online ordering coming soon!")}
             >
-              <Link to="/reservations" className="d_btn_primary">Reserve Table →</Link>
+              <Link to="/reservations" className="d_btn_primary">
+                Reserve Table →
+              </Link>
             </button>
           </div>
           <div className="d_order_cta_right">
@@ -2770,7 +2849,6 @@ export default function Home() {
 
           <div className="d_events_grid">
             {blogs.slice(0, 3).map((blog) => (
-
               <div className="d_event_card" key={blog._id}>
                 <div className="d_event_img_wrap">
                   <img
@@ -2808,7 +2886,8 @@ export default function Home() {
                     </div>
                     <button
                       className="d_event_register"
-                      onClick={() => handlePostClick(blog._id)}>
+                      onClick={() => handlePostClick(blog._id)}
+                    >
                       Read More <FaArrowRight style={{ marginLeft: 8 }} />
                     </button>
                   </div>
@@ -2922,7 +3001,11 @@ export default function Home() {
               }}
               onClick={() => showToast("📸 Full gallery opening...")}
             >
-              <Link to="/gallery" className="text-decoration-none" style={{ color: "var(--d-text)" }}>
+              <Link
+                to="/gallery"
+                className="text-decoration-none"
+                style={{ color: "var(--d-text)" }}
+              >
                 View All →
               </Link>
             </button>
@@ -2935,7 +3018,7 @@ export default function Home() {
                 return (
                   <div
                     key={item._id || index}
-                    className={`d_gallery_item ${isFirst ? 'd_wide d_tall' : ''}`}
+                    className={`d_gallery_item ${isFirst ? "d_wide d_tall" : ""}`}
                   >
                     <img
                       className="d_gallery_img"
@@ -2944,7 +3027,9 @@ export default function Home() {
                     />
                     <div className="d_gallery_overlay">
                       <div className="d_gallery_caption">{item.title}</div>
-                      <div className="d_gallery_subcaption">{item.category}</div>
+                      <div className="d_gallery_subcaption">
+                        {item.category}
+                      </div>
                     </div>
                   </div>
                 );

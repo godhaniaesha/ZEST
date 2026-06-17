@@ -1286,7 +1286,7 @@ body {
 .d_testi_inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 100px 5%;
+  padding:45px 5%;
 }
 
 .d_testi_grid {
