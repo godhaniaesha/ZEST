@@ -730,7 +730,6 @@ const STEPS = [
   { id: 5, label: "Review", sub: "Final Check", icon: <FiShield /> },
 ];
 
-
 const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
@@ -767,6 +766,7 @@ export default function ZestReservation() {
   const cardMountRef = useRef(null);
   const cardElementRef = useRef(null);
   const [cardReady, setCardReady] = useState(false);
+  const [paymentIntentId, setPaymentIntentId] = useState("");
 
   useEffect(() => {
     const loadTables = async () => {
@@ -786,7 +786,7 @@ export default function ZestReservation() {
 
   useEffect(() => {
     if (user) {
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
         name: user.name || prev.name,
         email: user.email || prev.email,
@@ -808,7 +808,9 @@ export default function ZestReservation() {
         ...p,
         guests: s,
         table:
-          currentTable && currentTable.capacity >= s && currentTable.status !== "Occupied"
+          currentTable &&
+          currentTable.capacity >= s &&
+          currentTable.status !== "Occupied"
             ? p.table
             : null,
       };
@@ -904,7 +906,7 @@ export default function ZestReservation() {
           (event) => {
             setCardComplete(event.complete);
             setCardError(event.error?.message || "");
-          }
+          },
         );
 
         if (active) {
@@ -948,18 +950,18 @@ export default function ZestReservation() {
     if (step === 3) {
       if (!form.name.trim()) return setError("Please enter your full name.");
       if (!emailOk) return setError("Please enter a valid email address.");
-      if (phoneDigits.length < 10) return setError("Please enter a valid 10-digit phone number.");
+      if (phoneDigits.length < 10)
+        return setError("Please enter a valid 10-digit phone number.");
       if (!form.seatingArea) return setError("Please select a seating area.");
-      if (!form.agreePolicy) return setError("You must accept the reservation policy.");
+      if (!form.agreePolicy)
+        return setError("You must accept the reservation policy.");
     }
 
     if (step === 4) {
       const paymentResult = await payReservationAdvance({
         paymentMethod: form.paymentMethod,
         cardElement:
-          form.paymentMethod === "Card"
-            ? cardElementRef.current
-            : null,
+          form.paymentMethod === "Card" ? cardElementRef.current : null,
         upiVpa: form.upiVpa.trim(),
       });
 
@@ -975,9 +977,8 @@ export default function ZestReservation() {
 
         const paymentResult = await payReservationAdvance({
           paymentMethod: form.paymentMethod,
-          cardElement: form.paymentMethod === "Card"
-            ? cardElementRef.current
-            : null,
+          cardElement:
+            form.paymentMethod === "Card" ? cardElementRef.current : null,
           // upiVpa: form.upiVpa.trim(),
         });
 
@@ -1013,8 +1014,8 @@ export default function ZestReservation() {
 
         setError(
           err.response?.data?.message ||
-          err.message ||
-          "Could not save reservation. Please try again."
+            err.message ||
+            "Could not save reservation. Please try again.",
         );
       }
     } else setStep((p) => p + 1);
@@ -1158,7 +1159,8 @@ export default function ZestReservation() {
                   {/* Right: Guests + Date */}
                   <div className="h_schedule_right">
                     <div className="h_inline_fields">
-                      <div className="h_guest_field"
+                      <div
+                        className="h_guest_field"
                         style={{
                           display: "flex",
                           flexDirection: "column",
@@ -1405,7 +1407,9 @@ export default function ZestReservation() {
                     <textarea
                       placeholder="Any dietary preferences, accessibility needs, decor request, etc."
                       value={form.specialRequests}
-                      onChange={(e) => update("specialRequests", e.target.value)}
+                      onChange={(e) =>
+                        update("specialRequests", e.target.value)
+                      }
                       maxLength={280}
                     />
                   </div>
@@ -1430,20 +1434,35 @@ export default function ZestReservation() {
             {step === 4 && (
               <div className="h_content_card">
                 <h2>Secure Checkout</h2>
-                <p style={{ fontSize: "0.85rem", opacity: 0.6, marginBottom: "1.5rem" }}>
-                  Pay ₹{ADVANCE_AMOUNT} advance to confirm your reservation. This amount will be
-                  deducted from your final bill.
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    opacity: 0.6,
+                    marginBottom: "1.5rem",
+                  }}
+                >
+                  Pay ₹{ADVANCE_AMOUNT} advance to confirm your reservation.
+                  This amount will be deducted from your final bill.
                 </p>
 
-                <div className="h_payment_row" style={{ marginBottom: "1.5rem" }}>
+                <div
+                  className="h_payment_row"
+                  style={{ marginBottom: "1.5rem" }}
+                >
                   <button
                     type="button"
                     className={`h_btn_next ${form.paymentMethod === "Card" ? "" : ""}`}
                     style={{
                       flex: 1,
                       justifyContent: "center",
-                      background: form.paymentMethod === "Card" ? "var(--z-emerald)" : "rgba(255,255,255,0.5)",
-                      color: form.paymentMethod === "Card" ? "var(--z-gold)" : "var(--z-dark)",
+                      background:
+                        form.paymentMethod === "Card"
+                          ? "var(--z-emerald)"
+                          : "rgba(255,255,255,0.5)",
+                      color:
+                        form.paymentMethod === "Card"
+                          ? "var(--z-gold)"
+                          : "var(--z-dark)",
                       padding: "0.9rem 1rem",
                       fontSize: "0.7rem",
                     }}
@@ -1457,8 +1476,14 @@ export default function ZestReservation() {
                     style={{
                       flex: 1,
                       justifyContent: "center",
-                      background: form.paymentMethod === "UPI" ? "var(--z-emerald)" : "rgba(255,255,255,0.5)",
-                      color: form.paymentMethod === "UPI" ? "var(--z-gold)" : "var(--z-dark)",
+                      background:
+                        form.paymentMethod === "UPI"
+                          ? "var(--z-emerald)"
+                          : "rgba(255,255,255,0.5)",
+                      color:
+                        form.paymentMethod === "UPI"
+                          ? "var(--z-gold)"
+                          : "var(--z-dark)",
                       padding: "0.9rem 1rem",
                       fontSize: "0.7rem",
                     }}
@@ -1476,11 +1501,23 @@ export default function ZestReservation() {
                       <div ref={cardMountRef} className="h_stripe_card_wrap" />
                     </div>
                     {cardError && (
-                      <p style={{ fontSize: "0.72rem", color: "#C0392B", marginTop: "0.5rem" }}>
+                      <p
+                        style={{
+                          fontSize: "0.72rem",
+                          color: "#C0392B",
+                          marginTop: "0.5rem",
+                        }}
+                      >
                         {cardError}
                       </p>
                     )}
-                    <p style={{ fontSize: "0.68rem", opacity: 0.45, marginTop: "0.5rem" }}>
+                    <p
+                      style={{
+                        fontSize: "0.68rem",
+                        opacity: 0.45,
+                        marginTop: "0.5rem",
+                      }}
+                    >
                       Test card: 4242 4242 4242 4242, any future expiry, any CVC
                     </p>
                   </div>
@@ -1493,10 +1530,18 @@ export default function ZestReservation() {
                         type="text"
                         placeholder="yourname@upi"
                         value={form.upiVpa}
-                        onChange={(e) => update("upiVpa", e.target.value.trim())}
+                        onChange={(e) =>
+                          update("upiVpa", e.target.value.trim())
+                        }
                       />
                     </div>
-                    <p style={{ fontSize: "0.68rem", opacity: 0.45, marginTop: "0.5rem" }}>
+                    <p
+                      style={{
+                        fontSize: "0.68rem",
+                        opacity: 0.45,
+                        marginTop: "0.5rem",
+                      }}
+                    >
                       Test mode: use success@upi
                     </p>
                   </div>
@@ -1513,8 +1558,17 @@ export default function ZestReservation() {
                     alignItems: "center",
                   }}
                 >
-                  <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>Advance Payment</span>
-                  <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "1.6rem", color: "var(--z-emerald)", fontWeight: 600 }}>
+                  <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>
+                    Advance Payment
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "Cormorant Garamond, serif",
+                      fontSize: "1.6rem",
+                      color: "var(--z-emerald)",
+                      fontWeight: 600,
+                    }}
+                  >
                     ₹{ADVANCE_AMOUNT}
                   </span>
                 </div>
@@ -1557,7 +1611,8 @@ export default function ZestReservation() {
                     <label>Table</label>
                     <span>
                       Table #
-                      {tables.find((t) => t._id === form.table)?.number || form.table}
+                      {tables.find((t) => t._id === form.table)?.number ||
+                        form.table}
                     </span>
                   </div>
                   <div className="h_summary_row">
@@ -1582,7 +1637,9 @@ export default function ZestReservation() {
                   </div>
                   <div className="h_summary_row">
                     <label>Advance Paid</label>
-                    <span>₹{ADVANCE_AMOUNT} via {form.paymentMethod}</span>
+                    <span>
+                      ₹{ADVANCE_AMOUNT} via {form.paymentMethod}
+                    </span>
                   </div>
                 </div>
               </div>

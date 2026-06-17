@@ -85,7 +85,9 @@ export default function POS() {
         const orders = Array.isArray(res.data) ? res.data : [];
         setReservationOrders(orders);
 
-        const reservation = reservations.find((r) => r._id === selectedReservation);
+        const reservation = reservations.find(
+          (r) => r._id === selectedReservation,
+        );
         setSelectedReservationData(reservation || null);
 
         const combinedItems = [];
@@ -138,10 +140,13 @@ export default function POS() {
         setCardComplete(false);
         setCardError("");
 
-        const { cardElement } = await mountCardElement(cardMountRef.current, (event) => {
-          setCardComplete(event.complete);
-          setCardError(event.error?.message || "");
-        });
+        const { cardElement } = await mountCardElement(
+          cardMountRef.current,
+          (event) => {
+            setCardComplete(event.complete);
+            setCardError(event.error?.message || "");
+          },
+        );
 
         if (active) {
           cardElementRef.current = cardElement;
@@ -172,46 +177,25 @@ export default function POS() {
     return `Table ${reservation.tableNumber || ""}`;
   };
 
-
   const handlePayment = async () => {
     try {
-      // Backend થી clientSecret મેળવો
-      const response = await paymentAPI.createAdvanceIntent({
-        paymentMethod: "Card",
+      setPaying(true);
+      setPaymentError("");
+
+      const result = await payBill({
+        amount: total,
+        paymentMethod,
+        upiVpa,
+        cardElement: cardElementRef.current,
       });
 
-      const clientSecret = response.data.clientSecret;
+      console.log("Payment Success:", result);
 
-      console.log("CLIENT SECRET:", clientSecret);
-
-      if (!clientSecret) {
-        alert("Client Secret not received");
-        return;
-      }
-
-      const cardElement = elements.getElement(CardElement);
-
-      if (!cardElement) {
-        alert("Please enter card details");
-        return;
-      }
-
-      const { error, paymentIntent } =
-        await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: cardElement,
-          },
-        });
-
-      if (error) {
-        console.error(error);
-        alert(error.message);
-        return;
-      }
-
-      console.log("Payment Success:", paymentIntent);
+      // order complete logic
     } catch (err) {
-      console.error(err);
+      setPaymentError(err.message || "Payment failed");
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -228,7 +212,9 @@ export default function POS() {
   };
 
   const removeFromCart = (id) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id && item._id !== id));
+    setCart((prevCart) =>
+      prevCart.filter((item) => item.id !== id && item._id !== id),
+    );
   };
 
   return (
@@ -288,7 +274,9 @@ export default function POS() {
 
           <div className="d-card">
             <div className="d-section-title">
-              {selectedReservation ? "Active Order" : "Select a table to view bill"}
+              {selectedReservation
+                ? "Active Order"
+                : "Select a table to view bill"}
             </div>
             {selectedReservation && (
               <div className="d-table-wrap mt-3">
@@ -305,7 +293,11 @@ export default function POS() {
                   <tbody>
                     {cart.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="text-center py-4" style={{ color: "var(--d-text-muted)" }}>
+                        <td
+                          colSpan="5"
+                          className="text-center py-4"
+                          style={{ color: "var(--d-text-muted)" }}
+                        >
                           No items in this bill
                         </td>
                       </tr>
@@ -320,14 +312,21 @@ export default function POS() {
                             <div className="d-flex align-items-center gap-2">
                               <button
                                 className="btn btn-sm btn-light p-1"
-                                onClick={() => updateQty(item.id || item._id || item.name, -1)}
+                                onClick={() =>
+                                  updateQty(
+                                    item.id || item._id || item.name,
+                                    -1,
+                                  )
+                                }
                               >
                                 <MdRemove />
                               </button>
                               <span>{item.qty}</span>
                               <button
                                 className="btn btn-sm btn-light p-1"
-                                onClick={() => updateQty(item.id || item._id || item.name, 1)}
+                                onClick={() =>
+                                  updateQty(item.id || item._id || item.name, 1)
+                                }
                               >
                                 <MdAdd />
                               </button>
@@ -339,7 +338,9 @@ export default function POS() {
                           <td>
                             <button
                               className="text-danger border-0 bg-transparent"
-                              onClick={() => removeFromCart(item.id || item._id || item.name)}
+                              onClick={() =>
+                                removeFromCart(item.id || item._id || item.name)
+                              }
                             >
                               <MdDelete />
                             </button>
@@ -382,7 +383,10 @@ export default function POS() {
                 <hr />
                 <div className="d-flex justify-content-between mb-4 mt-4">
                   <strong
-                    style={{ fontSize: "1.4rem", fontFamily: "Playfair Display" }}
+                    style={{
+                      fontSize: "1.4rem",
+                      fontFamily: "Playfair Display",
+                    }}
                   >
                     Total
                   </strong>
@@ -400,7 +404,9 @@ export default function POS() {
                 {total > 0 && (
                   <>
                     <div className="d-payment-methods mb-3">
-                      <div className="text-muted small mb-2">Payment Method</div>
+                      <div className="text-muted small mb-2">
+                        Payment Method
+                      </div>
                       <div className="d-flex gap-3">
                         <button
                           className={`d-btn-outline flex-grow-1 ${paymentMethod === "Card" ? "active" : ""}`}
@@ -421,14 +427,18 @@ export default function POS() {
 
                     {paymentMethod === "Card" ? (
                       <div className="mb-3">
-                        <div className="text-muted small mb-2">Card Details</div>
+                        <div className="text-muted small mb-2">
+                          Card Details
+                        </div>
                         <div
                           ref={cardMountRef}
                           className="form-control"
                           style={{ minHeight: "42px", paddingTop: "10px" }}
                         />
                         {cardError && (
-                          <div className="text-danger small mt-2">{cardError}</div>
+                          <div className="text-danger small mt-2">
+                            {cardError}
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -445,7 +455,9 @@ export default function POS() {
                 )}
 
                 {paymentError && (
-                  <div className="alert alert-danger py-2 small mb-3">{paymentError}</div>
+                  <div className="alert alert-danger py-2 small mb-3">
+                    {paymentError}
+                  </div>
                 )}
 
                 <button
@@ -455,13 +467,29 @@ export default function POS() {
                   disabled={cart.length === 0 || paying}
                 >
                   <MdPayment className="me-2" />
-                  {paying ? "Processing..." : total === 0 ? "Settle Bill" : "Complete Payment"}
+                  {paying
+                    ? "Processing..."
+                    : total === 0
+                      ? "Settle Bill"
+                      : "Complete Payment"}
                 </button>
               </div>
             ) : (
-              <div className="text-center py-5" style={{ color: "var(--d-text-muted)" }}>
-                <MdShoppingCart style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5 }} />
-                <p>Select a table from the dropdown above to view and manage the bill</p>
+              <div
+                className="text-center py-5"
+                style={{ color: "var(--d-text-muted)" }}
+              >
+                <MdShoppingCart
+                  style={{
+                    fontSize: "3rem",
+                    marginBottom: "1rem",
+                    opacity: 0.5,
+                  }}
+                />
+                <p>
+                  Select a table from the dropdown above to view and manage the
+                  bill
+                </p>
               </div>
             )}
           </div>
