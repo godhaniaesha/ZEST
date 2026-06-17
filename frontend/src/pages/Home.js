@@ -1955,8 +1955,7 @@ const STYLE = `
     .d_hero_image_side { display: none; }
     .d_gallery_grid { grid-template-columns: repeat(2, 1fr); }
     .d_gallery_item.d_tall { grid-row: span 1; }
-    .d_order_cta_left,
-    .d_order_cta_right { padding: 40px 32px; }
+    .d_order_cta_left, .d_order_cta_right { padding: 40px 32px; }
     .d_exp_visual_panel { padding: 12px; }
     .d_exp_mosaic { gap: 10px; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
     .d_exp_img.d_tall { grid-row: span 1; aspect-ratio: 4/3; height: auto; }
@@ -1976,19 +1975,19 @@ const STYLE = `
     .d_hero_glass_stats { padding: 18px 20px; border-radius: var(--d-radius-md); }
     .d_hero_scroll_indicator { bottom: 18px; }
     .d_section { padding: 48px 5%; }
-    .d_order_cta { grid-template-columns: 1fr; }
-  }
+    }
     @media (max-width:700px){
-    .d_about_grid { grid-template-columns: 1fr; gap: 48px; }
-    .d_about_img_main { aspect-ratio: 7 / 5;  }
+      .d_about_grid { grid-template-columns: 1fr; gap: 48px; }
+      .d_about_img_main { aspect-ratio: 7 / 5;  }
       .d_about_img_accent {     width: 40%;
       aspect-ratio: 2 / 2; }
-    }
-  
-  @media (max-width: 576px) {
-    .d_menu_grid { grid-template-columns: 1fr; }
+      }
+      
+      @media (max-width: 576px) {
+        .d_order_cta { grid-template-columns: 1fr; }
+        .d_menu_grid { grid-template-columns: 1fr; }
     .d_events_grid { grid-template-columns: 1fr; }
-    .d_about_badge { left: -12px; }
+    .d_about_badge { left: -12px; }   
   }
 
   @media (max-width: 480px) {
@@ -2234,7 +2233,7 @@ export default function Home() {
       try {
         const response = await menuAPI.getAll();
         const allMenuItems = response.data;
-        
+
         // Transform and categorize menu items
         const transformedMenu = {
           food: allMenuItems
@@ -2265,7 +2264,7 @@ export default function Home() {
               img: item.img || 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
             })),
         };
-        
+
         setMenuItems(transformedMenu);
       } catch (error) {
         console.error("Error fetching menu items:", error);
@@ -2538,7 +2537,7 @@ export default function Home() {
               onClick={() => showToast("🧾 Full menu opening...")}
               href="menu"
             >
-              <Link to="/menu"  className="d_btn_primary">View Full Menu →</Link>
+              <Link to="/menu" className="d_btn_primary">View Full Menu →</Link>
             </button>
           </div>
         </div>
@@ -2570,7 +2569,7 @@ export default function Home() {
               className="bg-transparent border-0"
               onClick={() => showToast("🛒 Online ordering coming soon!")}
             >
-              <Link to="/reservations"  className="d_btn_primary">Reserve Table →</Link>
+              <Link to="/reservations" className="d_btn_primary">Reserve Table →</Link>
             </button>
           </div>
           <div className="d_order_cta_right">
@@ -2934,8 +2933,8 @@ export default function Home() {
                 // First item gets wide and tall class
                 const isFirst = index === 0;
                 return (
-                  <div 
-                    key={item._id || index} 
+                  <div
+                    key={item._id || index}
                     className={`d_gallery_item ${isFirst ? 'd_wide d_tall' : ''}`}
                   >
                     <img

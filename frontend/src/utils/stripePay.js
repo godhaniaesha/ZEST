@@ -38,7 +38,7 @@ export const getStripePublishableKey = async () => {
   if (!data?.publishableKey) {
     throw new Error(
       data?.message ||
-        "Stripe publishable key is missing. Add STRIPE_PUBLISHABLE_KEY to backend .env",
+      "Stripe publishable key is missing. Add STRIPE_PUBLISHABLE_KEY to backend .env",
     );
   }
 
@@ -91,52 +91,45 @@ export const payReservationAdvance = async ({
 }) => {
   const stripe = await getStripe();
 
-  // 1. Create the payment intent on the backend
-  const { data } = await paymentAPI.createAdvanceIntent({ paymentMethod });
-  const { clientSecret, paymentIntentId, amount } = data;
-
-  if (paymentMethod === "Card") {
-    if (!cardElement) {
-      throw new Error("Please enter your card details.");
-    }
-
-    const result = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: { card: cardElement },
-    });
-
-    if (result.error) {
-      throw new Error(result.error.message || "Card payment failed.");
-    }
-
-    if (result.paymentIntent.status !== "succeeded") {
-      throw new Error("Payment could not be completed.");
-    }
-
-    return {
-      paymentIntentId: result.paymentIntent.id,
-      amount,
-      redirected: false,
-    };
-  }
-
-  // UPI flow
-  if (!upiVpa) {
-    throw new Error("Please enter a valid UPI ID.");
-  }
-
-  const result = await stripe.confirmUpiPayment(clientSecret, {
-    payment_method: {
-      upi: { vpa: upiVpa },
-    },
+  const { data } = await paymentAPI.createAdvanceIntent({
+    paymentMethod,
   });
 
+console.log("FULL RESPONSE:", data);
+console.log("CLIENT SECRET:", data.clientSecret);
+console.log("PAYMENT INTENT ID:", data.paymentIntentId);
+
+  console.log("Stripe Response:", data);
+
+  const { clientSecret } = data;
+
+  if (!clientSecret) {
+    throw new Error(
+      "Backend did not return clientSecret. Check createAdvanceIntent API."
+    );
+  }
+
+  if (!cardElement) {
+    throw new Error("Card element not mounted.");
+  }
+
+  const result = await stripe.confirmCardPayment(
+    clientSecret,
+    {
+      payment_method: {
+        card: cardElement,
+      },
+    }
+  );
+
+  console.log("Stripe Result:", result);
+
   if (result.error) {
-    throw new Error(result.error.message || "UPI payment failed.");
+    throw new Error(result.error.message);
   }
 
   return {
-    paymentIntentId: result.paymentIntent?.id || paymentIntentId,
-    amount,
+    paymentIntentId: result.paymentIntent?.id,
     redirected: false,
   };
 };

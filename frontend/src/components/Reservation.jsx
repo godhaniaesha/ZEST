@@ -768,6 +768,7 @@ export default function ZestReservation() {
   const clockRef = useRef(null);
   const cardMountRef = useRef(null);
   const cardElementRef = useRef(null);
+  const [cardReady, setCardReady] = useState(false);
 
   useEffect(() => {
     const loadTables = async () => {
@@ -900,13 +901,17 @@ export default function ZestReservation() {
         setCardComplete(false);
         setCardError("");
 
-        const { cardElement } = await mountCardElement(cardMountRef.current, (event) => {
-          setCardComplete(event.complete);
-          setCardError(event.error?.message || "");
-        });
+        const { cardElement } = await mountCardElement(
+          cardMountRef.current,
+          (event) => {
+            setCardComplete(event.complete);
+            setCardError(event.error?.message || "");
+          }
+        );
 
         if (active) {
           cardElementRef.current = cardElement;
+          setCardReady(true);
         } else {
           cardElement.unmount();
         }
@@ -951,13 +956,18 @@ export default function ZestReservation() {
     }
 
     if (step === 4) {
-      if (form.paymentMethod === "Card") {
-        if (!cardComplete) {
-          return setError(cardError || "Please enter complete card details.");
-        }
-      } else if (!form.upiVpa.trim()) {
-        return setError("Enter a valid UPI ID (e.g. success@upi).");
-      }
+      const paymentResult = await payReservationAdvance({
+        paymentMethod: form.paymentMethod,
+        cardElement:
+          form.paymentMethod === "Card"
+            ? cardElementRef.current
+            : null,
+        upiVpa: form.upiVpa.trim(),
+      });
+
+      setPaymentIntentId(paymentResult.paymentIntentId);
+
+      return setStep(5);
     }
 
     if (step === 5) {
@@ -967,8 +977,10 @@ export default function ZestReservation() {
 
         const paymentResult = await payReservationAdvance({
           paymentMethod: form.paymentMethod,
-          cardElement: form.paymentMethod === "Card" ? cardElementRef.current : null,
-          upiVpa: form.upiVpa.trim(),
+          cardElement: form.paymentMethod === "Card"
+            ? cardElementRef.current
+            : null,
+          // upiVpa: form.upiVpa.trim(),
         });
 
         if (paymentResult.redirected) return;

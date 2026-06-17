@@ -172,57 +172,46 @@ export default function POS() {
     return `Table ${reservation.tableNumber || ""}`;
   };
 
+
   const handlePayment = async () => {
-    if (!selectedReservation || cart.length === 0) return;
-
-    setPaymentError("");
-
-    if (total > 0) {
-      if (paymentMethod === "Card" && !cardComplete) {
-        setPaymentError(cardError || "Please enter complete card details.");
-        return;
-      }
-      if (paymentMethod === "UPI" && !upiVpa.trim()) {
-        setPaymentError("Enter a valid UPI ID.");
-        return;
-      }
-    }
-
     try {
-      setPaying(true);
-
-      const orderIds = reservationOrders.map((o) => o._id);
-
-      const result = await payBill({
-        paymentMethod,
-        cardElement: paymentMethod === "Card" ? cardElementRef.current : null,
-        upiVpa: upiVpa.trim(),
-        reservationId: selectedReservation,
-        subtotal,
-        tax,
-        orderIds,
+      // Backend થી clientSecret મેળવો
+      const response = await paymentAPI.createAdvanceIntent({
+        paymentMethod: "Card",
       });
 
-      if (result.redirected) return;
+      const clientSecret = response.data.clientSecret;
 
-      alert(
-        result.message ||
-          `Payment of ₹${(result.amountPaid ?? total).toLocaleString()} completed` +
-            (advanceDeducted > 0 ? ` (₹${advanceDeducted} advance deducted)` : "") +
-            ` via ${paymentMethod}`,
-      );
+      console.log("CLIENT SECRET:", clientSecret);
 
-      setCart([]);
-      setSelectedReservation("");
-      setSelectedReservationData(null);
-      setReservationOrders([]);
-      setUpiVpa("");
-    } catch (error) {
-      setPaymentError(
-        error.response?.data?.message || "Payment failed. Please try again.",
-      );
-    } finally {
-      setPaying(false);
+      if (!clientSecret) {
+        alert("Client Secret not received");
+        return;
+      }
+
+      const cardElement = elements.getElement(CardElement);
+
+      if (!cardElement) {
+        alert("Please enter card details");
+        return;
+      }
+
+      const { error, paymentIntent } =
+        await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+          },
+        });
+
+      if (error) {
+        console.error(error);
+        alert(error.message);
+        return;
+      }
+
+      console.log("Payment Success:", paymentIntent);
+    } catch (err) {
+      console.error(err);
     }
   };
 

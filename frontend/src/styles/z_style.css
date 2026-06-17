@@ -667,7 +667,7 @@ body {
   .d_btn_primary, .d_btn_outline { width: 100%; justify-content: center; }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .d_about_grid {
     grid-template-columns: 1fr !important;
     gap: 48px !important;

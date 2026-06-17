@@ -53,41 +53,30 @@ const verifyPaymentIntent = async (paymentIntentId, expectedAmount) => {
 };
 
 router.get("/config", (req, res) => {
-  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || "";
-
-  if (!publishableKey) {
-    return res.status(500).json({
-      message:
-        "Stripe publishable key is not configured. Add STRIPE_PUBLISHABLE_KEY to backend .env",
-    });
-  }
+  console.log("SECRET:", process.env.STRIPE_SECRET);
+  console.log("PUBLISHABLE:", process.env.STRIPE_PUBLISHABLE_KEY);
 
   res.json({
-    publishableKey,
-    advanceAmount: ADVANCE_AMOUNT,
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+    advanceAmount: 200,
   });
 });
-
-router.post("/reservation-advance-intent", optionalAuth, async (req, res) => {
+router.post("/reservation-advance-intent", async (req, res) => {
   try {
-    const { paymentMethod } = req.body;
+    const paymentIntent = await createPaymentIntent(
+      ADVANCE_AMOUNT,
+      req.body.paymentMethod
+    );
 
-    const paymentIntent = await createPaymentIntent(ADVANCE_AMOUNT, paymentMethod);
-
-    await Payment.create({
-      amount: ADVANCE_AMOUNT,
-      paymentMethod,
-      stripePaymentIntentId: paymentIntent.id,
-      paymentType: "Advance",
-      status: "Pending",
-    });
+    console.log("PI CREATED:", paymentIntent.id);
+    console.log("CLIENT SECRET:", paymentIntent.client_secret);
 
     res.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      amount: ADVANCE_AMOUNT,
     });
   } catch (err) {
+    console.error(err);
     res.status(400).json({ message: err.message });
   }
 });
