@@ -35,6 +35,8 @@ export const getStripePublishableKey = async () => {
   if (publishableKeyCache) return publishableKeyCache;
 
   const { data } = await paymentAPI.getConfig();
+  console.log("Stripe Config Response:", data);
+  console.log("Publishable Key:", data.publishableKey);
   if (!data?.publishableKey) {
     throw new Error(
       data?.message ||
@@ -95,9 +97,9 @@ export const payReservationAdvance = async ({
     paymentMethod,
   });
 
-console.log("FULL RESPONSE:", data);
-console.log("CLIENT SECRET:", data.clientSecret);
-console.log("PAYMENT INTENT ID:", data.paymentIntentId);
+  console.log("FULL RESPONSE:", data);
+  console.log("CLIENT SECRET:", data.clientSecret);
+  console.log("PAYMENT INTENT ID:", data.paymentIntentId);
 
   console.log("Stripe Response:", data);
 
@@ -165,19 +167,40 @@ const confirmStripePayment = async ({
     return { paymentIntentId: paymentIntent.id, requiresAction: false };
   }
 
-  // UPI flow
+  // UPI flow - Stripe UPI requires QR code or redirect flow
+  // For now, we'll return the client secret and let the backend handle UPI confirmation
+  // or use a redirect flow
   if (!upiVpa) {
     throw new Error("Please enter a valid UPI ID.");
   }
 
-  const upiResult = await stripe.confirmUpiPayment(clientSecret, {
-    payment_method: {
-      upi: { vpa: upiVpa },
+  // For UPI in India, Stripe typically uses a QR code flow
+  // We'll use confirmPayment without payment_method_data to let Stripe handle the flow
+  const upiResult = await stripe.confirmPayment({
+    clientSecret,
+    confirmParams: {
+      return_url: window.location.origin + '/admin/dashboard',
     },
   });
 
   if (upiResult.error) {
     throw new Error(upiResult.error.message || "UPI payment failed.");
+  }
+
+  // UPI payment might require redirect or QR code
+  if (upiResult.paymentIntent?.status === 'requires_action') {
+    const redirectUrl = upiResult.paymentIntent.next_action?.redirect_to_url?.url;
+    const qrCodeUrl = upiResult.paymentIntent.next_action?.upi_display_qr_code?.image_data_url;
+    
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+      return { redirected: true };
+    }
+    
+    if (qrCodeUrl) {
+      // Return QR code URL for display
+      return { requiresAction: true, qrCodeUrl, paymentIntentId: upiResult.paymentIntent.id };
+    }
   }
 
   return { paymentIntentId: upiResult.paymentIntent?.id, requiresAction: false };

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Reservation = require('../models/Reservation');
+const Table = require('../models/Table');
 const ItemRating = require('../models/ItemRating');
 const { auth, authorizeRoles } = require('../middleware/auth');
 
@@ -59,23 +60,43 @@ router.get('/reservation/:reservationId', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+
+    let nextId = 1000;
+
+    if (lastOrder && lastOrder.id) {
+      nextId = parseInt(lastOrder.id, 10) + 1;
+    }
+
+    // Check if reservation has advance payment paid
+    let initialStatus = req.body.status || 'Pending';
+    if (req.body.reservationId) {
+      const reservation = await Reservation.findById(req.body.reservationId);
+      if (reservation && reservation.advancePaymentStatus === 'Paid') {
+        initialStatus = 'Paid';
+      }
+    }
+
     const order = new Order({
-      id: req.body.id,
+      id: String(nextId),
       table: req.body.table,
       waiter: req.body.waiter,
       items: req.body.items,
       type: req.body.type,
       amount: req.body.amount,
-      status: req.body.status || 'Pending',
+      status: initialStatus,
       time: req.body.time,
       userId: req.body.userId,
       reservationId: req.body.reservationId
     });
 
     const newOrder = await order.save();
+
     res.status(201).json(newOrder);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({
+      message: err.message
+    });
   }
 });
 
@@ -83,7 +104,7 @@ router.patch('/:id/payment-status', auth, async (req, res) => {
   try {
     const { status } = req.body;
 
-    const validStatuses = ['Pending', 'Paid', 'Cancelled'];
+    const validStatuses = ['Pending', 'Paid'];
 
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
@@ -103,6 +124,20 @@ router.patch('/:id/payment-status', auth, async (req, res) => {
       });
     }
 
+    // If order status becomes Paid, free the table and mark reservation as fully paid
+    if (status === 'Paid' && order.reservationId) {
+      await Reservation.findByIdAndUpdate(
+        order.reservationId,
+        { fullPaymentDone: true }
+      );
+
+      // Free the table associated with the reservation
+      const reservation = await Reservation.findById(order.reservationId).populate('table');
+      if (reservation && reservation.table) {
+        await Table.findByIdAndUpdate(reservation.table._id, { status: 'Free' });
+      }
+    }
+
     res.json(order);
   } catch (err) {
     res.status(500).json({
@@ -116,7 +151,7 @@ router.patch('/:orderId/items/:itemId/status', auth, async (req, res) => {
   try {
     const { status } = req.body;
 
-    const validStatuses = ['Pending', 'Preparing', 'Served', 'Cancelled'];
+    const validStatuses = ['Pending', 'Preparing', 'Ready', 'Served'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         message: 'Invalid item status'

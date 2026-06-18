@@ -197,6 +197,10 @@ router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waite
         await Table.findByIdAndUpdate(reservation.table, { status: 'Reserved' });
       }
 
+      if (status === 'Reserved' && reservation.table) {
+        await Table.findByIdAndUpdate(reservation.table, { status: 'Reserved' });
+      }
+
       if (status === 'Cancelled' && reservation.table) {
         await Table.findByIdAndUpdate(reservation.table, { status: 'Free' });
       }

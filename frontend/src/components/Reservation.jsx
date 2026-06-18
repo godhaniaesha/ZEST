@@ -660,8 +660,7 @@ const h_res_css = `
     /* Table grid */
     .h_table_grid { grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
 
-    /* Payment */
-    .h_payment_row { flex-direction: column; gap: 0; }
+    /* Payment */    
     .h_two_col_grid { grid-template-columns: 1fr; gap: 0; }
 
     /* Summary */
@@ -670,14 +669,19 @@ const h_res_css = `
     .h_summary_row { flex-direction: row; flex-wrap: wrap; }
 
     /* Footer */
-    .h_footer { flex-direction: column-reverse; gap: 0.8rem; padding-top: 1.2rem; }
-    .h_btn_next { width: 100%; justify-content: center; padding: 1rem 1.5rem; font-size: 0.7rem; }
+   
+    .h_btn_next { width: 50%; justify-content: center; padding: 1rem 1.5rem; font-size: 0.7rem; }
     .h_btn_back { align-self: center; }
 
     /* Input */
     .h_input_box { margin-bottom: 1rem; border-radius: 18px; padding: 0.9rem 1.1rem; }
   }
+ @media (max-width: 700px) {
+   .h_footer { flex-direction: column-reverse; gap: 0.8rem; padding-top: 1.2rem; }
 
+   /* Payment */ 
+   .h_payment_row { flex-direction: row; gap: 10; }
+}
   /* ══════════════════════════════════════
      RESPONSIVE — SMALL MOBILE (≤ 480px)
   ══════════════════════════════════════ */
@@ -710,6 +714,10 @@ const h_res_css = `
     .h_res_step_node { min-width: 128px; padding: 0.55rem 0.6rem; }
     .h_res_step_info p { font-size: 0.65rem; }
     .h_capsule_btn { width: 38px; height: 38px; }
+  }
+    @media (max-width: 375px) {
+    .h_btn_next { width: 100%; }
+    .h_payment_row { flex-direction: column; }
   }
 `;
 
@@ -966,14 +974,12 @@ export default function ZestReservation() {
         setLoading(true);
         setError("");
 
-        const paymentResult = await payReservationAdvance({
-          paymentMethod: form.paymentMethod,
-          cardElement:
-            form.paymentMethod === "Card" ? cardElementRef.current : null,
-          // upiVpa: form.upiVpa.trim(),
-        });
-
-        if (paymentResult.redirected) return;
+        // Use the payment intent ID from step 4, don't process payment again
+        if (!paymentIntentId) {
+          setError("Payment information missing. Please go back and complete payment.");
+          setLoading(false);
+          return;
+        }
 
         const reservationData = {
           customerName: form.name,
@@ -988,7 +994,7 @@ export default function ZestReservation() {
           specialOccasion: form.specialOccasion,
           specialRequests: form.specialRequests,
           paymentMethod: form.paymentMethod,
-          stripePaymentIntentId: paymentResult.paymentIntentId,
+          stripePaymentIntentId: paymentIntentId,
           status: "Pending",
         };
 
