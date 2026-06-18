@@ -8,7 +8,7 @@ import '../src/styles/x_style.css';
 import '../src/styles/z_style.css';
 import '../src/styles/menu_style.css';
 import '../src/styles/profile.css';
-
+import '../src/styles/RatingModal.css';
 
 import Home from './pages/Home';
 import ContactUs from './pages/ContactUs';
@@ -18,6 +18,7 @@ import Auth from './components/Auth';
 import AboutUs from './pages/AboutUs';
 import Menu from './pages/Menu';
 import MenuDetail from './pages/MenuDetail';
+import RatingModal from './pages/RatingModal';
 
 import AppRoutes from './admin/Approutes';
 import Services from './pages/Services';
@@ -33,8 +34,9 @@ import NewHome from './pages/NewHome';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import FAQ from './pages/FAQ';
+import { useState, useEffect } from 'react';
 
-function UserLayout({ children }) {
+function UserLayout({ children, showRatingModal, onRatingClose }) {
   return (
     <>
       <Navbar />
@@ -44,11 +46,39 @@ function UserLayout({ children }) {
       </main>
 
       <Footer />
+      
+      <RatingModal 
+        isOpen={showRatingModal} 
+        onClose={onRatingClose}
+        onSubmit={(data) => console.log('Rating submitted:', data)}
+        cafeOrBarName="ZEST Cafe & Bar"
+      />
     </>
   );
 }
 
 function App() {
+  const [showRating, setShowRating] = useState(false);
+
+  useEffect(() => {
+    // Check if user already rated
+    const hasRated = localStorage.getItem('userHasRated');
+    
+    // Show modal after 3 seconds on first visit or after order
+    if (!hasRated) {
+      const timer = setTimeout(() => {
+        setShowRating(true);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleRatingClose = () => {
+    setShowRating(false);
+    localStorage.setItem('userHasRated', 'true');
+  };
+
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -56,31 +86,29 @@ function App() {
         <Routes>
 
           {/* USER ROUTES */}
-          <Route path="/" element={<UserLayout>  <Home /> </UserLayout>} />
-          <Route path="/home" element={<UserLayout>  <Home /> </UserLayout>} />
-          <Route path="/cbhome" element={<UserLayout>  <BarCafeHome /> </UserLayout>} />
-          <Route path="/newhome" element={<UserLayout>  <NewHome /> </UserLayout>} />
-          <Route path="/aboutus" element={<UserLayout>  <AboutUs /> </UserLayout>} />
-          <Route path="/contactus" element={<UserLayout>  <ContactUs /> </UserLayout>} />
-          <Route path="/services" element={<UserLayout>  <Services /> </UserLayout>} />
-          <Route path="/privacy-policy" element={<UserLayout>  <PrivacyPolicy /> </UserLayout>} />
-          <Route path="/terms" element={<UserLayout>  <TermsAndConditions /> </UserLayout>} />
-          <Route path="/menu" element={<UserLayout>  <Menu /> </UserLayout>} />
-          <Route path="/menu/:id" element={<UserLayout>  <MenuDetail /> </UserLayout>} />
-          <Route path="/auth" element={<UserLayout>  <Auth /> </UserLayout>} />
-          <Route path="/blog" element={<UserLayout>  <Blog /> </UserLayout>} />
-          <Route path="/gallery" element={<UserLayout>  <Gallery/> </UserLayout>} />
-          <Route path="/blog/:id" element={<UserLayout>  <BlogDetail /> </UserLayout>} />
+          <Route path="/" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Home /> </UserLayout>} />
+          <Route path="/home" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Home /> </UserLayout>} />
+          <Route path="/cbhome" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <BarCafeHome /> </UserLayout>} />
+          <Route path="/newhome" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <NewHome /> </UserLayout>} />
+          <Route path="/aboutus" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <AboutUs /> </UserLayout>} />
+          <Route path="/contactus" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <ContactUs /> </UserLayout>} />
+          <Route path="/services" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Services /> </UserLayout>} />
+          <Route path="/privacy-policy" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <PrivacyPolicy /> </UserLayout>} />
+          <Route path="/terms" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <TermsAndConditions /> </UserLayout>} />
+          <Route path="/menu" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Menu /> </UserLayout>} />
+          <Route path="/menu/:id" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <MenuDetail /> </UserLayout>} />
+          <Route path="/auth" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Auth /> </UserLayout>} />
+          <Route path="/blog" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Blog /> </UserLayout>} />
+          <Route path="/gallery" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Gallery/> </UserLayout>} />
+          <Route path="/blog/:id" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <BlogDetail /> </UserLayout>} />
 
-          <Route path="/reservations" element={<UserLayout> <Reservation /> </UserLayout> } />
-          <Route path="/profile" element={<UserLayout> <Profile /> </UserLayout> } />
+          <Route path="/reservations" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Reservation /> </UserLayout> } />
+          <Route path="/profile" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Profile /> </UserLayout> } />
         
-        
-         <Route path="/termss" element={<UserLayout> <Terms /> </UserLayout> } />
-          <Route path="/privacy" element={<UserLayout> <Privacy /> </UserLayout> } />
-          <Route path="/faq" element={<UserLayout> <FAQ /> </UserLayout> } />
+         <Route path="/termss" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Terms /> </UserLayout> } />
+          <Route path="/privacy" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <Privacy /> </UserLayout> } />
+          <Route path="/faq" element={<UserLayout showRatingModal={showRating} onRatingClose={handleRatingClose}> <FAQ /> </UserLayout> } />
 
-          
           {/* ADMIN ROUTES */}
           <Route path="/admin/*" element={<AppRoutes />} />
 

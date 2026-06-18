@@ -543,7 +543,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/zest-rest
       category: "food",
       tag: "Italian",
       description: "Creamy truffle risotto garnished with parmesan.",
-      image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=600&q=80",
+      image: "https://i.pinimg.com/736x/a8/a7/c5/a8a7c5d0f8b911fcd4ec1691dc3bf195.jpg",
       featured: true
     },
     {
@@ -551,7 +551,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/zest-rest
       category: "drinks",
       tag: "Cocktails",
       description: "A selection of our finest cocktails.",
-      image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80",
+      image: "https://i.pinimg.com/1200x/e0/fd/56/e0fd566141751a4e6e1450f7e0242ac4.jpg",
       featured: true
     },
     {
@@ -559,7 +559,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/zest-rest
       category: "ambiance",
       tag: "Interior",
       description: "Our beautiful restaurant interior.",
-      image: "https://images.unsplash.com/photo-1559329007-40df8a9345d8?auto=format&fit=crop&w=600&q=80",
+      image: "https://i.pinimg.com/736x/cb/08/2e/cb082eedfc22dcba74f2c03fcad68e64.jpg",
       featured: true
     }
   ]);
