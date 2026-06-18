@@ -278,7 +278,7 @@ export default function KitchenDisplay() {
                       className="d-kot-action-btn d-kot-btn-ready"
                       onClick={() => handleMarkReady(order.id)}
                     >
-                      <MdCheckCircle className="me-1" /> Dome
+                      <MdCheckCircle className="me-1" /> Done
                     </button>
                   </div>
                 </div>

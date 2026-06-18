@@ -1,33 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Blog = require("../models/Blog");
-const multer = require("multer");
-const path = require("path");
-
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads/"));
-  },
-  filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() +
-      "-" +
-      Math.round(Math.random() * 1e9) +
-      path.extname(file.originalname);
-    cb(null, uniqueName);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only image files are allowed!"), false);
-  }
-};
-
-const upload = multer({ storage: storage, fileFilter: fileFilter });
+const upload = require("../middleware/uploadS3");
+const { deleteFromS3 } = require("../middleware/uploadS3");
 
 const buildBlogPayload = (body, file, existingImage = null) => {
   const payload = {
@@ -41,7 +16,7 @@ const buildBlogPayload = (body, file, existingImage = null) => {
   };
 
   if (file) {
-    payload.image = `http://localhost:${process.env.PORT || 5000}/uploads/${file.filename}`;
+    payload.image = `${process.env.AWS_S3_BASE_URL}/${file.key}`;
   } else if (body.image && typeof body.image === "string") {
     payload.image = body.image;
   } else if (existingImage) {
@@ -122,6 +97,10 @@ router.delete(
   authorizeRoles("superadmin", "manager"),
   async (req, res) => {
     try {
+      const blog = await Blog.findById(req.params.id);
+      if (blog && blog.image) {
+        await deleteFromS3(blog.image);
+      }
       await Blog.findByIdAndDelete(req.params.id);
       res.json({ message: "Blog deleted" });
     } catch (err) {

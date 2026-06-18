@@ -70,9 +70,19 @@ export default function Menu() {
     return matchesCategory && matchesSearch;
   });
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleAdd = () => {
     setCurrentItem(null);
     setFormData({ name: '', category: categories[1]?.name || '', price: '', status: 'Available', type: 'Cafe', cuisine: cuisines[0] || '', description: '', prepTime: 15, ingredients: '' });
+    setImageFile(null);
+    setImagePreview(null);
     setShowForm(true);
   };
 
@@ -89,6 +99,8 @@ export default function Menu() {
       prepTime: item.prepTime || 15,
       ingredients: item.ingredients || ''
     });
+    setImageFile(null);
+    setImagePreview(item.img || null);
     setShowForm(true);
   };
 
@@ -97,7 +109,7 @@ export default function Menu() {
     setShowDelete(true);
   };
 
-  const handleSave = async (_, fileData) => {
+  const handleSave = async () => {
     try {
       // Validation
       if (!formData.name || !formData.price || !formData.category) {
@@ -139,8 +151,8 @@ export default function Menu() {
         data.append('color', '#2ecc71');
       }
 
-      if (fileData?.file) {
-        data.append(fileData.name, fileData.file);
+      if (imageFile) {
+        data.append('img', imageFile);
       }
 
       if (currentItem) {
@@ -153,6 +165,8 @@ export default function Menu() {
 
       await loadData();
       setShowForm(false);
+      setImageFile(null);
+      setImagePreview(null);
     } catch (error) {
       console.error('Error saving menu item:', error);
       alert('Failed to save menu item');
@@ -408,6 +422,21 @@ export default function Menu() {
                 value={formData.ingredients}
                 onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
               />
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Image</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img src={imagePreview} alt="Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                </div>
+              )}
             </Form.Group>
           </Col>
         </Row>

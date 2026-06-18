@@ -2,21 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Cuisine = require('../models/Cuisine');
 const { auth, authorizeRoles } = require('../middleware/auth');
-const multer = require('multer');
-const path = require('path');
-
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads/'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
-
-const upload = multer({ storage: storage });
+const upload = require('../middleware/uploadS3');
+const { deleteFromS3 } = require('../middleware/uploadS3');
 
 // Public route to get all cuisines
 router.get('/', async (req, res) => {
@@ -37,7 +24,7 @@ router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef'), upload.s
   };
 
   if (req.file) {
-    cuisineData.img = `http://localhost:${process.env.PORT || 5000}/uploads/${req.file.filename}`;
+    cuisineData.img = `${process.env.AWS_S3_BASE_URL}/${req.file.key}`;
   }
 
   const cuisine = new Cuisine(cuisineData);
@@ -59,7 +46,7 @@ router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef'), upload
     };
 
     if (req.file) {
-      cuisineData.img = `http://localhost:${process.env.PORT || 5000}/uploads/${req.file.filename}`;
+      cuisineData.img = `${process.env.AWS_S3_BASE_URL}/${req.file.key}`;
     }
 
     const updatedCuisine = await Cuisine.findByIdAndUpdate(req.params.id, cuisineData, { new: true });
@@ -71,6 +58,10 @@ router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef'), upload
 
 router.delete('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef'), async (req, res) => {
   try {
+    const cuisine = await Cuisine.findById(req.params.id);
+    if (cuisine && cuisine.img) {
+      await deleteFromS3(cuisine.img);
+    }
     await Cuisine.findByIdAndDelete(req.params.id);
     res.json({ message: 'Cuisine deleted' });
   } catch (err) {

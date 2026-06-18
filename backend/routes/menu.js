@@ -1,35 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const Menu = require("../models/Menu");
-const multer = require("multer");
-const path = require("path");
 const { inferMenuType, toMenuTypeArray } = require("../utils/menuType");
 const { auth, authorizeRoles } = require("../middleware/auth");
-
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads/"));
-  },
-  filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() +
-      "-" +
-      Math.round(Math.random() * 1e9) +
-      path.extname(file.originalname);
-    cb(null, uniqueName);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only image files are allowed!"), false);
-  }
-};
-
-const upload = multer({ storage: storage, fileFilter: fileFilter });
+const upload = require("../middleware/uploadS3");
+const { deleteFromS3 } = require("../middleware/uploadS3");
 
 const buildMenuPayload = (body, file) => {
   const category = body.category;
@@ -51,7 +26,7 @@ const buildMenuPayload = (body, file) => {
   };
 
   if (file) {
-    payload.img = `http://localhost:${process.env.PORT || 5000}/uploads/${file.filename}`;
+    payload.img = `${process.env.AWS_S3_BASE_URL}/${file.key}`;
   } else if (body.img && typeof body.img === "string") {
     payload.img = body.img;
   }
@@ -130,10 +105,11 @@ router.put(
 
 router.delete("/:id", auth, authorizeRoles("chef", "manager", "superadmin"), async (req, res) => {
   try {
-    const menuItem = await Menu.findByIdAndDelete(req.params.id);
-    if (!menuItem) {
-      return res.status(404).json({ message: "Menu item not found" });
+    const menuItem = await Menu.findById(req.params.id);
+    if (menuItem && menuItem.img) {
+      await deleteFromS3(menuItem.img);
     }
+    await Menu.findByIdAndDelete(req.params.id);
     res.json({ message: "Menu item deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
