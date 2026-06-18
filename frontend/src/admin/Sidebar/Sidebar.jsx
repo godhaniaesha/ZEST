@@ -105,7 +105,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
         <Link to="/" className="d-sidebar-logo" style={{ textDecoration: 'none' }}>
           <div className="d-logo-icon">☕</div>
           <div className="d-logo-text">
-            <div className="d-logo-name">Breva</div>
+            <div className="d-logo-name">Zest</div>
             <div className="d-logo-tagline">Café & Bar Admin</div>
           </div>
         </Link>

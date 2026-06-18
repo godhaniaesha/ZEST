@@ -1986,9 +1986,9 @@ body {
     padding: 20px 16px;
   }
 
-  .d-hide-mobile {
+  /* .d-hide-mobile {
     display: none !important;
-  }
+  } */
 
   /* Force labels and logo to be visible on mobile even if collapsed state is active */
   .d-sidebar.d-collapsed .d-nav-label,

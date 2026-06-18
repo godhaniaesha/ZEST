@@ -234,7 +234,7 @@ export default function POS() {
             <MdPayment /> POS & Billing
           </div>
           <div className="d-page-sub">
-            Point of Sale terminal for Breva Café & Bar
+            Point of Sale terminal for Zest Café & Bar
           </div>
         </div>
         <div className="d-flex gap-2">

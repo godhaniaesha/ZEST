@@ -116,7 +116,7 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
           <MdFullscreen />
         </button>
 
-        <div className="d-profile-container">
+        {/* <div className="d-profile-container">
           <button 
             className="d-navbar-icon-btn" 
             aria-label="Notifications"
@@ -147,7 +147,7 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
               </button>
             </div>
           )}
-        </div>
+        </div> */}
 
         <div className="d-divider-v" />
 

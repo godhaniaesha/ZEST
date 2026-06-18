@@ -108,7 +108,7 @@ export default function Dashboard() {
           <div className="d-page-heading d-flex align-items-center gap-2">
             <MdDashboard /> Dashboard Overview
           </div>
-          <div className="d-page-sub">Real-time management for Breva Café & Bar</div>
+          <div className="d-page-sub">Real-time management for Zest Café & Bar</div>
         </div>
         <div className="d-flex gap-2 align-items-center">
           <button className="d-btn-outline d-hide-mobile" onClick={handleDownloadReport}>Download Report</button>

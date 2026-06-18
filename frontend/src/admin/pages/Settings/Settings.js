@@ -61,9 +61,9 @@ export default function Settings() {
               <div className="d-section-title mb-4">Business Information</div>
               <Row className="g-3">
                 {[
-                  ['Café Name', 'Breva Café & Bar'],
+                  ['Café Name', 'Zest Café & Bar'],
                   ['Owner Name', 'Admin User'],
-                  ['Email Address', 'hello@breva.in'],
+                  ['Email Address', 'hello@Zest.in'],
                   ['Phone Number', '+91 98765 00000'],
                   ['GST Number', '24AAAAA0000A1Z5'],
                   ['Address', 'MG Road, Gujarat'],
@@ -399,7 +399,7 @@ export default function Settings() {
                           <label className="d-settings-label">Merchant Name</label>
                           <input 
                             className="d-settings-input" 
-                            placeholder="Breva Café & Bar"
+                            placeholder="Zest Café & Bar"
                             style={{
                               width: '100%', padding: '10px 14px',
                               border: '1.5px solid var(--d-border)', borderRadius: 'var(--d-radius-md)',
