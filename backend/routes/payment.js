@@ -92,6 +92,52 @@ router.post("/reservation-advance-intent", async (req, res) => {
   }
 });
 
+router.post("/reservation-advance-complete", async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+
+    if (!paymentIntentId) {
+      return res.status(400).json({ message: "Payment intent ID is required." });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status !== "succeeded") {
+      return res.status(400).json({
+        message: "Payment has not been completed. Please complete the payment first.",
+        paymentStatus: paymentIntent.status,
+      });
+    }
+
+    if (paymentIntent.amount !== ADVANCE_AMOUNT * 100) {
+      return res.status(400).json({
+        message: `Invalid advance payment amount. Expected ₹${ADVANCE_AMOUNT}.`,
+      });
+    }
+
+    // Update payment record
+    await Payment.findOneAndUpdate(
+      { stripePaymentIntentId: paymentIntentId },
+      {
+        paymentType: "Advance",
+        status: "Succeeded",
+        amount: ADVANCE_AMOUNT,
+      },
+      { new: true, upsert: true }
+    );
+
+    res.json({
+      success: true,
+      paymentIntentId: paymentIntent.id,
+      amount: ADVANCE_AMOUNT,
+      message: "Advance payment verified successfully.",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.post("/bill-intent", auth, async (req, res) => {
   try {
     const { reservationId, subtotal, tax, paymentMethod } = req.body;

@@ -87,7 +87,8 @@ export default function KitchenDisplay() {
 
       const mapped = data.map(mapOrderToUI);
 
-      setOrders(mapped);
+      // Filter out completed orders
+      setOrders(mapped.filter(o => o.status !== 'Completed'));
     } catch (err) {
       console.error('Failed to fetch orders', err);
       setError(err.message || 'Failed to load orders');
@@ -118,17 +119,27 @@ export default function KitchenDisplay() {
   };
 
   const handleMarkReady = (id) => {
-    // Mark order payment/status as Paid on backend and remove locally
+    // Mark order as completed when all items are Ready
     const order = orders.find(o => o.id === id || o._id === id);
     if (!order) return;
 
+    // Check if all items are Ready
+    const allItemsReady = order.items.every(item => item.status === 'Ready');
+    if (!allItemsReady) {
+      setError('All items must be Ready before marking order as Done');
+      return;
+    }
+
     (async () => {
       try {
-        await api.patch(`/orders/${order._id}/payment-status`, { status: 'Paid' });
+        // Update order status to Completed on backend
+        await api.put(`/orders/${order._id}`, { status: 'Completed' });
+        // Remove order from local display
+        setOrders((cur) => cur.filter(o => o._id !== order._id));
       } catch (err) {
-        console.error('Failed to mark order ready', err);
+        console.error('Failed to mark order as Done', err);
+        setError(err.response?.data?.message || err.message || 'Failed to mark order as Done');
       }
-      setOrders((cur) => cur.filter(o => o._id !== order._id));
     })();
   };
 
@@ -277,6 +288,11 @@ export default function KitchenDisplay() {
                     <button
                       className="d-kot-action-btn d-kot-btn-ready"
                       onClick={() => handleMarkReady(order.id)}
+                      disabled={!order.items.every(item => item.status === 'Ready')}
+                      style={{
+                        opacity: order.items.every(item => item.status === 'Ready') ? 1 : 0.5,
+                        cursor: order.items.every(item => item.status === 'Ready') ? 'pointer' : 'not-allowed'
+                      }}
                     >
                       <MdCheckCircle className="me-1" /> Done
                     </button>

@@ -13,7 +13,7 @@ import {
   FiPhone,
 } from "react-icons/fi";
 import { useAuth } from "../contexts/AuthContext";
-import { reservationsAPI, publicTablesAPI } from "../api";
+import { reservationsAPI, publicTablesAPI, paymentAPI } from "../api";
 import { payReservationAdvance, mountCardElement } from "../utils/stripePay";
 
 const ADVANCE_AMOUNT = 200;
@@ -965,6 +965,17 @@ export default function ZestReservation() {
       });
 
       setPaymentIntentId(paymentResult.paymentIntentId);
+
+      // Verify payment with backend
+      try {
+        await paymentAPI.completeAdvancePayment({
+          paymentIntentId: paymentResult.paymentIntentId,
+        });
+      } catch (err) {
+        console.error("Payment verification failed:", err);
+        setError(err.response?.data?.message || "Payment verification failed");
+        return;
+      }
 
       return setStep(5);
     }

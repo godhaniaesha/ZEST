@@ -101,8 +101,6 @@ export const payReservationAdvance = async ({
   console.log("CLIENT SECRET:", data.clientSecret);
   console.log("PAYMENT INTENT ID:", data.paymentIntentId);
 
-  console.log("Stripe Response:", data);
-
   const { clientSecret } = data;
 
   if (!clientSecret) {
@@ -111,6 +109,41 @@ export const payReservationAdvance = async ({
     );
   }
 
+  // Handle UPI payment
+  if (paymentMethod === "UPI") {
+    const upiResult = await stripe.confirmPayment({
+      clientSecret,
+      confirmParams: {
+        return_url: window.location.origin + '/admin/dashboard',
+      },
+    });
+
+    if (upiResult.error) {
+      throw new Error(upiResult.error.message || "UPI payment failed.");
+    }
+
+    // UPI payment might require redirect or QR code
+    if (upiResult.paymentIntent?.status === 'requires_action') {
+      const redirectUrl = upiResult.paymentIntent.next_action?.redirect_to_url?.url;
+      const qrCodeUrl = upiResult.paymentIntent.next_action?.upi_display_qr_code?.image_data_url;
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+        return { redirected: true };
+      }
+
+      if (qrCodeUrl) {
+        return { requiresAction: true, qrCodeUrl, paymentIntentId: upiResult.paymentIntent.id };
+      }
+    }
+
+    return {
+      paymentIntentId: upiResult.paymentIntent?.id,
+      redirected: false,
+    };
+  }
+
+  // Handle Card payment
   if (!cardElement) {
     throw new Error("Card element not mounted.");
   }
