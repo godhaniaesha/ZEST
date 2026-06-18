@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+
 import { Row, Col, Form } from "react-bootstrap";
+
 import {
   MdEvent,
   MdCheckCircle,
@@ -11,51 +13,100 @@ import {
   MdAccessTime,
   MdPeople,
 } from "react-icons/md";
+
 import DeleteModal from "../../components/DeleteModal";
+
 import FormModal from "../../components/FormModal";
+
 import { leaveAPI, usersAPI } from "../../../api";
 
+import { useAuth } from "../../../contexts/AuthContext";
+
 export default function LeaveManagement() {
+  const { user } = useAuth();
+
   const [leaves, setLeaves] = useState([]);
+
   const [staffList, setStaffList] = useState([]);
+
   const [searchTerm, setSearchTerm] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("all");
+
   const [loading, setLoading] = useState(true);
 
   // Modal States
+
   const [showForm, setShowForm] = useState(false);
+
   const [showDelete, setShowDelete] = useState(false);
+
   const [showReject, setShowReject] = useState(false);
+
   const [currentItem, setCurrentItem] = useState(null);
+
   const [rejectionReason, setRejectionReason] = useState("");
+
   const [formData, setFormData] = useState({
     staffId: "",
+
     startDate: "",
+
     endDate: "",
+
     type: "sick",
+
     reason: "",
   });
 
   const loadData = async () => {
     try {
       setLoading(true);
+
       const [leavesRes, staffRes] = await Promise.all([
         leaveAPI.getAll(),
-        usersAPI.getAll()
+
+        usersAPI.getAll(),
       ]);
+
       setLeaves(Array.isArray(leavesRes.data) ? leavesRes.data : []);
-      setStaffList(Array.isArray(staffRes.data) ? staffRes.data.filter(staff => staff.role !== 'customer').map(staff => ({
-        _id: staff._id,
-        name: staff.name,
-        role: staff.role,
-        initials: staff.name.split(' ').map(n => n[0]).join('').toUpperCase(),
-        color: '#C9A84C',
-        leavesTotal: staff.leavesTotal || 12,
-        leavesTaken: staff.leavesTaken || 0
-      })) : []);
+
+      setStaffList(
+        Array.isArray(staffRes.data)
+          ? staffRes.data
+
+              .filter((staff) => staff.role !== "customer")
+
+              .map((staff) => ({
+                _id: staff._id,
+
+                name: staff.name,
+
+                role: staff.role,
+
+                initials: staff.name
+
+                  .split(" ")
+
+                  .map((n) => n[0])
+
+                  .join("")
+
+                  .toUpperCase(),
+
+                color: "#C9A84C",
+
+                leavesTotal: staff.leavesTotal || 12,
+
+                leavesTaken: staff.leavesTaken || 0,
+              }))
+          : [],
+      );
     } catch (error) {
       console.error("Error loading data:", error);
+
       setLeaves([]);
+
       setStaffList([]);
     } finally {
       setLoading(false);
@@ -71,64 +122,88 @@ export default function LeaveManagement() {
       l.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       l.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
       l.reason.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = statusFilter === "all" || l.status === statusFilter;
+
     return matchesSearch && matchesStatus;
   });
 
   const handleAdd = () => {
     setCurrentItem(null);
+
     setFormData({
-      staffId: "",
+      staffId: user?._id || "",
+
       startDate: "",
+
       endDate: "",
+
       type: "sick",
+
       reason: "",
     });
+
     setShowForm(true);
   };
 
   const handleEdit = (item) => {
     setCurrentItem(item);
+
     setFormData({
       staffId: item.staffId,
+
       startDate: item.startDate,
+
       endDate: item.endDate,
+
       type: item.type,
+
       reason: item.reason,
     });
+
     setShowForm(true);
   };
 
   const handleDeleteClick = (item) => {
     setCurrentItem(item);
+
     setShowDelete(true);
   };
 
   const handleApprove = async (item) => {
     try {
       await leaveAPI.approve(item._id);
+
       alert("Leave approved successfully");
+
       loadData();
     } catch (error) {
       console.error("Error approving leave:", error);
+
       alert("Failed to approve leave");
     }
   };
 
   const handleRejectClick = (item) => {
     setCurrentItem(item);
+
     setRejectionReason("");
+
     setShowReject(true);
   };
 
   const handleReject = async () => {
     try {
       await leaveAPI.reject(currentItem._id, rejectionReason);
+
       setShowReject(false);
+
       alert("Leave rejected");
+
       loadData();
     } catch (error) {
       console.error("Error rejecting leave:", error);
+
       alert("Failed to reject leave");
     }
   };
@@ -142,13 +217,17 @@ export default function LeaveManagement() {
         !formData.reason
       ) {
         alert("Please fill in all required fields");
+
         return;
       }
 
       const start = new Date(formData.startDate);
+
       const end = new Date(formData.endDate);
+
       if (end < start) {
         alert("End date must be after start date");
+
         return;
       }
 
@@ -159,9 +238,11 @@ export default function LeaveManagement() {
       }
 
       setShowForm(false);
+
       loadData();
     } catch (error) {
       console.error("Error saving leave:", error);
+
       alert("Failed to save leave request");
     }
   };
@@ -169,20 +250,28 @@ export default function LeaveManagement() {
   const confirmDelete = async () => {
     try {
       await leaveAPI.delete(currentItem._id);
+
       setShowDelete(false);
+
       loadData();
     } catch (error) {
       console.error("Error deleting leave:", error);
+
       alert("Failed to delete leave request");
     }
   };
 
   const getStats = () => {
     const pending = leaves.filter((l) => l.status === "pending").length;
+
     const approved = leaves.filter((l) => l.status === "approved").length;
+
     const rejected = leaves.filter((l) => l.status === "rejected").length;
+
     const totalDays = leaves
+
       .filter((l) => l.status === "approved")
+
       .reduce((sum, l) => sum + l.days, 0);
 
     return { pending, approved, rejected, totalDays };
@@ -192,8 +281,11 @@ export default function LeaveManagement() {
 
   const formatDateRange = (startDate, endDate) => {
     const start = new Date(startDate).toLocaleDateString("en-IN");
+
     const end = new Date(endDate).toLocaleDateString("en-IN");
+
     if (startDate === endDate) return start;
+
     return `${start} - ${end}`;
   };
 
@@ -203,11 +295,13 @@ export default function LeaveManagement() {
         <div>
           <div className="d-page-heading d-flex align-items-center gap-2">
             <MdEvent /> Leave Management
-          </div>
+          </div>  
+
           <div className="d-page-sub">
             Manage staff leave requests and approvals
           </div>
         </div>
+
         <div className="d-flex gap-2">
           <button className="d-btn-gold" onClick={handleAdd}>
             <MdAdd /> Request Leave
@@ -219,6 +313,7 @@ export default function LeaveManagement() {
         {loading
           ? Array(4)
               .fill(0)
+
               .map((_, i) => (
                 <Col key={i} xs={12} sm={6} xl={3}>
                   <div className="d-stat-card">
@@ -226,10 +321,13 @@ export default function LeaveManagement() {
                       className="d-stat-icon d-gold"
                       style={{
                         width: "42px",
+
                         height: "42px",
+
                         fontSize: "1.1rem",
                       }}
                     ></div>
+
                     <div>
                       <div
                         className="d-stat-value"
@@ -237,6 +335,7 @@ export default function LeaveManagement() {
                       >
                         ...
                       </div>
+
                       <div className="d-stat-label">Loading...</div>
                     </div>
                   </div>
@@ -245,26 +344,41 @@ export default function LeaveManagement() {
           : [
               {
                 label: "Pending Requests",
+
                 value: stats.pending,
+
                 icon: <MdAccessTime />,
+
                 color: "d-gold",
               },
+
               {
                 label: "Approved",
+
                 value: stats.approved,
+
                 icon: <MdCheckCircle />,
+
                 color: "d-green",
               },
+
               {
                 label: "Rejected",
+
                 value: stats.rejected,
+
                 icon: <MdCancel />,
+
                 color: "d-red",
               },
+
               {
                 label: "Total Days Taken",
+
                 value: stats.totalDays,
+
                 icon: <MdEvent />,
+
                 color: "d-blue",
               },
             ].map((s, i) => (
@@ -274,12 +388,15 @@ export default function LeaveManagement() {
                     className={`d-stat-icon ${s.color}`}
                     style={{
                       width: "42px",
+
                       height: "42px",
+
                       fontSize: "1.1rem",
                     }}
                   >
                     {s.icon}
                   </div>
+
                   <div>
                     <div
                       className="d-stat-value"
@@ -287,6 +404,7 @@ export default function LeaveManagement() {
                     >
                       {s.value}
                     </div>
+
                     <div className="d-stat-label">{s.label}</div>
                   </div>
                 </div>
@@ -298,6 +416,7 @@ export default function LeaveManagement() {
         <Col xs={12} md={6}>
           <div className="d-navbar-search-box w-100">
             <MdSearch className="d-search-icon" />
+
             <input
               type="text"
               placeholder="Search by name, role, or reason..."
@@ -306,24 +425,30 @@ export default function LeaveManagement() {
             />
           </div>
         </Col>
+
         <Col xs={12} md={6}>
           <Form.Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">All Statuses</option>
+
             <option value="pending">Pending</option>
+
             <option value="approved">Approved</option>
+
             <option value="rejected">Rejected</option>
           </Form.Select>
         </Col>
       </Row>
 
       <h5 className="mt-4 mb-3">Staff Leave Summary</h5>
+
       <Row className="g-3 mb-5">
         {loading
           ? Array(6)
               .fill(0)
+
               .map((_, i) => (
                 <Col key={i} xs={12} sm={6} md={4}>
                   <div className="d-card">
@@ -341,31 +466,45 @@ export default function LeaveManagement() {
                       <div
                         style={{
                           width: 48,
+
                           height: 48,
+
                           borderRadius: "var(--d-radius-md)",
+
                           background: `${staff.color}15`,
+
                           color: staff.color,
+
                           display: "flex",
+
                           alignItems: "center",
+
                           justifyContent: "center",
+
                           fontWeight: 800,
+
                           fontSize: "1.1rem",
+
                           flexShrink: 0,
                         }}
                       >
                         {staff.initials}
                       </div>
+
                       <div>
                         <h6 className="mb-0">{staff.name}</h6>
+
                         <div className="small text-muted">{staff.role}</div>
                       </div>
                     </div>
                   </div>
+
                   <div className="progress mb-2" style={{ height: "6px" }}>
                     <div
                       className="progress-bar"
                       style={{
                         width: `${(staff.leavesTaken / staff.leavesTotal) * 100}%`,
+
                         backgroundColor:
                           staff.leavesTaken >= staff.leavesTotal
                             ? "#e74c3c"
@@ -373,10 +512,13 @@ export default function LeaveManagement() {
                       }}
                     />
                   </div>
+
                   <div className="d-flex justify-content-between small text-muted">
                     <span>{staff.leavesTaken} leaves taken</span>
+
                     <span>{staff.leavesTotal} total</span>
                   </div>
+
                   <div className="small text-center mt-2">
                     <strong>{staff.leavesTotal - staff.leavesTaken}</strong>{" "}
                     leaves remaining
@@ -392,19 +534,28 @@ export default function LeaveManagement() {
             <thead>
               <tr>
                 <th>Staff</th>
+
                 <th>Role</th>
+
                 <th>Date Range</th>
+
                 <th>Days</th>
+
                 <th>Type</th>
+
                 <th>Reason</th>
+
                 <th>Status</th>
+
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {loading ? (
                 Array(5)
                   .fill(0)
+
                   .map((_, i) => (
                     <tr key={i}>
                       <td colSpan="8" className="text-center py-4">
@@ -426,34 +577,51 @@ export default function LeaveManagement() {
                         <div
                           style={{
                             width: 32,
+
                             height: 32,
+
                             borderRadius: "var(--d-radius-md)",
+
                             background: `${staffList.find((s) => s._id === item.staffId)?.color || "#C9A84C"}15`,
+
                             color:
                               staffList.find((s) => s._id === item.staffId)
                                 ?.color || "#C9A84C",
+
                             display: "flex",
+
                             alignItems: "center",
+
                             justifyContent: "center",
+
                             fontWeight: 700,
+
                             fontSize: "0.8rem",
                           }}
                         >
                           {staffList.find((s) => s._id === item.staffId)
                             ?.initials ||
                             item.staffName
+
                               .split(" ")
+
                               .map((n) => n[0])
+
                               .join("")}
                         </div>
+
                         <span>{item.staffName}</span>
                       </div>
                     </td>
+
                     <td>{item.role}</td>
+
                     <td>{formatDateRange(item.startDate, item.endDate)}</td>
+
                     <td>
                       {item.days} day{item.days !== 1 ? "s" : ""}
                     </td>
+
                     <td>
                       <span
                         className="d-chip d-chip-gray"
@@ -462,16 +630,21 @@ export default function LeaveManagement() {
                         {item.type.toUpperCase()}
                       </span>
                     </td>
+
                     <td
                       style={{
                         maxWidth: "200px",
+
                         overflow: "hidden",
+
                         textOverflow: "ellipsis",
+
                         whiteSpace: "nowrap",
                       }}
                     >
                       {item.reason}
                     </td>
+
                     <td>
                       <span
                         className={`d-chip ${item.status === "approved" ? "d-chip-green" : item.status === "rejected" ? "d-chip-red" : "d-chip-gold"}`}
@@ -480,6 +653,7 @@ export default function LeaveManagement() {
                         {item.status.toUpperCase()}
                       </span>
                     </td>
+
                     <td>
                       <div className="d-flex gap-1">
                         {item.status === "pending" && (
@@ -491,6 +665,7 @@ export default function LeaveManagement() {
                             >
                               <MdCheckCircle /> Approve
                             </button>
+
                             <button
                               className="d-btn-outline text-danger"
                               onClick={() => handleRejectClick(item)}
@@ -500,12 +675,14 @@ export default function LeaveManagement() {
                             </button>
                           </>
                         )}
+
                         <button
                           className="d-navbar-icon-btn"
                           onClick={() => handleEdit(item)}
                         >
                           <MdEdit />
                         </button>
+
                         <button
                           className="d-navbar-icon-btn text-danger"
                           onClick={() => handleDeleteClick(item)}
@@ -523,6 +700,7 @@ export default function LeaveManagement() {
       </div>
 
       {/* Form Modal */}
+
       <FormModal
         show={showForm}
         onHide={() => setShowForm(false)}
@@ -533,25 +711,20 @@ export default function LeaveManagement() {
           <Col xs={12}>
             <Form.Group>
               <Form.Label className="small fw-bold">Staff Member *</Form.Label>
-              <Form.Select
-                value={formData.staffId}
-                onChange={(e) =>
-                  setFormData({ ...formData, staffId: e.target.value })
-                }
-                required
-              >
-                <option value="">Select Staff</option>
-                {staffList.map((staff) => (
-                  <option key={staff._id} value={staff._id}>
-                    {staff.name}
-                  </option>
-                ))}
-              </Form.Select>
+
+              <Form.Control
+                type="text"
+                value={user?.name || "Current User"}
+                disabled
+                style={{ backgroundColor: "#f8f9fa" }}
+              />
             </Form.Group>
           </Col>
+
           <Col xs={12} md={6}>
             <Form.Group>
               <Form.Label className="small fw-bold">Start Date *</Form.Label>
+
               <Form.Control
                 type="date"
                 value={formData.startDate}
@@ -562,9 +735,11 @@ export default function LeaveManagement() {
               />
             </Form.Group>
           </Col>
+
           <Col xs={12} md={6}>
             <Form.Group>
               <Form.Label className="small fw-bold">End Date *</Form.Label>
+
               <Form.Control
                 type="date"
                 value={formData.endDate}
@@ -575,9 +750,11 @@ export default function LeaveManagement() {
               />
             </Form.Group>
           </Col>
+
           <Col xs={12}>
             <Form.Group>
               <Form.Label className="small fw-bold">Leave Type *</Form.Label>
+
               <Form.Select
                 value={formData.type}
                 onChange={(e) =>
@@ -585,17 +762,24 @@ export default function LeaveManagement() {
                 }
               >
                 <option value="sick">Sick Leave</option>
+
                 <option value="vacation">Vacation</option>
+
                 <option value="personal">Personal</option>
+
                 <option value="maternity">Maternity</option>
+
                 <option value="paternity">Paternity</option>
+
                 <option value="other">Other</option>
               </Form.Select>
             </Form.Group>
           </Col>
+
           <Col xs={12}>
             <Form.Group>
               <Form.Label className="small fw-bold">Reason *</Form.Label>
+
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -612,6 +796,7 @@ export default function LeaveManagement() {
       </FormModal>
 
       {/* Reject Modal */}
+
       <FormModal
         show={showReject}
         onHide={() => setShowReject(false)}
@@ -620,6 +805,7 @@ export default function LeaveManagement() {
       >
         <Form.Group>
           <Form.Label className="small fw-bold">Rejection Reason *</Form.Label>
+
           <Form.Control
             as="textarea"
             rows={3}
@@ -632,6 +818,7 @@ export default function LeaveManagement() {
       </FormModal>
 
       {/* Delete Modal */}
+
       <DeleteModal
         show={showDelete}
         onHide={() => setShowDelete(false)}

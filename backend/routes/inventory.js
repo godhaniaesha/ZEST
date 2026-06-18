@@ -37,6 +37,7 @@ router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartende
   // Auto-calculate status
   const status = calculateStatus(req.body.quantity, req.body.minQuantity);
 
+  // router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef'), async (req, res) => {
   const item = new Inventory({
     name: req.body.name,
     category: req.body.category || 'General',
@@ -54,7 +55,7 @@ router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartende
   }
 });
 
-router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartender'), async (req, res) => {
+router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef'), async (req, res) => {
   try {
     // Validation
     if (req.body.minQuantity !== undefined && req.body.minQuantity <= 0) {
@@ -69,7 +70,7 @@ router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef', 'barten
     const item = await Inventory.findById(req.params.id);
     const qty = req.body.quantity !== undefined ? req.body.quantity : item.quantity;
     const min = req.body.minQuantity !== undefined ? req.body.minQuantity : item.minQuantity;
-    
+
     req.body.status = calculateStatus(qty, min);
 
     const updatedItem = await Inventory.findByIdAndUpdate(req.params.id, req.body, { new: true });

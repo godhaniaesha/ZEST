@@ -17,8 +17,7 @@ const STAFF_ROLES = [
   'manager',
   'chef',
   'waiter',
-  'cashier',
-  'bartender'
+  'cashier'
 ];
 if (!global.crypto) {
   global.crypto = crypto;

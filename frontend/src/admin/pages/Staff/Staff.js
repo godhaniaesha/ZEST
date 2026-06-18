@@ -24,7 +24,6 @@ const STAFF_ROLE_OPTIONS = [
   { label: 'Chef', value: 'chef' },
   { label: 'Waiter', value: 'waiter' },
   { label: 'Cashier', value: 'cashier' },
-  { label: 'Bartender', value: 'bartender' },
 ];
   
 const getInitials = (name = '') =>

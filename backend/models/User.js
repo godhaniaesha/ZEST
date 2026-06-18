@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender', 'customer'], default: 'customer' },
+  role: { type: String, enum: ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'customer'], default: 'customer' },
   status: { type: String, enum: ['Active', 'Inactive', 'On Duty'], default: 'Active' },
   shift: { type: String, enum: ['Morning', 'Evening', 'Both'], default: 'Morning' },
   phone: { type: String },

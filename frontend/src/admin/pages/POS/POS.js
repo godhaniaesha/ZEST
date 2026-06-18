@@ -289,7 +289,7 @@ export default function POS() {
             </div>
             {selectedReservation && (
               <div className="d-table-wrap mt-3">
-                <table className="d-table">
+                <table className="d-table"> 
                   <thead>
                     <tr>
                       <th>Item</th>

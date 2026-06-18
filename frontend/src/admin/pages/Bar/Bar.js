@@ -32,9 +32,9 @@ export default function Bar() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const { user } = useAuth();
-  const userRole = user?.role || 'bartender';
+  const userRole = user?.role || 'chef';
 
-  const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin' || userRole === 'bartender';
+  const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
 
   const loadData = async () => {
     try {

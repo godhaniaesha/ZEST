@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Row, Col, Form } from 'react-bootstrap';
 import {
   MdAccessTime, MdCheckCircle, MdCancel, MdSearch,
@@ -8,21 +8,43 @@ import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import { attendanceAPI } from '../../../api';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchStaff } from '../../../store/slices/staffSlice';
+import { fetchStaffUsers } from '../../../store/slices/usersSlice';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function StaffAttendance() {
   const dispatch = useDispatch();
-  const staffRedux = useSelector((state) => state.staff.list);
+  const { user } = useAuth();
+  const currentUserRole = user?.role || 'customer';
+  const staffRedux = useSelector((state) => state.users.staffList);
   const [attendance, setAttendance] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
+  const [leaveStatus, setLeaveStatus] = useState({}); // Track leave status for each staff
+
+  // Role-based permissions
+  const canManageAttendance = ['superadmin', 'manager', 'chef', 'waiter', 'cashier'].includes(currentUserRole);
+  const canFullManage = ['superadmin', 'manager'].includes(currentUserRole);
 
   // Modal States
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [formData, setFormData] = useState({ staffId: '', date: selectedDate, status: 'present', checkIn: '', checkOut: '' });
+
+  // Transform staff data from Redux to match component format
+  const staffList = useMemo(() => 
+    staffRedux.filter(staff => staff.role !== 'customer').map(staff => ({
+      _id: staff._id,
+      name: staff.name,
+      role: staff.role,
+      shift: staff.shift || 'Morning',
+      initials: staff.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+      color: '#C9A84C',
+      leavesTotal: staff.leavesTotal || 12,
+      leavesTaken: staff.leavesTaken || 0
+    }))
+  , [staffRedux]);
 
   const loadData = useCallback(async () => {
     try {
@@ -37,43 +59,105 @@ export default function StaffAttendance() {
     }
   }, [selectedDate]);
 
-  // Transform staff data from Redux to match component format
-  const staffList = staffRedux.filter(staff => staff.role !== 'customer').map(staff => ({
-    _id: staff._id,
-    name: staff.name,
-    role: staff.role,
-    initials: staff.name.split(' ').map(n => n[0]).join('').toUpperCase(),
-    color: '#C9A84C',
-    leavesTotal: staff.leavesTotal || 12,
-    leavesTaken: staff.leavesTaken || 0
-  }));
-
   useEffect(() => {
-    dispatch(fetchStaff());
+    dispatch(fetchStaffUsers());
   }, [dispatch]);
 
+  // Load attendance when date changes
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [selectedDate, loadData]);
+
+  // Load leave status when date changes (not on staff list changes to prevent infinite loop)
+  useEffect(() => {
+    const loadLeaveStatus = async () => {
+      if (staffList.length === 0) return;
+      
+      try {
+        const leavePromises = staffList.map(staff => 
+          attendanceAPI.checkLeave(staff._id, selectedDate)
+            .then(res => ({ staffId: staff._id, leaveData: res.data }))
+            .catch(() => ({ staffId: staff._id, leaveData: { onLeave: false } }))
+        );
+        
+        const leaveResults = await Promise.all(leavePromises);
+        const leaveStatusMap = {};
+        leaveResults.forEach(({ staffId, leaveData }) => {
+          leaveStatusMap[staffId] = leaveData;
+        });
+        setLeaveStatus(leaveStatusMap);
+      } catch (error) {
+        console.error('Error loading leave status:', error);
+      }
+    };
+
+    loadLeaveStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]); // Only depend on selectedDate to prevent infinite loop
 
   const filtered = attendance.filter(a => 
     a.staffName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     a.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const getShiftTime = (shift) => {
+    switch(shift) {
+      case 'Morning':
+        return '09:00';
+      case 'Evening':
+        return '17:00';
+      case 'Both':
+        return '09:00';
+      default:
+        return '09:00';
+    }
+  };
+
   const handleAdd = () => {
     setCurrentItem(null);
-    setFormData({ staffId: '', date: selectedDate, status: 'present', checkIn: '', checkOut: '' });
+    // Pre-select current user for non-managers
+    const initialStaffId = canFullManage ? '' : user._id;
+    const initialCheckIn = canFullManage ? '' : getShiftTime(user?.shift || 'Morning');
+    
+    setFormData({ 
+      staffId: initialStaffId, 
+      date: selectedDate, 
+      status: 'present', 
+      checkIn: initialCheckIn, 
+      checkOut: '' 
+    });
     setShowForm(true);
   };
 
+  const handleStaffChange = (staffId) => {
+    const selectedStaff = staffList.find(staff => staff._id === staffId);
+    if (selectedStaff) {
+      const defaultCheckIn = getShiftTime(selectedStaff.shift);
+      setFormData({ 
+        ...formData, 
+        staffId, 
+        checkIn: defaultCheckIn 
+      });
+    } else {
+      setFormData({ ...formData, staffId, checkIn: '' });
+    }
+  };
+
   const handleEdit = (item) => {
+    // Non-managers can only edit their own attendance
+    if (!canFullManage && item.staffId !== user._id) {
+      alert('You can only edit your own attendance');
+      return;
+    }
+
     setCurrentItem(item);
+    const staff = staffList.find(s => s._id === item.staffId);
+    const defaultCheckIn = item.checkIn || (staff ? getShiftTime(staff.shift) : '');
     setFormData({
       staffId: item.staffId,
       date: item.date,
       status: item.status,
-      checkIn: item.checkIn || '',
+      checkIn: defaultCheckIn,
       checkOut: item.checkOut || ''
     });
     setShowForm(true);
@@ -92,7 +176,7 @@ export default function StaffAttendance() {
       loadData();
     } catch (error) {
       console.error('Error marking present:', error);
-      alert('Failed to mark as present');
+      alert(error.response?.data?.message || 'Failed to mark as present');
     }
   };
 
@@ -104,14 +188,64 @@ export default function StaffAttendance() {
       loadData();
     } catch (error) {
       console.error('Error marking absent:', error);
-      alert('Failed to mark as absent');
+      alert(error.response?.data?.message || 'Failed to mark as absent');
     }
   };
+
+  const handleAutoMarkLeave = async (staffId) => {
+    try {
+      const staff = staffList.find(s => s._id === staffId);
+      await attendanceAPI.autoMarkLeave(staffId, selectedDate);
+      alert(`${staff?.name || 'Staff'} marked as on-leave`);
+      loadData();
+    } catch (error) {
+      console.error('Error marking leave:', error);
+      alert(error.response?.data?.message || 'Failed to mark as on-leave');
+    }
+  };
+
+  // Reload leave status when staff list is initially loaded
+  useEffect(() => {
+    if (staffList.length > 0 && Object.keys(leaveStatus).length === 0) {
+      const loadLeaveStatus = async () => {
+        try {
+          const leavePromises = staffList.map(staff => 
+            attendanceAPI.checkLeave(staff._id, selectedDate)
+              .then(res => ({ staffId: staff._id, leaveData: res.data }))
+              .catch(() => ({ staffId: staff._id, leaveData: { onLeave: false } }))
+          );
+          
+          const leaveResults = await Promise.all(leavePromises);
+          const leaveStatusMap = {};
+          leaveResults.forEach(({ staffId, leaveData }) => {
+            leaveStatusMap[staffId] = leaveData;
+          });
+          setLeaveStatus(leaveStatusMap);
+        } catch (error) {
+          console.error('Error loading leave status:', error);
+        }
+      };
+      loadLeaveStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [staffList.length]); // Only run when staff list length changes (initial load)
 
   const handleSave = async () => {
     try {
       if (!formData.staffId) {
         alert('Please select a staff member');
+        return;
+      }
+
+      // Non-managers can only edit their own attendance
+      if (!canFullManage && currentItem && currentItem.staffId !== user._id) {
+        alert('You can only edit your own attendance');
+        return;
+      }
+
+      // Non-managers can only create attendance for themselves
+      if (!canFullManage && !currentItem && formData.staffId !== user._id) {
+        alert('You can only mark your own attendance');
         return;
       }
 
@@ -131,6 +265,12 @@ export default function StaffAttendance() {
 
   const confirmDelete = async () => {
     try {
+      // Double-check permission before delete
+      if (!canFullManage) {
+        alert('You do not have permission to delete attendance records');
+        return;
+      }
+      
       await attendanceAPI.delete(currentItem._id);
       setShowDelete(false);
       loadData();
@@ -145,8 +285,9 @@ export default function StaffAttendance() {
     const present = attendance.filter(a => a.status === 'present').length;
     const absent = attendance.filter(a => a.status === 'absent').length;
     const late = attendance.filter(a => a.status === 'late').length;
+    const onLeave = attendance.filter(a => a.status === 'on-leave').length;
 
-    return { total, present, absent, late };
+    return { total, present, absent, late, onLeave };
   };
 
   const stats = getStats();
@@ -169,7 +310,9 @@ export default function StaffAttendance() {
               style={{ width: 'auto' }}
             />
           </Form.Group>
-          <button className="d-btn-gold" onClick={handleAdd}><MdEdit /> Add Attendance</button>
+          {canManageAttendance && (
+            <button className="d-btn-gold" onClick={handleAdd}><MdEdit /> Add Attendance</button>
+          )}
         </div>
       </div>
 
@@ -191,7 +334,8 @@ export default function StaffAttendance() {
             { label: 'Total Staff', value: stats.total, icon: <MdPeople />, color: 'd-gold' },
             { label: 'Present', value: stats.present, icon: <MdCheckCircle />, color: 'd-green' },
             { label: 'Absent', value: stats.absent, icon: <MdCancel />, color: 'd-red' },
-            { label: 'Late', value: stats.late, icon: <MdCalendarToday />, color: 'd-blue' }
+            { label: 'Late', value: stats.late, icon: <MdCalendarToday />, color: 'd-blue' },
+            { label: 'On Leave', value: stats.onLeave, icon: <MdCalendarToday />, color: 'd-purple' }
           ].map((s, i) => (
             <Col key={i} xs={12} sm={6} xl={3}>
               <div className="d-stat-card">
@@ -229,19 +373,19 @@ export default function StaffAttendance() {
                 <th>Status</th>
                 <th>Check In</th>
                 <th>Check Out</th>
-                <th>Actions</th>
+                {canManageAttendance && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array(5).fill(0).map((_, i) => (
                   <tr key={i}>
-                    <td colSpan="7" className="text-center py-4">Loading...</td>
+                    <td colSpan={canManageAttendance ? 7 : 6} className="text-center py-4">Loading...</td>
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-4 text-muted">No attendance records found</td>
+                  <td colSpan={canManageAttendance ? 7 : 6} className="text-center py-4 text-muted">No attendance records found</td>
                 </tr>
               ) : (
                 filtered.map((item) => (
@@ -263,22 +407,28 @@ export default function StaffAttendance() {
                     <td>{item.role}</td>
                     <td>{new Date(item.date).toLocaleDateString('en-IN')}</td>
                     <td>
-                      <span className={`d-chip ${item.status === 'present' ? 'd-chip-green' : item.status === 'absent' ? 'd-chip-red' : 'd-chip-gold'}`} style={{ fontSize: '0.7rem' }}>
+                      <span className={`d-chip ${item.status === 'present' ? 'd-chip-green' : item.status === 'absent' ? 'd-chip-red' : item.status === 'late' ? 'd-chip-gold' : 'd-chip-blue'}`} style={{ fontSize: '0.7rem' }}>
                         {item.status.toUpperCase()}
                       </span>
                     </td>
                     <td>{item.checkIn || '-'}</td>
                     <td>{item.checkOut || '-'}</td>
-                    <td>
-                      <div className="d-flex gap-1">
-                        <button className="d-navbar-icon-btn" onClick={() => handleEdit(item)}>
-                          <MdEdit />
-                        </button>
-                        <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(item)}>
-                          <MdDelete />
-                        </button>
-                      </div>
-                    </td>
+                    {canManageAttendance ? (
+                      <td>
+                        <div className="d-flex gap-1">
+                          <button className="d-navbar-icon-btn" onClick={() => handleEdit(item)}>
+                            <MdEdit />
+                          </button>
+                          {canFullManage && (
+                            <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(item)}>
+                              <MdDelete />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    ) : (
+                      <td className="text-muted small">View Only</td>
+                    )}
                   </tr>
                 ))
               )}
@@ -287,8 +437,12 @@ export default function StaffAttendance() {
         </div>
       </div>
 
-      <h5 className="mt-5 mb-3">Quick Actions - Mark Today's Attendance</h5>
-      <Row className="g-3">
+      {canManageAttendance && (
+        <>
+          <h5 className="mt-5 mb-3">
+            {canFullManage ? 'Quick Actions - Mark Today\'s Attendance' : 'Mark Your Attendance'}
+          </h5>
+          <Row className="g-3">
         {loading ? (
           Array(6).fill(0).map((_, i) => (
             <Col key={i} xs={12} sm={6} md={4}>
@@ -300,8 +454,13 @@ export default function StaffAttendance() {
             </Col>
           ))
         ) : (
-          staffList.map((staff) => {
+          staffList
+            .filter(staff => canFullManage || staff._id === user._id)
+            .map((staff) => {
             const todayAttendance = attendance.find(a => a.staffId === staff._id && a.date === selectedDate);
+            const staffLeaveStatus = leaveStatus[staff._id] || { onLeave: false };
+            const isOnLeave = staffLeaveStatus.onLeave;
+            
             return (
               <Col key={staff._id} xs={12} sm={6} md={4}>
                 <div className="d-card h-100">
@@ -315,20 +474,31 @@ export default function StaffAttendance() {
                       }}>{staff.initials}</div>
                       <div>
                         <h6 className="mb-0">{staff.name}</h6>
-                        <div className="small text-muted">{staff.role}</div>
+                        <div className="small text-muted">{staff.role} • {staff.shift}</div>
                       </div>
                     </div>
-                    {todayAttendance && (
-                      <span className={`d-chip ${todayAttendance.status === 'present' ? 'd-chip-green' : todayAttendance.status === 'absent' ? 'd-chip-red' : 'd-chip-gold'}`} style={{ fontSize: '0.65rem' }}>
+                    {todayAttendance ? (
+                      <span className={`d-chip ${todayAttendance.status === 'present' ? 'd-chip-green' : todayAttendance.status === 'absent' ? 'd-chip-red' : todayAttendance.status === 'late' ? 'd-chip-gold' : 'd-chip-blue'}`} style={{ fontSize: '0.65rem' }}>
                         {todayAttendance.status.toUpperCase()}
                       </span>
-                    )}
+                    ) : isOnLeave ? (
+                      <span className="d-chip d-chip-blue" style={{ fontSize: '0.65rem' }}>
+                        ON LEAVE
+                      </span>
+                    ) : null}
                   </div>
+                  
+                  {isOnLeave && !todayAttendance && (
+                    <div className="small text-muted mb-2">
+                      <em>{staffLeaveStatus.leaveType?.toUpperCase()} - {staffLeaveStatus.leaveReason}</em>
+                    </div>
+                  )}
+                  
                   <div className="d-flex gap-2">
                     <button 
                       className={`d-btn-outline flex-grow-1 ${todayAttendance?.status === 'present' ? 'd-btn-gold' : ''}`} 
                       onClick={() => handleMarkPresent(staff._id)}
-                      disabled={todayAttendance?.status === 'present'}
+                      disabled={todayAttendance?.status === 'present' || isOnLeave}
                       style={{ padding: '6px', fontSize: '0.8rem' }}
                     >
                       <MdCheckCircle /> Present
@@ -336,11 +506,20 @@ export default function StaffAttendance() {
                     <button 
                       className={`d-btn-outline flex-grow-1 text-danger ${todayAttendance?.status === 'absent' ? 'd-btn-gold' : ''}`} 
                       onClick={() => handleMarkAbsent(staff._id)}
-                      disabled={todayAttendance?.status === 'absent'}
+                      disabled={todayAttendance?.status === 'absent' || isOnLeave}
                       style={{ padding: '6px', fontSize: '0.8rem' }}
                     >
                       <MdCancel /> Absent
                     </button>
+                    {isOnLeave && !todayAttendance && (
+                      <button 
+                        className="d-btn-outline flex-grow-1 text-primary"
+                        onClick={() => handleAutoMarkLeave(staff._id)}
+                        style={{ padding: '6px', fontSize: '0.8rem' }}
+                      >
+                        Mark Leave
+                      </button>
+                    )}
                   </div>
                 </div>
               </Col>
@@ -348,6 +527,8 @@ export default function StaffAttendance() {
           })
         )}
       </Row>
+      </>
+      )}
         
       {/* Modals */}
       <FormModal
@@ -362,14 +543,20 @@ export default function StaffAttendance() {
               <Form.Label className="small fw-bold">Staff Member *</Form.Label>
               <Form.Select
                 value={formData.staffId}
-                onChange={(e) => setFormData({ ...formData, staffId: e.target.value })}
+                onChange={(e) => handleStaffChange(e.target.value)}
                 required
+                disabled={!canFullManage}
               >
                 <option value="">Select Staff</option>
                 {staffList.map(staff => (
-                  <option key={staff._id} value={staff._id}>{staff.name}</option>
+                  <option key={staff._id} value={staff._id}>{staff.name} ({staff.shift})</option>
                 ))}
               </Form.Select>
+              {!canFullManage && (
+                <Form.Text className="text-muted">
+                  You can only mark your own attendance
+                </Form.Text>
+              )}
             </Form.Group>
           </Col>
           <Col xs={12} md={6}>
@@ -394,6 +581,7 @@ export default function StaffAttendance() {
                 <option value="absent">Absent</option>
                 <option value="late">Late</option>
                 <option value="half-day">Half Day</option>
+                <option value="on-leave">On Leave</option>
               </Form.Select>
             </Form.Group>
           </Col>

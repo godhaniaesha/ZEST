@@ -15,12 +15,12 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const userRole = user?.role || 'chef';
-  const [activeTab, setActiveTab] = useState(userRole === 'bartender' ? 'bar' : 'menu');
+  const [activeTab, setActiveTab] = useState('menu');
 
   // Role-based permissions
-  const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin' || userRole === 'bartender';
+  const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
   const canSeeMenu = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
-  const canSeeBar = userRole === 'bartender' || userRole === 'manager' || userRole === 'superadmin';
+  const canSeeBar = userRole === 'manager' || userRole === 'superadmin';
   const canSeeCuisine = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
 
   // Modal States

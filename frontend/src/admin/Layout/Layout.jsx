@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useOutletContext, useLocation } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
+import AttendanceBanner from '../components/AttendanceBanner';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Layout() {
@@ -58,6 +59,9 @@ export default function Layout() {
           onToggleSidebar={handleToggle}
           userRole={userRole}
         />
+
+        {/* Attendance Banner - Fixed at top */}
+        <AttendanceBanner />
 
         <main className="d-page-body">
           <Outlet context={{ userRole }} />

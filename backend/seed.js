@@ -491,7 +491,6 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/zest-rest
     { name: 'Marco Chef', email: 'marco@zest.com', password: 'password123', role: 'chef', status: 'On Duty', phone: '9777777777', address: '303 Chef Lane, City', shift: 'Morning', salary: '55000', leavesTaken: 0, leavesTotal: 12, joiningDate: new Date('2024-02-01') },
     { name: 'Sam Waiter', email: 'sam@zest.com', password: 'password123', role: 'waiter', status: 'Active', phone: '9666666666', address: '404 Waiter Rd, City', shift: 'Evening', salary: '25000', leavesTaken: 1, leavesTotal: 12, joiningDate: new Date('2024-04-10') },
     { name: 'Sarah Cashier', email: 'sarah@zest.com', password: 'password123', role: 'cashier', status: 'Active', phone: '9555555555', address: '505 Cashier St, City', shift: 'Morning', salary: '22000', leavesTaken: 3, leavesTotal: 12, joiningDate: new Date('2024-01-20') },
-    { name: 'Mike Bartender', email: 'mike@zest.com', password: 'password123', role: 'bartender', status: 'On Duty', phone: '9444444444', address: '606 Bartender Ave, City', shift: 'Evening', salary: '30000', leavesTaken: 0, leavesTotal: 12, joiningDate: new Date('2024-03-01') },
     { name: 'Guest Customer', email: 'guest@zest.com', password: 'password123', role: 'customer', status: 'Active' }
   ]);
   console.log('Inserted users:', users.length);
