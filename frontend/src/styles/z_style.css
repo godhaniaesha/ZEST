@@ -640,7 +640,7 @@ body {
   .d_hero_desc { max-width: 660px; margin: 0 auto 36px; }
   .d_hero_actions { justify-content: center; }
   .d_stats_inner { grid-template-columns: repeat(2, 1fr); }
-  .d_stat_item:nth-child(2) { border-right: none; }
+  /* .d_stat_item:nth-child(2) { border-right: none; } */
   .d_experience_grid { grid-template-columns: 1fr; gap: 24px; }
   .d_exp_visual_panel { max-width: 760px; margin: 0 auto; }
   .d_exp_content { text-align: left; max-width: 760px; margin: 0 auto; padding: 28px 24px; }

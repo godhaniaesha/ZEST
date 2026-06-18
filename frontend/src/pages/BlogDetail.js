@@ -99,7 +99,6 @@ const BlogDetail = () => {
                     <div className="x_blogdetail_date_time">
                       <Calendar size={14} />
                       <span>{formatBlogDate(post.createdAt)}</span>
-                      <span className="x_dot">•</span>
                       <Clock size={14} />
                       <span>{post.readTime} min read</span>
                     </div>
@@ -133,8 +132,6 @@ const BlogDetail = () => {
       {!post.image && (
         <section className="x_blogdetail_image"></section>
       )}
-
-
 
       {/* Article Content */}
       <article className="x_blogdetail_content container">

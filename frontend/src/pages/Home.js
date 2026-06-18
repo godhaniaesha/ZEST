@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Children } from "react";
 import {
   FaCoffee,
   FaGlassCheers,
@@ -704,8 +704,9 @@ const STYLE = `
   .d_stat_item {
     padding: 28px 32px;
     text-align: center;
-    border-right: 1px solid rgba(201,168,76,0.1);
+    border-right: 1px solid rgba(201, 168, 76, 0.1);
     transition: var(--d-transition);
+    border-bottom: 1px solid rgba(201, 168, 76, 0.1);
   }
 
   .d_stat_item:last-child { border-right: none; }
@@ -1905,6 +1906,65 @@ const STYLE = `
     to { opacity: 1; transform: translateY(0); }
   }
 
+  /* ── CARD AUTO SLIDER (tablet/mobile) ── */
+  .d_card_slider {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-bottom: 40px;
+  }
+
+  .d_card_slider .swiper-slide {
+    height: auto;
+    display: flex;
+  }
+
+  .d_card_slider .swiper-slide > * {
+    width: 100%;
+  }
+
+  .d_card_slider .swiper-pagination {
+    bottom: 0;
+  }
+
+  .d_card_slider .swiper-pagination-bullet {
+    background: var(--d-gold-dark);
+    opacity: 0.35;
+    transition: var(--d-transition);
+  }
+
+  .d_card_slider .swiper-pagination-bullet-active {
+    opacity: 1;
+    background: var(--d-gold);
+  }
+
+  .d_menu_slider .swiper-pagination-bullet {
+    background: rgba(224,224,224,0.45);
+  }
+
+  .d_menu_slider .swiper-pagination-bullet-active,
+  .d_testi_slider .swiper-pagination-bullet-active {
+    background: var(--d-gold);
+  }
+
+  .d_testi_slider .swiper-pagination-bullet {
+    background: rgba(224,224,224,0.45);
+  }
+
+  .d_testi_slider {
+    margin-top: 56px;
+  }
+
+  @media (min-width: 769px) {
+    .d_card_slider {
+      padding-bottom: 0;
+    }
+
+    .d_card_slider .swiper-pagination {
+      display: none;
+    }
+  }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 1024px) {
     .d_hero { align-items: stretch; }
@@ -1919,7 +1979,7 @@ const STYLE = `
     .d_hero_glass_item { text-align: left; }
     .d_hero_scroll_indicator { left: 50%; transform: translateX(-50%); }
     .d_menu_grid { grid-template-columns: repeat(3, 1fr); }
-    .d_testi_grid { grid-template-columns: repeat(2, 1fr); }
+    // .d_testi_grid { grid-template-columns: repeat(2, 1fr); }
     .d_about_images { max-width: 100%; }
     .d_about_img_accent { right: 0; }
     .d_experience_grid { grid-template-columns: 1fr; gap: 24px; }
@@ -2178,6 +2238,48 @@ function LightSectionDecor({ variant = "about" }) {
         })}
       </div>
     </>
+  );
+}
+
+function CardSlider({ className = "", children }) {
+  const slides = Children.toArray(children).filter(Boolean);
+  if (!slides.length) return null;
+
+  const canLoop = slides.length > 1;
+
+  return (
+    <Swiper
+      className={`d_card_slider ${className}`.trim()}
+      modules={[Autoplay, Pagination]}
+      spaceBetween={16}
+      slidesPerView={1.15}
+      loop={canLoop}
+      speed={650}
+      autoplay={
+        canLoop
+          ? { delay: 3500, disableOnInteraction: false, pauseOnMouseEnter: true }
+          : false
+      }
+      pagination={{ clickable: true }}
+      breakpoints={{
+        577: {
+          slidesPerView: 2,
+          spaceBetween: 20,
+        },
+        769: {
+          slidesPerView: 3,
+          spaceBetween: 28,
+          loop: false,
+          autoplay: false,
+          allowTouchMove: false,
+          pagination: false,
+        },
+      }}
+    >
+      {slides.map((slide, index) => (
+        <SwiperSlide key={slide.key ?? index}>{slide}</SwiperSlide>
+      ))}
+    </Swiper>
   );
 }
 
@@ -2514,8 +2616,7 @@ export default function Home() {
               journey through flavour.
             </p>
           </div>
-          <div className="d_menu_grid">
-            {/* Combine all menu items from all categories */}
+          <CardSlider className="d_menu_slider">
             {[...menuItems.food, ...menuItems.drinks, ...menuItems.coffee].slice(0, 3).map((item, index) => (
               <div className="d_menu_card" key={`${item.name}-${index}`}>
                 <div className="d_menu_img_wrap">
@@ -2531,7 +2632,7 @@ export default function Home() {
                 </div>
               </div>
             ))}
-          </div>
+          </CardSlider>
           <div style={{ textAlign: "center", marginTop: 48 }}>
             <button className="bg-transparent border-0"
               onClick={() => showToast("🧾 Full menu opening...")}
@@ -2768,9 +2869,8 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="d_events_grid">
+          <CardSlider className="d_blog_slider">
             {blogs.slice(0, 3).map((blog) => (
-
               <div className="d_event_card" key={blog._id}>
                 <div className="d_event_img_wrap">
                   <img
@@ -2786,14 +2886,11 @@ export default function Home() {
                 </div>
 
                 <div className="d_event_body">
-                  {/* Top Content */}
                   <div>
                     <div className="d_event_type">{blog.category}</div>
-
                     <div className="d_event_name">{blog.title}</div>
                   </div>
 
-                  {/* Footer */}
                   <div className="d_event_footer">
                     <div className="d_event_meta">
                       <span>
@@ -2815,7 +2912,7 @@ export default function Home() {
                 </div>
               </div>
             ))}
-          </div>
+          </CardSlider>
         </div>
       </section>
 
@@ -2862,7 +2959,7 @@ export default function Home() {
               </span>
             </div>
           </div>
-          <div className="d_testi_grid">
+          <CardSlider className="d_testi_slider">
             {TESTIMONIALS.map((t) => (
               <div className="d_testi_card" key={t.name}>
                 <div className="d_testi_stars">★★★★★</div>
@@ -2877,7 +2974,7 @@ export default function Home() {
                 </div>
               </div>
             ))}
-          </div>
+          </CardSlider>
         </div>
       </section>
 

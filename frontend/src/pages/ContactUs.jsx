@@ -347,7 +347,7 @@ const ContactUs = () => {
 
         {/* FAQ Section */}
         <section className="x_contact_faq">
-          <div className="x_gallery_section_head">
+          <div className="x_gallery_section_head p-0">
             <div className="x_gallery_section_title_group">
               <span className="x_gallery_section_num">02</span>
               <h2 className="x_gallery_section_title">

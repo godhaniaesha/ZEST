@@ -41,7 +41,7 @@ const z_menu_moods = [
 
 const AboutUs = () => {
   return (
-    <div className="x_menu_page" style={{ paddingBottom: '100px' }}>
+    <div className="x_menu_page x_aboutus_page_main" >
       <div className="x_menu_inner">
         
         {/* HERO SECTION */}
@@ -118,7 +118,7 @@ const AboutUs = () => {
                 position: 'relative',
                 width: '100%',
                 aspectRatio: '3 / 4',
-                borderRadius: '170px 170px 6px 6px',
+                borderRadius: '194px 194px 6px 6px',
                 overflow: 'hidden',
                 border: '10px solid var(--d-bg-card)',
                 outline: '1px solid var(--d-gold-light)',
@@ -173,8 +173,8 @@ const AboutUs = () => {
         </section>
 
         {/* STATS SECTION */}
-        <section className="x_menu_controls_section" style={{ padding: '40px 0', borderTop: '1px solid var(--d-gold-light)', borderBottom: '1px solid var(--d-gold-light)', marginTop: '60px', background: 'var(--d-bg-card)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', textAlign: 'center' }}>
+        <section className="x_menu_controls_section x_about_stats_Section" style={{ padding: '40px 0', borderTop: '1px solid var(--d-gold-light)', borderBottom: '1px solid var(--d-gold-light)', marginTop: '60px', background: 'var(--d-bg-card)' }}>
+          <div className="x_about_stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', textAlign: 'center' }}>
             {z_stats.map((item) => (
               <div key={item.label}>
                 <strong style={{ 
@@ -203,7 +203,7 @@ const AboutUs = () => {
         </section>
 
         {/* OUR STORY SECTION */}
-        <div className="x_gallery_section_head pb-0" style={{ marginTop: '70px' }}>
+        <div className="x_gallery_section_head x_about_ourstory_section_head pb-0" style={{ marginTop: '70px' }}>
           <div className="x_gallery_section_title_group">
             <span className="x_gallery_section_num">01</span>
             <h2 className="x_gallery_section_title">
@@ -212,7 +212,7 @@ const AboutUs = () => {
           </div>
         </div>
 
-        <section style={{ 
+        <section className="x_about_ourstory_grid" style={{ 
           display: 'grid', 
           gridTemplateColumns: '1fr 1.2fr', 
           gap: '60px', 
@@ -233,7 +233,7 @@ const AboutUs = () => {
                 alt="Chef preparing food"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
               />
-              <div style={{ 
+              <div className="x_about_ourstory_image_tag" style={{ 
                 position: 'absolute', 
                 bottom: '-20px', 
                 right: '-20px', 
@@ -260,8 +260,8 @@ const AboutUs = () => {
             </div>
           </div>
 
-          <div>
-            <div className="x_menu_hero_label" style={{ marginBottom: '16px' }}>
+          <div className="x_about_ourstory_section_content">
+            <div className="x_menu_hero_label " style={{ marginBottom: '16px' }}>
               <span className="x_menu_hero_label_line"></span>
               <span className="x_menu_hero_label_text">About Zest</span>
             </div>
@@ -319,7 +319,7 @@ const AboutUs = () => {
         </section>
 
         {/* EXPERIENCE SECTION */}
-        <div className="x_gallery_section_head mb-0">
+        <div className="x_gallery_section_head x_about_ourstory_section_head">
           <div className="x_gallery_section_title_group">
             <span className="x_gallery_section_num">02</span>
             <h2 className="x_gallery_section_title">
@@ -341,7 +341,7 @@ const AboutUs = () => {
           </p>
         </div>
 
-        <section style={{ 
+        <section className="x_about_ourstory_grid" style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(3, 1fr)', 
           gap: '24px', 
@@ -404,7 +404,7 @@ const AboutUs = () => {
         </section>
 
         {/* MENU MOODS SECTION */}
-        <div className="x_gallery_section_head">
+        <div className="x_gallery_section_head x_about_ourstory_section_head">
           <div className="x_gallery_section_title_group">
             <span className="x_gallery_section_num">03</span>
             <h2 className="x_gallery_section_title">
@@ -413,7 +413,7 @@ const AboutUs = () => {
           </div>
         </div>
 
-        <section style={{ 
+        <section className="x_about_ourstory_grid"  style={{ 
           display: 'grid', 
           gridTemplateColumns: '1fr 1.4fr', 
           gap: '60px', 
