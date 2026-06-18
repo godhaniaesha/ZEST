@@ -103,7 +103,6 @@ export default function Users() {
       { label: 'Chef', value: 'chef' },
       { label: 'Waiter', value: 'waiter' },
       { label: 'Cashier', value: 'cashier' },
-      { label: 'Bartender', value: 'bartender' },
       { label: 'Customer', value: 'customer' }
     ] },
     { name: 'status', label: 'Status', type: 'select', required: true, col: 6, options: [

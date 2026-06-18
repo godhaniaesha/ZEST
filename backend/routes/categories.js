@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 });
 
 // Protected routes
-router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartender'), upload.single('img'), async (req, res) => {
+router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef'), upload.single('img'), async (req, res) => {
   const categoryData = {
     name: req.body.name,
     type: req.body.type,
@@ -51,7 +51,7 @@ router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartende
   }
 });
 
-router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartender'), upload.single('img'), async (req, res) => {
+router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef'), upload.single('img'), async (req, res) => {
   try {
     const categoryData = {
       name: req.body.name,
@@ -71,7 +71,7 @@ router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef', 'barten
   }
 });
 
-router.delete('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartender'), async (req, res) => {
+router.delete('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef'), async (req, res) => {
   try {
     await Category.findByIdAndDelete(req.params.id);
     res.json({ message: 'Category deleted' });

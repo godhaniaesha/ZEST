@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, ProgressBar } from 'react-bootstrap';
 import {
   MdTrendingUp, MdReceiptLong, MdPeople, MdStar,
@@ -6,6 +6,7 @@ import {
   MdLocalCafe, MdLocalBar, MdInventory, MdNotificationsActive,
   MdFiberManualRecord, MdDashboard
 } from 'react-icons/md';
+import { usersAPI, attendanceAPI } from '../../../api';
 
 const STATS = [
   { icon: <MdTrendingUp />, color: 'd-gold',  value: '₹1,24,500', label: "Total Revenue", change: '+12%', dir: 'up' },
@@ -39,7 +40,48 @@ const INVENTORY_ALERTS = [
 ];
 
 export default function Dashboard() {
-  const handleDownloadReport = () => {
+  const [staffList, setStaffList] = useState([]);
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStaffAndAttendance();
+  }, []);
+
+  const fetchStaffAndAttendance = async () => {
+    try {
+      setLoading(true);
+      
+      const [staffRes, attendanceRes] = await Promise.all([
+        usersAPI.getStaff(),
+        attendanceAPI.getAll()
+      ]);
+
+      const staff = staffRes.data || [];
+      const attendance = attendanceRes.data || [];
+
+      setStaffList(staff);
+      setAttendanceData(attendance);
+    } catch (error) {
+      console.error('Error fetching staff and attendance:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAttendanceStatus = (staffId) => {
+    const record = attendanceData.find(
+      a => a.staffId?._id === staffId || a.staffId === staffId
+    );
+    if (!record) return { status: 'Not Marked', color: 'secondary' };
+    if (record.status === 'present') return { status: 'Present', color: 'success' };
+    if (record.status === 'absent') return { status: 'Absent', color: 'danger' };
+    if (record.status === 'late') return { status: 'Late', color: 'warning' };
+    if (record.status === 'on-leave') return { status: 'On Leave', color: 'info' };
+    return { status: 'Not Marked', color: 'secondary' };
+  };
+
+  const handleDownloadReport = () => { 
     alert("Downloading sales report...");
   };
 
@@ -68,7 +110,7 @@ export default function Dashboard() {
           </div>
           <div className="d-page-sub">Real-time management for Breva Café & Bar</div>
         </div>
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 align-items-center">
           <button className="d-btn-outline d-hide-mobile" onClick={handleDownloadReport}>Download Report</button>
           <button className="d-btn-gold" onClick={handleNewOrder}>+ New Order</button>
         </div>
@@ -226,20 +268,35 @@ export default function Dashboard() {
             <div className="d-section-title">Quick Staff Overview</div>
             <div className="d-section-sub">Active members on duty</div>
             <div className="mt-3">
-              {[
-                { name: 'Rahul S.', role: 'Head Barista', status: 'Active', color: 'success' },
-                { name: 'Sonia M.', role: 'Mixologist', status: 'Active', color: 'success' },
-                { name: 'Amit K.', role: 'Floor Manager', status: 'On Break', color: 'warning' },
-              ].map((staff, i) => (
-                <div key={i} className="d-flex align-items-center gap-3 mb-3 p-2 rounded" style={{ background: 'var(--d-bg)' }}>
-                  <div className="d-avatar" style={{ width: '32px', height: '32px', fontSize: '0.7rem' }}>{staff.name.split(' ').map(n => n[0]).join('')}</div>
-                  <div className="flex-grow-1">
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{staff.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--d-text-muted)' }}>{staff.role}</div>
-                  </div>
-                  <span className={`badge bg-${staff.color}`} style={{ fontSize: '0.6rem' }}>{staff.status}</span>
+              {loading ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--d-text-muted)' }}>
+                  Loading staff data...
                 </div>
-              ))}
+              ) : staffList.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--d-text-muted)' }}>
+                  No staff members found
+                </div>
+              ) : (
+                staffList.map((staff) => {
+                  const attendance = getAttendanceStatus(staff._id);
+                  return (
+                    <div key={staff._id} className="d-flex align-items-center gap-3 mb-3 p-2 rounded" style={{ background: 'var(--d-bg)' }}>
+                      <div className="d-avatar" style={{ width: '32px', height: '32px', fontSize: '0.7rem' }}>
+                        {staff.name ? staff.name.split(' ').map(n => n[0]).join('') : 'NA'}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{staff.name || 'Unknown'}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--d-text-muted)' }}>
+                          {staff.role ? staff.role.charAt(0).toUpperCase() + staff.role.slice(1) : 'Staff'}
+                        </div>
+                      </div>
+                      <span className={`badge bg-${attendance.color}`} style={{ fontSize: '0.6rem' }}>
+                        {attendance.status}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
             <button className="d-btn-primary w-100 mt-2" style={{ justifyContent: 'center' }} onClick={manageRoster}>Manage Roster</button>
           </div>

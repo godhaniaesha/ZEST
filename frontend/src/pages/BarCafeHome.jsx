@@ -1883,7 +1883,7 @@ const events = [
     name: "Cocktail Masterclass",
     time: "6:00 PM – 9:00 PM",
     type: "Workshop",
-    desc: "Learn signature cocktail techniques from our head bartender. Includes premium spirits kit and recipes.",
+    desc: "Learn signature cocktail techniques from our head chef. Includes premium spirits kit and recipes.",
     img: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&q=80",
   },
   {
@@ -2392,8 +2392,7 @@ export default function BarCafeHome() {
                   <div>
                     <div className="d_exp_card_title">Premium Bar</div>
                     <div className="d_exp_card_desc">
-                      600+ spirits from 40+ countries. Our head bartender
-                      curates a rotating seasonal menu.
+                      600+ spirits from 40+ countries. Our head chef curates a rotating seasonal menu.
                     </div>
                   </div>
                 </div>

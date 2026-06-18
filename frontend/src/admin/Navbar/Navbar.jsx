@@ -33,7 +33,6 @@ const ROLE_LABELS = {
   'chef': 'Chef',
   'waiter': 'Waiter',
   'cashier': 'Cashier',
-  'bartender': 'Bartender',
   'customer': 'Customer'
 };
 

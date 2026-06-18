@@ -29,7 +29,7 @@ import LeaveManagement from './pages/LeaveManagement/LeaveManagement';
 import BlogManagement from './pages/Blog/Blog';
 import GalleryManagement from './pages/Gallery/Gallery';
 
-const ADMIN_ROLES = ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender'];
+const ADMIN_ROLES = ['superadmin', 'manager', 'chef', 'waiter', 'cashier'];
 
 // Wrapper component to pass userRole to pages
 function PageWrapper({ Component }) {

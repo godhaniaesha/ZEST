@@ -12,7 +12,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartender'), async (req, res) => {
+router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef'), async (req, res) => {
   const item = new Inventory({
     name: req.body.name,
     category: req.body.category,
@@ -29,7 +29,7 @@ router.post('/', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartende
   }
 });
 
-router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef', 'bartender'), async (req, res) => {
+router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'chef'), async (req, res) => {
   try {
     const item = await Inventory.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(item);

@@ -90,7 +90,7 @@ router.get("/:id", async (req, res) => {
 router.post(
   "/",
   auth,
-  authorizeRoles("chef", "manager", "superadmin", "bartender"),
+  authorizeRoles("chef", "manager", "superadmin"),
   upload.single("img"),
   async (req, res) => {
     try {
@@ -108,7 +108,7 @@ router.post(
 router.put(
   "/:id",
   auth,
-  authorizeRoles("chef", "manager", "superadmin", "bartender"),
+  authorizeRoles("chef", "manager", "superadmin"),
   upload.single("img"),
   async (req, res) => {
     try {
@@ -128,7 +128,7 @@ router.put(
   }
 );
 
-router.delete("/:id", auth, authorizeRoles("chef", "manager", "superadmin", "bartender"), async (req, res) => {
+router.delete("/:id", auth, authorizeRoles("chef", "manager", "superadmin"), async (req, res) => {
   try {
     const menuItem = await Menu.findByIdAndDelete(req.params.id);
     if (!menuItem) {

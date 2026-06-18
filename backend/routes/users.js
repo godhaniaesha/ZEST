@@ -32,7 +32,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-const STAFF_ROLES = ['superadmin', 'manager', 'chef', 'waiter', 'cashier', 'bartender'];
+const STAFF_ROLES = ['superadmin', 'manager', 'chef', 'waiter', 'cashier'];
 
 const toUserResponse = (user) => {
   const userResponse = user.toObject();
