@@ -177,6 +177,8 @@ export const leaveAPI = {
 export const contactAPI = {
   submit: (data) => api.post('/contacts', data),
   getAll: () => api.get('/contacts'),
+  updateStatus: (id, status) => api.patch(`/contacts/${id}/status`, { status }),
+  delete: (id) => api.delete(`/contacts/${id}`),
 };
 
 export const blogAPI = {

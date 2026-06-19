@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdFilterList,
-  MdPhotoLibrary, MdRestaurant, MdLocalBar, MdCake, MdChair
+  MdPhotoLibrary, MdRestaurant, MdLocalBar, MdCake, MdChair, MdStar
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
@@ -28,7 +28,7 @@ const GALLERY_FORM_FIELDS = [
   { name: 'tag', label: 'Tag *', type: 'text', required: true, col: 6, placeholder: 'e.g. Mains' },
   { name: 'description', label: 'Description *', type: 'textarea', required: true, col: 12, placeholder: 'Brief description of the gallery item...' },
   { name: 'image', label: 'Image *', type: 'file', col: 12, required: true },
-  { name: 'featured', label: 'Featured', type: 'checkbox', col: 12 },
+  { name: 'featured', label: 'Featured Item', type: 'checkbox', col: 12 },
 ];
 
 
@@ -78,6 +78,11 @@ export default function GalleryManagement() {
   });
 
 
+  // Separate featured and regular items
+  const featuredItems = filtered.filter(item => item.featured === true || item.featured === 'true');
+  const regularItems = filtered.filter(item => item.featured !== true && item.featured !== 'true');
+
+
   const handleAdd = () => {
     setCurrentItem(null);
     setFormData({
@@ -107,60 +112,72 @@ export default function GalleryManagement() {
   };
 
 
-  const handleSave = async (data, fileData) => {
-    try {
-      // Validation
-      if (!data.title || !data.category || !data.tag || !data.description) {
-        alert('Please fill in all required fields (Title, Category, Tag, Description)');
+// In the handleSave function, around line 130
+
+const handleSave = async (data, fileData) => {
+  try {
+    // Validation
+    if (!data.title || !data.category || !data.tag || !data.description) {
+      alert('Please fill in all required fields (Title, Category, Tag, Description)');
+      return;
+    }
+
+    const formDataToSend = new FormData();
+
+    Object.keys(data).forEach(key => {
+      if (FORM_SKIP_KEYS.includes(key)) return;
+
+      const value = data[key];
+
+      // Handle boolean values properly
+      if (key === 'featured') {
+        // Send as boolean, not string
+        formDataToSend.append(key, value === true);
         return;
       }
 
-      const formDataToSend = new FormData();
-
-      Object.keys(data).forEach(key => {
-        if (FORM_SKIP_KEYS.includes(key)) return;
-
-        const value = data[key];
-
-        if (
-          value === null ||
-          value === undefined ||
-          typeof value === 'object'
-        ) {
-          return;
-        }
-
-        formDataToSend.append(key, value);
-      });
-
-      if (fileData?.file) {
-        formDataToSend.append(fileData.name, fileData.file);
+      if (
+        value === null ||
+        value === undefined ||
+        (typeof value === 'object' && !(value instanceof File))
+      ) {
+        return;
       }
 
-      if (currentItem) {
-        // Edit
-        await galleryAPI.update(currentItem._id, formDataToSend);
-      } else {
-        // Add
-        await galleryAPI.create(formDataToSend);
-      }
+      formDataToSend.append(key, value);
+    });
 
-      await loadData();
-      setShowForm(false);
-    } catch (error) {
-      console.error('Error saving gallery item:', error);
-      alert('Failed to save gallery item');
+    if (fileData?.file) {
+      formDataToSend.append(fileData.name, fileData.file);
     }
-  };
 
+    if (currentItem) {
+      // Edit
+      await galleryAPI.update(currentItem._id, formDataToSend);
+      alert('Gallery item updated successfully');
+    } else {
+      // Add
+      await galleryAPI.create(formDataToSend);
+      alert('Gallery item added successfully');
+    }
+
+    await loadData();
+    setShowForm(false);
+  } catch (error) {
+    console.error('Error saving gallery item:', error);
+    alert('Failed to save gallery item');
+  }
+};
 
   const confirmDelete = async () => {
     try {
       await galleryAPI.delete(currentItem._id);
-      loadData();
+      alert('Gallery item deleted successfully');
+      await loadData();
       setShowDelete(false);
     } catch (error) {
       console.error('Error deleting gallery item:', error);
+      alert('Failed to delete gallery item');
     }
   };
 
@@ -173,6 +190,14 @@ export default function GalleryManagement() {
     });
   };
 
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div>Loading gallery...</div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -239,62 +264,133 @@ export default function GalleryManagement() {
       </div>
 
 
-      <Row className="g-3">
-        {filtered.map(item => (
-          <Col key={item._id} xs={12} sm={6} xl={4}>
-            <div className="d-card h-100 position-relative">
-              <div className="d-flex gap-3">
-                {item.image && (
-                  <div style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: 'var(--d-radius-md)',
-                    overflow: 'hidden',
-                    flexShrink: 0
-                  }}>
-                    <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                )}
-                <div className="flex-grow-1">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{item.title}</h5>
-                    {canAddEditDelete && (
-                      <div className="d-flex gap-1">
-                        <button
-                          className="d-navbar-icon-btn"
-                          onClick={() => handleEdit(item)}
-                          style={{ width: '28px', height: '28px', fontSize: '1rem' }}
-                        >
-                          <MdEdit />
-                        </button>
-                        <button
-                          className="d-navbar-icon-btn text-danger"
-                          onClick={() => handleDeleteClick(item)}
-                          style={{ width: '28px', height: '28px', fontSize: '1rem' }}
-                        >
-                          <MdDelete />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="d-page-sub mb-2">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
-                  <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      {item.featured && (
-                        <span className="badge bg-warning text-dark me-2" style={{ fontSize: '0.75rem' }}>Featured</span>
+      {/* Featured Items Section */}
+      {featuredItems.length > 0 && (
+        <>
+          <div className="d-section-title mb-3 d-flex align-items-center gap-2">
+            <MdStar style={{ color: '#FFB800' }} /> Featured Items
+          </div>
+          <Row className="g-3 mb-5">
+            {featuredItems.map(item => (
+              <Col key={item._id} xs={12} sm={6} xl={4}>
+                <div className="d-card h-100 position-relative" style={{ border: '2px solid #FFB800' }}>
+                  {item.image && (
+                    <div style={{
+                      width: '100%',
+                      height: '200px',
+                      borderRadius: 'var(--d-radius-md)',
+                      overflow: 'hidden',
+                      marginBottom: '12px'
+                    }}>
+                      <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
+                  <div>
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{item.title}</h5>
+                      {canAddEditDelete && (
+                        <div className="d-flex gap-1">
+                          <button
+                            className="d-navbar-icon-btn"
+                            onClick={() => handleEdit(item)}
+                            style={{ width: '28px', height: '28px', fontSize: '1rem' }}
+                          >
+                            <MdEdit />
+                          </button>
+                          <button
+                            className="d-navbar-icon-btn text-danger"
+                            onClick={() => handleDeleteClick(item)}
+                            style={{ width: '28px', height: '28px', fontSize: '1rem' }}
+                          >
+                            <MdDelete />
+                          </button>
+                        </div>
                       )}
+                    </div>
+                    <div className="d-page-sub mb-2">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
+                    <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span className="badge bg-warning text-dark" style={{ fontSize: '0.75rem' }}>Featured</span>
                       <span className="text-muted small" style={{ fontSize: '0.8rem' }}>
                         {formatDate(item.createdAt)}
                       </span>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </Col>
-        ))}
-      </Row>
+              </Col>
+            ))}
+          </Row>
+        </>
+      )}
+
+
+      {/* All Items Section */}
+      {filtered.length > 0 && (
+        <>
+          <div className="d-section-title mb-3">All Items</div>
+          <Row className="g-3">
+            {filtered.map(item => (
+              <Col key={item._id} xs={12} sm={6} xl={4}>
+                <div className="d-card h-100 position-relative">
+                  <div className="d-flex gap-3">
+                    {item.image && (
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: 'var(--d-radius-md)',
+                        overflow: 'hidden',
+                        flexShrink: 0
+                      }}>
+                        <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                    <div className="flex-grow-1">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{item.title}</h5>
+                        {canAddEditDelete && (
+                          <div className="d-flex gap-1">
+                            <button
+                              className="d-navbar-icon-btn"
+                              onClick={() => handleEdit(item)}
+                              style={{ width: '28px', height: '28px', fontSize: '1rem' }}
+                            >
+                              <MdEdit />
+                            </button>
+                            <button
+                              className="d-navbar-icon-btn text-danger"
+                              onClick={() => handleDeleteClick(item)}
+                              style={{ width: '28px', height: '28px', fontSize: '1rem' }}
+                            >
+                              <MdDelete />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="d-page-sub mb-2">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
+                      <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>
+                      <div className="d-flex justify-content-between align-items-center">
+                        {(item.featured === true || item.featured === 'true') && (
+                          <span className="badge bg-warning text-dark" style={{ fontSize: '0.75rem' }}>Featured</span>
+                        )}
+                        <span className="text-muted small" style={{ fontSize: '0.8rem' }}>
+                          {formatDate(item.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            ))}
+          </Row>
+        </>
+      )}
+
+
+      {filtered.length === 0 && (
+        <div className="text-center py-5 text-muted">
+          No gallery items found
+        </div>
+      )}
 
 
       <FormModal
