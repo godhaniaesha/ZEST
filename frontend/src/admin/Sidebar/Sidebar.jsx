@@ -30,8 +30,8 @@ const NAV_GROUPS = [
     label: "Super Admin",
     items: [
       { to: '/admin/users', icon: <MdAdminPanelSettings />, label: 'User Management', roles: ['superadmin'] },
-      { to: '/admin/system-logs', icon: <MdHistory />, label: 'System Logs', roles: ['superadmin'] },
-      { to: '/admin/settings', icon: <MdSettings />, label: 'Global Settings', roles: ['superadmin'] }
+      // { to: '/admin/system-logs', icon: <MdHistory />, label: 'System Logs', roles: ['superadmin'] },
+      // { to: '/admin/settings', icon: <MdSettings />, label: 'Global Settings', roles: ['superadmin'] }
     ]
   },
   {

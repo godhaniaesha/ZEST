@@ -62,9 +62,11 @@ const FormModal = ({
               {fields?.map((field, index) => (
                 <Col key={index} xs={12} md={field.col || 6}>
                   <Form.Group>
-                    <Form.Label className="small fw-bold">
-                      {field.label}
-                    </Form.Label>
+                    {field.type !== 'checkbox' && (
+                      <Form.Label className="small fw-bold">
+                        {field.label}
+                      </Form.Label>
+                    )}
 
                     {field.type === 'select' ? (
                       <Form.Select
@@ -130,6 +132,72 @@ const FormModal = ({
                           </div>
                         )}
                       </>
+                    ) : field.type === 'checkbox' ? (
+                      <div className="d-flex align-items-center gap-2">
+                        <div
+                          style={{
+                            position: 'relative',
+                            width: '20px',
+                            height: '20px',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleChange(field.name, !formData[field.name])}
+                        >
+                          <input
+                            type="checkbox"
+                            id={field.name}
+                            checked={formData[field.name] || false}
+                            onChange={(e) => handleChange(field.name, e.target.checked)}
+                            style={{
+                              position: 'absolute',
+                              opacity: 0,
+                              width: '100%',
+                              height: '100%',
+                              cursor: 'pointer',
+                              zIndex: 1
+                            }}
+                          />
+                          <div
+                            style={{
+                              width: '20px',
+                              height: '20px',
+                              border: formData[field.name] ? '2px solid var(--d-primary)' : '2px solid var(--d-border)',
+                              borderRadius: '4px',
+                              backgroundColor: formData[field.name] ? 'var(--d-primary)' : 'var(--d-white)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'var(--d-transition)'
+                            }}
+                          >
+                            {formData[field.name] && (
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="white"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                        <label
+                          htmlFor={field.name}
+                          className="small mb-0"
+                          style={{
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            color: 'var(--d-text)'
+                          }}
+                        >
+                          {field.label}
+                        </label>
+                      </div>
                     ) : (
                       <Form.Control
                         type={field.type || 'text'}
