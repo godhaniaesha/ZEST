@@ -25,6 +25,8 @@ import { useAuth } from "../../../contexts/AuthContext";
 export default function LeaveManagement() {
   const { user } = useAuth();
 
+  const isAdmin = user?.role === 'superadmin' || user?.role === 'manager';
+
   const [leaves, setLeaves] = useState([]);
 
   const [staffList, setStaffList] = useState([]);
@@ -34,6 +36,10 @@ export default function LeaveManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [loading, setLoading] = useState(true);
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [itemsPerPage] = useState(10);
 
   // Modal States
 
@@ -54,6 +60,10 @@ export default function LeaveManagement() {
 
     endDate: "",
 
+    startTime: "",
+
+    endTime: "",
+
     type: "sick",
 
     reason: "",
@@ -63,45 +73,68 @@ export default function LeaveManagement() {
     try {
       setLoading(true);
 
-      const [leavesRes, staffRes] = await Promise.all([
-        leaveAPI.getAll(),
+      const isAdmin = user?.role === 'superadmin' || user?.role === 'manager';
+      
+      const requests = [leaveAPI.getAll()];
+      
+      // Only load staff list for admins
+      if (isAdmin) {
+        requests.push(usersAPI.getAll());
+      }
 
-        usersAPI.getAll(),
-      ]);
+      const responses = await Promise.all(requests);
+      const leavesRes = responses[0];
+      const staffRes = isAdmin ? responses[1] : null;
 
+      console.log('Leaves response:', leavesRes.data);
       setLeaves(Array.isArray(leavesRes.data) ? leavesRes.data : []);
 
-      setStaffList(
-        Array.isArray(staffRes.data)
-          ? staffRes.data
+      if (isAdmin && staffRes) {
+        setStaffList(
+          Array.isArray(staffRes.data)
+            ? staffRes.data
 
-              .filter((staff) => staff.role !== "customer")
+                .filter((staff) => staff.role !== "customer" && staff.role !== "superadmin")
 
-              .map((staff) => ({
-                _id: staff._id,
+                .map((staff) => ({
+                  _id: staff._id,
 
-                name: staff.name,
+                  name: staff.name,
 
-                role: staff.role,
+                  role: staff.role,
 
-                initials: staff.name
+                  initials: staff.name
 
-                  .split(" ")
+                    .split(" ")
 
-                  .map((n) => n[0])
+                    .map((n) => n[0])
 
-                  .join("")
+                    .join("")
 
-                  .toUpperCase(),
+                    .toUpperCase(),
 
-                color: "#C9A84C",
+                  color: "#C9A84C",
 
-                leavesTotal: staff.leavesTotal || 12,
+                  leavesTotal: staff.leavesTotal || 12,
 
-                leavesTaken: staff.leavesTaken || 0,
-              }))
-          : [],
-      );
+                  leavesTaken: staff.leavesTaken || 0,
+                }))
+            : [],
+        );
+      } else {
+        // For non-admin users, just add themselves to staff list
+        if (user) {
+          setStaffList([{
+            _id: user._id,
+            name: user.name,
+            role: user.role,
+            initials: user.name.split(" ").map((n) => n[0]).join("").toUpperCase(),
+            color: "#C9A84C",
+            leavesTotal: user.leavesTotal || 12,
+            leavesTaken: user.leavesTaken || 0,
+          }]);
+        }
+      }
     } catch (error) {
       console.error("Error loading data:", error);
 
@@ -128,6 +161,33 @@ export default function LeaveManagement() {
     return matchesSearch && matchesStatus;
   });
 
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   const handleAdd = () => {
     setCurrentItem(null);
 
@@ -137,6 +197,10 @@ export default function LeaveManagement() {
       startDate: "",
 
       endDate: "",
+
+      startTime: "",
+
+      endTime: "",
 
       type: "sick",
 
@@ -155,6 +219,10 @@ export default function LeaveManagement() {
       startDate: item.startDate,
 
       endDate: item.endDate,
+
+      startTime: item.startTime || "",
+
+      endTime: item.endTime || "",  
 
       type: item.type,
 
@@ -534,7 +602,6 @@ export default function LeaveManagement() {
             <thead>
               <tr>
                 <th>Staff</th>
-
                 <th>Role</th>
 
                 <th>Date Range</th>
@@ -558,19 +625,19 @@ export default function LeaveManagement() {
 
                   .map((_, i) => (
                     <tr key={i}>
-                      <td colSpan="8" className="text-center py-4">
+                      <td colSpan="7" className="text-center py-4">
                         Loading...
                       </td>
                     </tr>
                   ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-4 text-muted">
+                  <td colSpan="7" className="text-center py-4 text-muted">
                     No leave requests found
                   </td>
                 </tr>
               ) : (
-                filtered.map((item) => (
+                currentItems.map((item) => (
                   <tr key={item._id}>
                     <td>
                       <div className="d-flex align-items-center gap-2">
@@ -656,7 +723,7 @@ export default function LeaveManagement() {
 
                     <td>
                       <div className="d-flex gap-1">
-                        {item.status === "pending" && (
+                        {isAdmin && item.status === "pending" && (
                           <>
                             <button
                               className="d-btn-outline"
@@ -676,19 +743,25 @@ export default function LeaveManagement() {
                           </>
                         )}
 
-                        <button
-                          className="d-navbar-icon-btn"
-                          onClick={() => handleEdit(item)}
-                        >
-                          <MdEdit />
-                        </button>
+                        {/* Non-admin users can only edit their own pending leaves */}
+                        {(!isAdmin && item.staffId === user._id && item.status === "pending") || isAdmin ? (
+                          <button
+                            className="d-navbar-icon-btn"
+                            onClick={() => handleEdit(item)}
+                          >
+                            <MdEdit />
+                          </button>
+                        ) : null}
 
-                        <button
-                          className="d-navbar-icon-btn text-danger"
-                          onClick={() => handleDeleteClick(item)}
-                        >
-                          <MdDelete />
-                        </button>
+                        {/* Only admin can delete */}
+                        {isAdmin && (
+                          <button
+                            className="d-navbar-icon-btn text-danger"
+                            onClick={() => handleDeleteClick(item)}
+                          >
+                            <MdDelete />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -698,6 +771,45 @@ export default function LeaveManagement() {
           </table>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      {filtered.length > 0 && (
+        <div className="d-flex justify-content-between align-items-center mt-3">
+          <div className="text-muted small">
+            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filtered.length)} of {filtered.length} entries
+          </div>
+          <div className="d-flex gap-2">
+            <button
+              className="d-btn-outline"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+            >
+              Previous
+            </button>
+            <div className="d-flex align-items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  className={`d-btn-outline ${currentPage === pageNumber ? "d-btn-gold" : ""}`}
+                  onClick={() => handlePageChange(pageNumber)}
+                  style={{ padding: "6px 12px", fontSize: "0.8rem", minWidth: "40px" }}
+                >
+                  {pageNumber}
+                </button>
+              ))}
+            </div>
+            <button
+              className="d-btn-outline"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Form Modal */}
 
@@ -747,6 +859,34 @@ export default function LeaveManagement() {
                   setFormData({ ...formData, endDate: e.target.value })
                 }
                 required
+              />
+            </Form.Group>
+          </Col>
+
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Start Time</Form.Label>
+
+              <Form.Control
+                type="time"
+                value={formData.startTime}
+                onChange={(e) =>
+                  setFormData({ ...formData, startTime: e.target.value })
+                }
+              />
+            </Form.Group>
+          </Col>
+
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">End Time</Form.Label>
+
+              <Form.Control
+                type="time"
+                value={formData.endTime}
+                onChange={(e) =>
+                  setFormData({ ...formData, endTime: e.target.value })
+                }
               />
             </Form.Group>
           </Col>
@@ -816,7 +956,7 @@ export default function LeaveManagement() {
           />
         </Form.Group>
       </FormModal>
-
+ 
       {/* Delete Modal */}
 
       <DeleteModal

@@ -14,6 +14,10 @@ const leaveSchema = new mongoose.Schema({
 
   endDate: { type: Date, required: true },
 
+  startTime: { type: String }, // Time in HH:MM format
+
+  endTime: { type: String }, // Time in HH:MM format
+
   type: { type: String, enum: ['sick', 'vacation', 'personal', 'maternity', 'paternity', 'other'], required: true },
 
   reason: { type: String, required: true },

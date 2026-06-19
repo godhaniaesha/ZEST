@@ -34,7 +34,7 @@ export default function StaffAttendance() {
 
   // Transform staff data from Redux to match component format
   const staffList = useMemo(() => 
-    staffRedux.filter(staff => staff.role !== 'customer').map(staff => ({
+    staffRedux.filter(staff => staff.role !== 'customer' && staff.role !== 'superadmin').map(staff => ({
       _id: staff._id,
       name: staff.name,
       role: staff.role,
@@ -49,7 +49,9 @@ export default function StaffAttendance() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('Loading attendance for date:', selectedDate);
       const attendanceRes = await attendanceAPI.getAll({ date: selectedDate });
+      console.log('Attendance response:', attendanceRes.data);
       setAttendance(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -71,7 +73,7 @@ export default function StaffAttendance() {
   // Load leave status when date changes (not on staff list changes to prevent infinite loop)
   useEffect(() => {
     const loadLeaveStatus = async () => {
-      if (staffList.length === 0) return;
+      if (staffList.length === 0) return; 
       
       try {
         const leavePromises = staffList.map(staff => 
@@ -96,8 +98,9 @@ export default function StaffAttendance() {
   }, [selectedDate]); // Only depend on selectedDate to prevent infinite loop
 
   const filtered = attendance.filter(a => 
-    a.staffName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    a.role.toLowerCase().includes(searchTerm.toLowerCase())
+    a.role !== 'superadmin' &&
+    (a.staffName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    a.role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getShiftTime = (shift) => {
@@ -280,12 +283,33 @@ export default function StaffAttendance() {
     }
   };
 
+  const handleUpdateLateToPresent = async () => {
+    if (!canFullManage) {
+      alert('You do not have permission to update attendance records');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to update all "late" records to "present"?')) {
+      return;
+    }
+
+    try {
+      const response = await attendanceAPI.updateLateToPresent();
+      alert(response.data.message || `Updated ${response.data.modifiedCount} records`);
+      loadData();
+    } catch (error) {
+      console.error('Error updating late records:', error);
+      alert('Failed to update records');
+    }
+  };
+
   const getStats = () => {
-    const total = attendance.length;
-    const present = attendance.filter(a => a.status === 'present').length;
-    const absent = attendance.filter(a => a.status === 'absent').length;
-    const late = attendance.filter(a => a.status === 'late').length;
-    const onLeave = attendance.filter(a => a.status === 'on-leave').length;
+    const filteredAttendance = attendance.filter(a => a.role !== 'superadmin');
+    const total = filteredAttendance.length;
+    const present = filteredAttendance.filter(a => a.status === 'present').length;
+    const absent = filteredAttendance.filter(a => a.status === 'absent').length;
+    const late = filteredAttendance.filter(a => a.status === 'late').length;
+    const onLeave = filteredAttendance.filter(a => a.status === 'on-leave').length;
 
     return { total, present, absent, late, onLeave };
   };
@@ -312,6 +336,9 @@ export default function StaffAttendance() {
           </Form.Group>
           {canManageAttendance && (
             <button className="d-btn-gold" onClick={handleAdd}><MdEdit /> Add Attendance</button>
+          )}
+          {canFullManage && (
+            <button className="d-btn-outline" onClick={handleUpdateLateToPresent}>Update Late to Present</button>
           )}
         </div>
       </div>

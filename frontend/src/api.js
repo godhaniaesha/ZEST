@@ -160,6 +160,7 @@ export const attendanceAPI = {
   getStats: (params) => api.get('/attendance/stats/summary', { params }),
   checkLeave: (staffId, date) => api.get(`/attendance/check-leave/${staffId}`, { params: { date } }),
   autoMarkLeave: (staffId, date) => api.post(`/attendance/auto-mark-leave/${staffId}`, { date }),
+  updateLateToPresent: () => api.post('/attendance/update-late-to-present'),
 };
 
 export const leaveAPI = {
