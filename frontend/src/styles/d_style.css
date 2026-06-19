@@ -119,6 +119,10 @@ body {
   box-shadow: var(--d-shadow-sm);
 }
 
+.d-card{
+  text-wrap: nowrap;
+}
+
 .d-navbar.d-sidebar-collapsed {
   left: var(--d-sidebar-collapsed);
 }

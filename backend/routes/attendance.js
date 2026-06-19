@@ -34,7 +34,24 @@ router.get('/', auth, async (req, res) => {
     let query = {};
 
     if (date) {
-      query.date = new Date(date);
+      // Handle date string from frontend (YYYY-MM-DD format)
+      const queryDate = new Date(date);
+      // Ensure we're using local time, not UTC
+      const year = queryDate.getFullYear();
+      const month = queryDate.getMonth();
+      const day = queryDate.getDate();
+      const normalizedDate = new Date(year, month, day);
+      
+      // Query for the entire day range
+      const startOfDay = new Date(year, month, day);
+      const endOfDay = new Date(year, month, day + 1);
+      
+      query.date = {
+        $gte: startOfDay,
+        $lt: endOfDay
+      };
+      
+      console.log('Querying attendance for date range:', { startOfDay, endOfDay });
     }
 
     if (staffId) {
@@ -42,15 +59,21 @@ router.get('/', auth, async (req, res) => {
     }
 
     if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1); // Include the entire end date
+      
       query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
+        $gte: start,
+        $lt: end
       };
     }
 
     const attendance = await Attendance.find(query).sort({ date: -1 });
+    console.log('Found attendance records:', attendance.length);
     res.json(attendance);
   } catch (err) {
+    console.error('Error fetching attendance:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -72,6 +95,7 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { staffId, date, status, checkIn, checkOut, notes } = req.body;
+    console.log('Creating attendance - checkIn:', checkIn, 'checkOut:', checkOut);
 
     // Check if user is trying to create their own attendance or is a manager/superadmin
     const isOwnAttendance = req.user.id.toString() === staffId;
@@ -109,11 +133,11 @@ router.post('/', auth, async (req, res) => {
       }
     }
 
-    // Auto-detect late status if check-in time is provided and status is present
+    // Auto-detect late status if check-in time is provided and status is present - COMMENTED OUT as per user request
     let finalStatus = status;
-    if (status === 'present' && checkIn && isLateCheckIn(checkIn)) {
-      finalStatus = 'late';
-    }
+    // if (status === 'present' && checkIn && isLateCheckIn(checkIn)) {
+    //   finalStatus = 'late';
+    // }
 
     const attendance = new Attendance({
       staffId,
@@ -127,6 +151,7 @@ router.post('/', auth, async (req, res) => {
     });
 
     const savedAttendance = await attendance.save();
+    console.log('Saved attendance - checkIn:', savedAttendance.checkIn, 'checkOut:', savedAttendance.checkOut);
     res.status(201).json(savedAttendance);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -137,6 +162,7 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { staffId, date, status, checkIn, checkOut, notes } = req.body;
+    console.log('Updating attendance - checkIn:', checkIn, 'checkOut:', checkOut);
 
     // Get the existing attendance record
     const existingAttendance = await Attendance.findById(req.params.id);
@@ -169,6 +195,7 @@ router.put('/:id', auth, async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    console.log('Updated attendance - checkIn:', attendance.checkIn, 'checkOut:', attendance.checkOut);
     res.json(attendance);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -192,10 +219,22 @@ router.delete('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req,
 router.post('/mark-present/:staffId', auth, async (req, res) => {
   try {
     const { date, checkIn } = req.body;
-    const attendanceDate = date ? new Date(date) : new Date();
+    let attendanceDate;
     
-    // Normalize date to remove time component for consistent comparison
-    attendanceDate.setHours(0, 0, 0, 0);
+    if (date) {
+      // Handle date string from frontend (YYYY-MM-DD format)
+      attendanceDate = new Date(date);
+      // Ensure we're using local time, not UTC
+      const year = attendanceDate.getFullYear();
+      const month = attendanceDate.getMonth();
+      const day = attendanceDate.getDate();
+      attendanceDate = new Date(year, month, day);
+    } else {
+      attendanceDate = new Date();
+      attendanceDate.setHours(0, 0, 0, 0);
+    }
+    
+    console.log('Marking present for staffId:', req.params.staffId, 'on date:', attendanceDate);
 
     // Check if user is trying to mark their own attendance or is a manager/superadmin
     const isOwnAttendance = req.user.id.toString() === req.params.staffId;
@@ -225,13 +264,15 @@ router.post('/mark-present/:staffId', auth, async (req, res) => {
     // Use provided check-in time or current time
     const checkInTime = checkIn || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     
-    // Auto-detect late status
-    const status = isLateCheckIn(checkInTime) ? 'late' : 'present';
+    // Auto-detect late status - COMMENTED OUT as per user request
+    // const status = isLateCheckIn(checkInTime) ? 'late' : 'present';
+    const status = 'present'; // Always mark as present, no late detection
 
     if (attendance) {
       attendance.status = status;
       attendance.checkIn = checkInTime;
       await attendance.save();
+      console.log('Updated existing attendance:', attendance);
     } else {
       attendance = new Attendance({
         staffId: req.params.staffId,
@@ -242,10 +283,12 @@ router.post('/mark-present/:staffId', auth, async (req, res) => {
         checkIn: checkInTime
       });
       await attendance.save();
+      console.log('Created new attendance:', attendance);
     }
 
     res.json(attendance);
   } catch (err) {
+    console.error('Error marking present:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -254,10 +297,22 @@ router.post('/mark-present/:staffId', auth, async (req, res) => {
 router.post('/mark-absent/:staffId', auth, async (req, res) => {
   try {
     const { date } = req.body;
-    const attendanceDate = date ? new Date(date) : new Date();
+    let attendanceDate;
     
-    // Normalize date to remove time component for consistent comparison
-    attendanceDate.setHours(0, 0, 0, 0);
+    if (date) {
+      // Handle date string from frontend (YYYY-MM-DD format)
+      attendanceDate = new Date(date);
+      // Ensure we're using local time, not UTC
+      const year = attendanceDate.getFullYear();
+      const month = attendanceDate.getMonth();
+      const day = attendanceDate.getDate();
+      attendanceDate = new Date(year, month, day);
+    } else {
+      attendanceDate = new Date();
+      attendanceDate.setHours(0, 0, 0, 0);
+    }
+    
+    console.log('Marking absent for staffId:', req.params.staffId, 'on date:', attendanceDate);
 
     // Check if user is trying to mark their own attendance or is a manager/superadmin
     const isOwnAttendance = req.user.id.toString() === req.params.staffId;
@@ -289,6 +344,7 @@ router.post('/mark-absent/:staffId', auth, async (req, res) => {
       attendance.checkIn = null;
       attendance.checkOut = null;
       await attendance.save();
+      console.log('Updated existing attendance to absent:', attendance);
     } else {
       attendance = new Attendance({
         staffId: req.params.staffId,
@@ -300,10 +356,12 @@ router.post('/mark-absent/:staffId', auth, async (req, res) => {
         checkOut: null
       });
       await attendance.save();
+      console.log('Created new absent attendance:', attendance);
     }
 
     res.json(attendance);
   } catch (err) {
+    console.error('Error marking absent:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -373,12 +431,45 @@ router.get('/check-leave/:staffId', auth, async (req, res) => {
   }
 });
 
+// Update all late records to present (admin only)
+router.post('/update-late-to-present', auth, authorizeRoles('superadmin', 'manager'), async (req, res) => {
+  try {
+    const result = await Attendance.updateMany(
+      { status: 'late' },
+      { status: 'present' }
+    );
+    
+    console.log(`Updated ${result.modifiedCount} late records to present`);
+    res.json({ 
+      message: `Updated ${result.modifiedCount} late records to present`,
+      modifiedCount: result.modifiedCount 
+    });
+  } catch (err) {
+    console.error('Error updating late records:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Auto-mark attendance for staff on approved leave
 router.post('/auto-mark-leave/:staffId', auth, async (req, res) => {
   try {
     const { date } = req.body;
-    const attendanceDate = date ? new Date(date) : new Date();
-    attendanceDate.setHours(0, 0, 0, 0);
+    let attendanceDate;
+    
+    if (date) {
+      // Handle date string from frontend (YYYY-MM-DD format)
+      attendanceDate = new Date(date);
+      // Ensure we're using local time, not UTC
+      const year = attendanceDate.getFullYear();
+      const month = attendanceDate.getMonth();
+      const day = attendanceDate.getDate();
+      attendanceDate = new Date(year, month, day);
+    } else {
+      attendanceDate = new Date();
+      attendanceDate.setHours(0, 0, 0, 0);
+    }
+    
+    console.log('Auto-marking leave for staffId:', req.params.staffId, 'on date:', attendanceDate);
 
     // Check if user is trying to mark their own attendance or is a manager/superadmin
     const isOwnAttendance = req.user.id.toString() === req.params.staffId;
@@ -415,6 +506,7 @@ router.post('/auto-mark-leave/:staffId', auth, async (req, res) => {
       attendance.status = 'on-leave';
       attendance.notes = `On ${leave.type} leave: ${leave.reason}`;
       await attendance.save();
+      console.log('Updated existing attendance to on-leave:', attendance);
     } else {
       attendance = new Attendance({
         staffId: req.params.staffId,
@@ -425,10 +517,12 @@ router.post('/auto-mark-leave/:staffId', auth, async (req, res) => {
         notes: `On ${leave.type} leave: ${leave.reason}`
       });
       await attendance.save();
+      console.log('Created new on-leave attendance:', attendance);
     }
 
     res.json(attendance);
   } catch (err) {
+    console.error('Error auto-marking leave:', err);
     res.status(500).json({ message: err.message });
   }
 });

@@ -16,7 +16,7 @@ export default function AttendanceBanner() {
   const today = new Date().toISOString().split('T')[0];
 
   const loadTodayAttendance = useCallback(async () => {
-    if (!user || user.role === 'customer') {
+    if (!user || user.role === 'customer' || user.role === 'superadmin') {
       setLoading(false);
       return;
     }
@@ -69,16 +69,18 @@ export default function AttendanceBanner() {
     };
   }, [attendanceStatus, isAutoLeave, handleAutoLeave]);
 
-  // Only show for staff users, not customers
+  // Only show for staff users, not customers or superadmin
   // Banner shows full day regardless of attendance status
-  if (loading || !user || user.role === 'customer' || !isVisible) {
+  if (loading || !user || user.role === 'customer' || user.role === 'superadmin' || !isVisible) {
     return null;
   }
 
   const handleMarkPresent = async () => {
     try {
-      await attendanceAPI.markPresent(user._id, today);
-      setAttendanceStatus('present');
+      console.log('Marking present for user:', user._id, 'on date:', today);
+      const response = await attendanceAPI.markPresent(user._id, today);
+      console.log('Mark present response:', response.data);
+      setAttendanceStatus(response.data.status || 'present');
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
