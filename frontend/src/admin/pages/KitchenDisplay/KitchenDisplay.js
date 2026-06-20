@@ -77,18 +77,27 @@ export default function KitchenDisplay() {
     priority: derivePriority(o.createdAt)
   });
 
-  // Fetch orders from backend and map to local UI shape
   const fetchOrders = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const res = await ordersAPI.getAll();
       const data = res.data || [];
 
       const mapped = data.map(mapOrderToUI);
 
-      // Filter out completed orders
-      setOrders(mapped.filter(o => o.status !== 'Completed'));
+      const activeOrders = mapped.filter(order => {
+        const allDone =
+          order.items.length > 0 &&
+          order.items.every(item =>
+            ['Ready', 'Served'].includes(item.status)
+          );
+
+        return !allDone && order.status !== 'Completed';
+      });
+
+      setOrders(activeOrders);
     } catch (err) {
       console.error('Failed to fetch orders', err);
       setError(err.message || 'Failed to load orders');
@@ -110,7 +119,13 @@ export default function KitchenDisplay() {
       try {
         const res = await ordersAPI.updateItemStatus(order._id, item._id, { status: nextStatus });
         const mapped = mapOrderToUI(res.data);
-        setOrders((cur) => cur.map((o) => (o._id === mapped._id ? mapped : o)));
+
+        // If order is now Completed, remove it from the display
+        if (mapped.status === 'Completed') {
+          setOrders((cur) => cur.filter((o) => o._id !== mapped._id));
+        } else {
+          setOrders((cur) => cur.map((o) => (o._id === mapped._id ? mapped : o)));
+        }
       } catch (err) {
         console.error('Failed to update item status', err);
         setError(err.response?.data?.message || err.message || 'Failed to update item status');
@@ -163,24 +178,14 @@ export default function KitchenDisplay() {
       {/* Page Header */}
       <div className="d-page-header">
         <div className="d-flex align-items-center gap-3">
-          <button
-            className="d-icon-btn"
-            onClick={() => navigate('/admin/dashboard')}
-          >
-            <MdArrowBack fontSize="1.2rem" />
-          </button>
           <div>
             <div className="d-page-heading d-flex align-items-center gap-2">
-              <MdKitchen /> Kitchen Display System <span className="d-live-dot"></span>
+              <MdKitchen /> Kitchen Display <span className="d-live-dot"></span>
             </div>
             <div className="d-page-sub">Real-time Order Monitoring & Management</div>
           </div>
         </div>
         <div className="d-flex gap-3 align-items-center">
-          <div className="d-urgent-badge">
-            <MdNotificationsActive className="animate-pulse" />
-            <span>{orders.filter(o => o.priority === 'Urgent').length} Urgent Orders</span>
-          </div>
           <button
             className="d-btn-outline"
             onClick={() => navigate('/admin/reports')}
@@ -209,12 +214,6 @@ export default function KitchenDisplay() {
             </button>
           ))}
         </div>
-        <button
-          className="d-btn-clear-all"
-          onClick={handleClearAll}
-        >
-          <MdDoneAll className="me-2" /> Clear All Completed
-        </button>
       </div>
 
       {/* Orders Grid */}
@@ -306,8 +305,6 @@ export default function KitchenDisplay() {
 
       <style jsx>{`
         .d-kot-page {
-          padding: 20px;
-          background: #f5f7fa;
           min-height: auto;
           overflow-x: hidden;
         }
@@ -435,7 +432,7 @@ export default function KitchenDisplay() {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 16px;
+          padding: 5px 16px;
           background: transparent;
           border: 1.5px solid transparent;
           border-radius: 10px;

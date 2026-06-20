@@ -139,9 +139,6 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
                     >
                       <span className="d-nav-icon">{item.icon}</span>
                       <span className="d-nav-label">{item.label}</span>
-                      {item.badge && (
-                        <span className="d-nav-badge">{item.badge}</span>
-                      )}
                       <span className="d-tooltip">{item.label}</span>
                     </NavLink>
                   );

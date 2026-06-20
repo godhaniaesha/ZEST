@@ -76,7 +76,6 @@ export default function ServiceRequests() {
           <div className="d-page-sub">Manage customer inquiries and feedback</div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline" onClick={fetchRequests}>Refresh</button>
           <button className="d-btn-gold" onClick={() => {
             const completed = requests.filter(r => r.status === 'Completed');
             if (completed.length === 0) {

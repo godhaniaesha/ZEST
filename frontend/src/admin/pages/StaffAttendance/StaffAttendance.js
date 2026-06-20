@@ -33,7 +33,7 @@ export default function StaffAttendance() {
   const [formData, setFormData] = useState({ staffId: '', date: selectedDate, status: 'present', checkIn: '', checkOut: '' });
 
   // Transform staff data from Redux to match component format
-  const staffList = useMemo(() => 
+  const staffList = useMemo(() =>
     staffRedux.filter(staff => staff.role !== 'customer' && staff.role !== 'superadmin').map(staff => ({
       _id: staff._id,
       name: staff.name,
@@ -44,7 +44,7 @@ export default function StaffAttendance() {
       leavesTotal: staff.leavesTotal || 12,
       leavesTaken: staff.leavesTaken || 0
     }))
-  , [staffRedux]);
+    , [staffRedux]);
 
   const loadData = useCallback(async () => {
     try {
@@ -73,15 +73,15 @@ export default function StaffAttendance() {
   // Load leave status when date changes (not on staff list changes to prevent infinite loop)
   useEffect(() => {
     const loadLeaveStatus = async () => {
-      if (staffList.length === 0) return; 
-      
+      if (staffList.length === 0) return;
+
       try {
-        const leavePromises = staffList.map(staff => 
+        const leavePromises = staffList.map(staff =>
           attendanceAPI.checkLeave(staff._id, selectedDate)
             .then(res => ({ staffId: staff._id, leaveData: res.data }))
             .catch(() => ({ staffId: staff._id, leaveData: { onLeave: false } }))
         );
-        
+
         const leaveResults = await Promise.all(leavePromises);
         const leaveStatusMap = {};
         leaveResults.forEach(({ staffId, leaveData }) => {
@@ -97,14 +97,14 @@ export default function StaffAttendance() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]); // Only depend on selectedDate to prevent infinite loop
 
-  const filtered = attendance.filter(a => 
+  const filtered = attendance.filter(a =>
     a.role !== 'superadmin' &&
-    (a.staffName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    a.role.toLowerCase().includes(searchTerm.toLowerCase()))
+    (a.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      a.role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getShiftTime = (shift) => {
-    switch(shift) {
+    switch (shift) {
       case 'Morning':
         return '09:00';
       case 'Evening':
@@ -121,13 +121,13 @@ export default function StaffAttendance() {
     // Pre-select current user for non-managers
     const initialStaffId = canFullManage ? '' : user._id;
     const initialCheckIn = canFullManage ? '' : getShiftTime(user?.shift || 'Morning');
-    
-    setFormData({ 
-      staffId: initialStaffId, 
-      date: selectedDate, 
-      status: 'present', 
-      checkIn: initialCheckIn, 
-      checkOut: '' 
+
+    setFormData({
+      staffId: initialStaffId,
+      date: selectedDate,
+      status: 'present',
+      checkIn: initialCheckIn,
+      checkOut: ''
     });
     setShowForm(true);
   };
@@ -136,10 +136,10 @@ export default function StaffAttendance() {
     const selectedStaff = staffList.find(staff => staff._id === staffId);
     if (selectedStaff) {
       const defaultCheckIn = getShiftTime(selectedStaff.shift);
-      setFormData({ 
-        ...formData, 
-        staffId, 
-        checkIn: defaultCheckIn 
+      setFormData({
+        ...formData,
+        staffId,
+        checkIn: defaultCheckIn
       });
     } else {
       setFormData({ ...formData, staffId, checkIn: '' });
@@ -212,12 +212,12 @@ export default function StaffAttendance() {
     if (staffList.length > 0 && Object.keys(leaveStatus).length === 0) {
       const loadLeaveStatus = async () => {
         try {
-          const leavePromises = staffList.map(staff => 
+          const leavePromises = staffList.map(staff =>
             attendanceAPI.checkLeave(staff._id, selectedDate)
               .then(res => ({ staffId: staff._id, leaveData: res.data }))
               .catch(() => ({ staffId: staff._id, leaveData: { onLeave: false } }))
           );
-          
+
           const leaveResults = await Promise.all(leavePromises);
           const leaveStatusMap = {};
           leaveResults.forEach(({ staffId, leaveData }) => {
@@ -273,7 +273,7 @@ export default function StaffAttendance() {
         alert('You do not have permission to delete attendance records');
         return;
       }
-      
+
       await attendanceAPI.delete(currentItem._id);
       setShowDelete(false);
       loadData();
@@ -325,20 +325,23 @@ export default function StaffAttendance() {
           </div>
           <div className="d-page-sub">Manage daily attendance of staff members</div>
         </div>
-        <div className="d-flex gap-2 align-items-center">
-          <Form.Group className="mb-0">
-            <Form.Control
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={{ width: 'auto' }}
-            />
-          </Form.Group>
+        <div className="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
           {canManageAttendance && (
-            <button className="d-btn-gold" onClick={handleAdd}><MdEdit /> Add Attendance</button>
+            <button
+              className="d-btn-gold w-100 w-sm-auto"
+              onClick={handleAdd}
+            >
+              <MdEdit /> Add Attendance
+            </button>
           )}
+
           {canFullManage && (
-            <button className="d-btn-outline" onClick={handleUpdateLateToPresent}>Update Late to Present</button>
+            <button
+              className="d-btn-outline w-100 w-sm-auto"
+              onClick={handleUpdateLateToPresent}
+            >
+              Update Late to Present
+            </button>
           )}
         </div>
       </div>
@@ -379,14 +382,29 @@ export default function StaffAttendance() {
         )}
       </Row>
 
-      <div className="d-navbar-search-box mb-4 w-100" style={{ maxWidth: '400px', margin: '0' }}>
-        <MdSearch className="d-search-icon" />
-        <input
-          type="text"
-          placeholder="Search by name or role..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="d-flex gap-3 flex-wrap mb-3">
+        <div
+          className="d-navbar-search-box m-0"
+          style={{ width: "250px" }}
+        >
+          <MdSearch className="d-search-icon" />
+          <input
+            type="text"
+            placeholder="Search items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="d-d-navbar-search-box p-0">
+          <Form.Group className="mb-0">
+            <Form.Control
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ width: 'auto', height: '44px' }}
+            />
+          </Form.Group>
+        </div>
       </div>
 
       <div className="d-card">
@@ -470,93 +488,93 @@ export default function StaffAttendance() {
             {canFullManage ? 'Quick Actions - Mark Today\'s Attendance' : 'Mark Your Attendance'}
           </h5>
           <Row className="g-3">
-        {loading ? (
-          Array(6).fill(0).map((_, i) => (
-            <Col key={i} xs={12} sm={6} md={4}>
-              <div className="d-card">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>Loading...</div>
-                </div>
-              </div>
-            </Col>
-          ))
-        ) : (
-          staffList
-            .filter(staff => canFullManage || staff._id === user._id)
-            .map((staff) => {
-            const todayAttendance = attendance.find(a => a.staffId === staff._id && a.date === selectedDate);
-            const staffLeaveStatus = leaveStatus[staff._id] || { onLeave: false };
-            const isOnLeave = staffLeaveStatus.onLeave;
-            
-            return (
-              <Col key={staff._id} xs={12} sm={6} md={4}>
-                <div className="d-card h-100">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="d-flex gap-3 align-items-center">
-                      <div style={{
-                        width: 48, height: 48, borderRadius: 'var(--d-radius-md)',
-                        background: `${staff.color}15`, color: staff.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 800, fontSize: '1.1rem', flexShrink: 0
-                      }}>{staff.initials}</div>
-                      <div>
-                        <h6 className="mb-0">{staff.name}</h6>
-                        <div className="small text-muted">{staff.role} • {staff.shift}</div>
+            {loading ? (
+              Array(6).fill(0).map((_, i) => (
+                <Col key={i} xs={12} sm={6} md={4}>
+                  <div className="d-card">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>Loading...</div>
+                    </div>
+                  </div>
+                </Col>
+              ))
+            ) : (
+              staffList
+                .filter(staff => canFullManage || staff._id === user._id)
+                .map((staff) => {
+                  const todayAttendance = attendance.find(a => a.staffId === staff._id && a.date === selectedDate);
+                  const staffLeaveStatus = leaveStatus[staff._id] || { onLeave: false };
+                  const isOnLeave = staffLeaveStatus.onLeave;
+
+                  return (
+                    <Col key={staff._id} xs={12} sm={6} md={4}>
+                      <div className="d-card h-100">
+                        <div className="d-flex justify-content-between align-items-start mb-3">
+                          <div className="d-flex gap-3 align-items-center">
+                            <div style={{
+                              width: 48, height: 48, borderRadius: 'var(--d-radius-md)',
+                              background: `${staff.color}15`, color: staff.color,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontWeight: 800, fontSize: '1.1rem', flexShrink: 0
+                            }}>{staff.initials}</div>
+                            <div>
+                              <h6 className="mb-0">{staff.name}</h6>
+                              <div className="small text-muted">{staff.role} • {staff.shift}</div>
+                            </div>
+                          </div>
+                          {todayAttendance ? (
+                            <span className={`d-chip ${todayAttendance.status === 'present' ? 'd-chip-green' : todayAttendance.status === 'absent' ? 'd-chip-red' : todayAttendance.status === 'late' ? 'd-chip-gold' : 'd-chip-blue'}`} style={{ fontSize: '0.65rem' }}>
+                              {todayAttendance.status.toUpperCase()}
+                            </span>
+                          ) : isOnLeave ? (
+                            <span className="d-chip d-chip-blue" style={{ fontSize: '0.65rem' }}>
+                              ON LEAVE
+                            </span>
+                          ) : null}
+                        </div>
+
+                        {isOnLeave && !todayAttendance && (
+                          <div className="small text-muted mb-2">
+                            <em>{staffLeaveStatus.leaveType?.toUpperCase()} - {staffLeaveStatus.leaveReason}</em>
+                          </div>
+                        )}
+
+                        <div className="d-flex gap-2">
+                          <button
+                            className={`d-btn-outline flex-grow-1 ${todayAttendance?.status === 'present' ? 'd-btn-gold' : ''}`}
+                            onClick={() => handleMarkPresent(staff._id)}
+                            disabled={todayAttendance?.status === 'present' || isOnLeave}
+                            style={{ padding: '6px', fontSize: '0.8rem' }}
+                          >
+                            <MdCheckCircle /> Present
+                          </button>
+                          <button
+                            className={`d-btn-outline flex-grow-1 text-danger ${todayAttendance?.status === 'absent' ? 'd-btn-gold' : ''}`}
+                            onClick={() => handleMarkAbsent(staff._id)}
+                            disabled={todayAttendance?.status === 'absent' || isOnLeave}
+                            style={{ padding: '6px', fontSize: '0.8rem' }}
+                          >
+                            <MdCancel /> Absent
+                          </button>
+                          {isOnLeave && !todayAttendance && (
+                            <button
+                              className="d-btn-outline flex-grow-1 text-primary"
+                              onClick={() => handleAutoMarkLeave(staff._id)}
+                              style={{ padding: '6px', fontSize: '0.8rem' }}
+                            >
+                              Mark Leave
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {todayAttendance ? (
-                      <span className={`d-chip ${todayAttendance.status === 'present' ? 'd-chip-green' : todayAttendance.status === 'absent' ? 'd-chip-red' : todayAttendance.status === 'late' ? 'd-chip-gold' : 'd-chip-blue'}`} style={{ fontSize: '0.65rem' }}>
-                        {todayAttendance.status.toUpperCase()}
-                      </span>
-                    ) : isOnLeave ? (
-                      <span className="d-chip d-chip-blue" style={{ fontSize: '0.65rem' }}>
-                        ON LEAVE
-                      </span>
-                    ) : null}
-                  </div>
-                  
-                  {isOnLeave && !todayAttendance && (
-                    <div className="small text-muted mb-2">
-                      <em>{staffLeaveStatus.leaveType?.toUpperCase()} - {staffLeaveStatus.leaveReason}</em>
-                    </div>
-                  )}
-                  
-                  <div className="d-flex gap-2">
-                    <button 
-                      className={`d-btn-outline flex-grow-1 ${todayAttendance?.status === 'present' ? 'd-btn-gold' : ''}`} 
-                      onClick={() => handleMarkPresent(staff._id)}
-                      disabled={todayAttendance?.status === 'present' || isOnLeave}
-                      style={{ padding: '6px', fontSize: '0.8rem' }}
-                    >
-                      <MdCheckCircle /> Present
-                    </button>
-                    <button 
-                      className={`d-btn-outline flex-grow-1 text-danger ${todayAttendance?.status === 'absent' ? 'd-btn-gold' : ''}`} 
-                      onClick={() => handleMarkAbsent(staff._id)}
-                      disabled={todayAttendance?.status === 'absent' || isOnLeave}
-                      style={{ padding: '6px', fontSize: '0.8rem' }}
-                    >
-                      <MdCancel /> Absent
-                    </button>
-                    {isOnLeave && !todayAttendance && (
-                      <button 
-                        className="d-btn-outline flex-grow-1 text-primary"
-                        onClick={() => handleAutoMarkLeave(staff._id)}
-                        style={{ padding: '6px', fontSize: '0.8rem' }}
-                      >
-                        Mark Leave
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </Col>
-            );
-          })
-        )}
-      </Row>
-      </>
+                    </Col>
+                  );
+                })
+            )}
+          </Row>
+        </>
       )}
-        
+
       {/* Modals */}
       <FormModal
         show={showForm}

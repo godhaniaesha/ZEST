@@ -1,69 +1,136 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, ProgressBar } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import {
   MdTrendingUp, MdReceiptLong, MdPeople, MdStar,
   MdArrowUpward, MdArrowDownward, MdMoreVert,
   MdLocalCafe, MdLocalBar, MdInventory, MdNotificationsActive,
   MdFiberManualRecord, MdDashboard
 } from 'react-icons/md';
-import { usersAPI, attendanceAPI } from '../../../api';
+import { usersAPI, attendanceAPI, ordersAPI, inventoryAPI, tablesAPI, reportsAPI } from '../../../api';
 
-const STATS = [
-  { icon: <MdTrendingUp />, color: 'd-gold',  value: '₹1,24,500', label: "Total Revenue", change: '+12%', dir: 'up' },
-  { icon: <MdLocalCafe />,   color: 'd-green', value: '₹45,200',   label: "Cafe Sales",    change: '+8%',  dir: 'up' },
-  { icon: <MdLocalBar />,    color: 'd-blue',  value: '₹79,300',   label: "Bar Sales",     change: '+15%', dir: 'up' },
-  { icon: <MdReceiptLong />, color: 'd-red',   value: '87',        label: 'Total Orders',  change: '+5%',  dir: 'up' },
-];
-
-const RECENT_ORDERS = [
-  { id: '#T-1021', table: 'Table 4', items: 'Cappuccino, Croissant', type: 'Cafe', amount: '₹450',  status: 'Served',  statusClass: 'd-chip-green' },
-  { id: '#T-1020', table: 'Table 7', items: 'Old Fashioned, Nachos', type: 'Bar',  amount: '₹1,250', status: 'Preparing',statusClass: 'd-chip-gold' },
-  { id: '#T-1019', table: 'Bar',     items: 'Draft Beer x2',         type: 'Bar',  amount: '₹800',  status: 'Served',  statusClass: 'd-chip-green' },
-  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
-  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
-  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
-  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
-  { id: '#T-1018', table: 'Table 2', items: 'Iced Latte, Sandwich',  type: 'Cafe', amount: '₹520',  status: 'Pending', statusClass: 'd-chip-blue' },
-];
-
-const TOP_ITEMS = [
-  { name: 'Cold Brew Coffee', sales: 45, progress: 85, color: 'success', category: 'Cafe' },
-  { name: 'Signature Cocktail', sales: 38, progress: 70, color: 'warning', category: 'Bar' },
-  { name: 'Classic Mojito', sales: 32, progress: 60, color: 'info', category: 'Bar' },
-  { name: 'Avocado Toast', sales: 28, progress: 50, color: 'primary', category: 'Cafe' },
-];
-
-const INVENTORY_ALERTS = [
-  { item: 'Coffee Beans (Arabica)', stock: '2.5kg', status: 'Low', color: 'var(--d-danger)' },
-  { item: 'Single Malt Whiskey', stock: '2 bottles', status: 'Critical', color: 'var(--d-danger)' },
-  { item: 'Fresh Mint Leaves', stock: 'Limited', status: 'Restock', color: 'var(--d-warning)' },
-];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [staffList, setStaffList] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [topItems, setTopItems] = useState([]);
+  const [inventoryAlerts, setInventoryAlerts] = useState([]);
+  const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStaffAndAttendance();
+    fetchDashboardData();
   }, []);
 
-  const fetchStaffAndAttendance = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
       
-      const [staffRes, attendanceRes] = await Promise.all([
+      const [staffRes, attendanceRes, ordersRes, inventoryRes, tablesRes, reportsRes] = await Promise.all([
         usersAPI.getStaff(),
-        attendanceAPI.getAll()
+        attendanceAPI.getAll(),
+        ordersAPI.getAll(),
+        inventoryAPI.getAll(),
+        tablesAPI.getAll(),
+        reportsAPI.getSummary('7days')
       ]);
 
       const staff = staffRes.data || [];
       const attendance = attendanceRes.data || [];
+      const orders = ordersRes.data || [];
+      const inventory = inventoryRes.data || [];
+      const tablesData = tablesRes.data || [];
+      const reports = reportsRes.data || {};
 
       setStaffList(staff);
       setAttendanceData(attendance);
+      setTables(tablesData);
+
+      // Process stats from reports
+      const totalRevenue = reports.totalRevenue || 0;
+      const totalOrders = reports.totalOrders || 0;
+      const growth = reports.growth || 0;
+      
+      // Calculate cafe vs bar sales from orders
+      let cafeSales = 0;
+      let barSales = 0;
+      orders.forEach(order => {
+        if (order.type === 'Dine-in') {
+          cafeSales += order.amount || 0;
+        } else if (order.type === 'Bar') {
+          barSales += order.amount || 0;
+        }
+      });
+
+      setStats([
+        { icon: <MdTrendingUp />, color: 'd-gold',  value: `₹${totalRevenue.toLocaleString()}`, label: "Total Revenue", change: `${growth >= 0 ? '+' : ''}${growth}%`, dir: growth >= 0 ? 'up' : 'down' },
+        { icon: <MdLocalCafe />,   color: 'd-green', value: `₹${cafeSales.toLocaleString()}`,   label: "Cafe Sales",    change: '+8%',  dir: 'up' },
+        { icon: <MdLocalBar />,    color: 'd-blue',  value: `₹${barSales.toLocaleString()}`,   label: "Bar Sales",     change: '+15%', dir: 'up' },
+        { icon: <MdReceiptLong />, color: 'd-red',   value: totalOrders,        label: 'Total Orders',  change: '+5%',  dir: 'up' },
+      ]);
+
+      // Process recent orders (last 8)
+      const recent = orders.slice(0, 8).map(order => ({
+        id: `#${order.id}`,
+        table: order.table,
+        items: order.items?.map(item => item.name).join(', ') || 'No items',
+        type: order.type === 'Bar' ? 'Bar' : 'Cafe',
+        amount: `₹${order.amount?.toLocaleString() || 0}`,
+        status: order.status || 'Pending',
+        statusClass: order.status === 'Paid' ? 'd-chip-green' : order.status === 'Pending' ? 'd-chip-blue' : 'd-chip-gold'
+      }));
+      setRecentOrders(recent);
+
+      // Calculate top selling items from orders
+      const itemSales = {};
+      orders.forEach(order => {
+        order.items?.forEach(item => {
+          const itemName = item.name;
+          if (!itemSales[itemName]) {
+            itemSales[itemName] = { 
+              name: itemName, 
+              sales: 0, 
+              category: order.type === 'Bar' ? 'Bar' : 'Cafe' 
+            };
+          }
+          itemSales[itemName].sales += item.qty || 1;
+        });
+      });
+
+      const topSelling = Object.values(itemSales)
+        .sort((a, b) => b.sales - a.sales)
+        .slice(0, 4)
+        .map((item, index) => {
+          const maxSales = Math.max(...Object.values(itemSales).map(i => i.sales));
+          const progress = maxSales > 0 ? (item.sales / maxSales) * 100 : 0;
+          const colors = ['success', 'warning', 'info', 'primary'];
+          return {
+            name: item.name,
+            sales: item.sales,
+            progress: Math.round(progress),
+            color: colors[index] || 'primary',
+            category: item.category
+          };
+        });
+      setTopItems(topSelling);
+
+      // Process inventory alerts (low stock items)
+      const alerts = inventory
+        .filter(item => item.status === 'Low' || item.status === 'Critical')
+        .slice(0, 5)
+        .map(item => ({
+          item: item.name,
+          stock: `${item.quantity} ${item.unit}`,
+          status: item.status,
+          color: item.status === 'Critical' ? 'var(--d-danger)' : 'var(--d-warning)'
+        }));
+      setInventoryAlerts(alerts);
+
     } catch (error) {
-      console.error('Error fetching staff and attendance:', error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -81,24 +148,24 @@ export default function Dashboard() {
     return { status: 'Not Marked', color: 'secondary' };
   };
 
-  const handleDownloadReport = () => { 
-    alert("Downloading sales report...");
+  const handleDownloadReport = () => {
+    navigate('/admin/reports');
   };
 
   const handleNewOrder = () => {
-    alert("Opening new order form...");
+    navigate('/admin/take-order');
   };
 
   const viewAllOrders = () => {
-    alert("Navigating to Orders page...");
+    navigate('/admin/orders');
   };
 
   const manageRoster = () => {
-    alert("Navigating to Staff page...");
+    navigate('/admin/staff');
   };
 
   const handleTableClick = (tableNum) => {
-    alert(`Table ${tableNum} details`);
+    navigate('/admin/tables');
   };
 
   return (
@@ -118,7 +185,7 @@ export default function Dashboard() {
 
       {/* Main Stats */}
       <Row className="g-3 mb-4">
-        {STATS.map((s, i) => (
+        {stats.map((s, i) => (
           <Col key={i} xs={12} sm={6} xl={3}>
             <div className="d-stat-card">
               <div className={`d-stat-icon ${s.color}`}>{s.icon}</div>
@@ -158,7 +225,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {RECENT_ORDERS.map((o) => (
+                  {recentOrders.map((o) => (
                     <tr key={o.id}>
                       <td><strong>{o.id}</strong></td>
                       <td>
@@ -185,7 +252,7 @@ export default function Dashboard() {
             <div className="d-section-title">Top Selling Items</div>
             <div className="d-section-sub">Popular choices this week</div>
             <div className="mt-3">
-              {TOP_ITEMS.map((item, idx) => (
+              {topItems.map((item, idx) => (
                 <div key={idx} className="mb-3">
                   <div className="d-flex justify-content-between mb-1">
                     <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{item.name}</span>
@@ -203,7 +270,7 @@ export default function Dashboard() {
               <div className="d-section-title mb-0">Inventory Alerts</div>
             </div>
             <div className="d-sidebar-scroll" style={{ maxHeight: '180px', overflowY: 'auto' }}>
-              {INVENTORY_ALERTS.map((alert, idx) => (
+              {inventoryAlerts.map((alert, idx) => (
                 <div key={idx} className="d-flex align-items-center justify-content-between p-2 border-bottom border-light">
                   <div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{alert.item}</div>
@@ -226,14 +293,13 @@ export default function Dashboard() {
             <div className="d-section-title">Table Status</div>
             <div className="d-section-sub">Real-time floor management</div>
             <div className="d-table-status-grid mt-3">
-              {Array.from({ length: 12 }, (_, i) => {
-                const statuses = ['occupied', 'occupied', 'free', 'occupied', 'free', 'reserved', 'occupied', 'free', 'occupied', 'free', 'occupied', 'reserved'];
-                const s = statuses[i];
+              {tables.length > 0 ? tables.map((table, i) => {
+                const s = table.status?.toLowerCase() || 'free';
                 const color = s === 'occupied' ? 'var(--d-danger)' : s === 'reserved' ? 'var(--d-info)' : 'var(--d-success)';
                 const bg = s === 'occupied' ? 'rgba(231,76,60,0.1)' : s === 'reserved' ? 'rgba(52,152,219,0.1)' : 'rgba(46,204,113,0.1)';
                 return (
                   <div 
-                    key={i} 
+                    key={table._id || i} 
                     style={{
                       background: bg,
                       border: `1.5px solid ${color}`,
@@ -244,13 +310,17 @@ export default function Dashboard() {
                       transition: 'var(--d-transition)',
                       position: 'relative'
                     }}
-                    onClick={() => handleTableClick(i + 1)}
+                    onClick={() => handleTableClick(table.number)}
                   >
-                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color, fontFamily: 'Lato,sans-serif' }}>T{i + 1}</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color, fontFamily: 'Lato,sans-serif' }}>{table.type === 'Bar' ? 'B' : 'T'}{table.number}</div>
                     <div style={{ fontSize: '0.6rem', color, textTransform: 'uppercase', fontWeight: 700, marginTop: '2px' }}>{s}</div>
                   </div>
                 );
-              })}
+              }) : (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: 'var(--d-text-muted)' }}>
+                  No tables found
+                </div>
+              )}
             </div>
             <div className="mt-4 d-flex gap-3 flex-wrap">
               {[['Free','var(--d-success)'], ['Occupied','var(--d-danger)'], ['Reserved','var(--d-info)']].map(([l, c]) => (

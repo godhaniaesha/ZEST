@@ -138,6 +138,14 @@ router.patch('/:id/payment-status', auth, async (req, res) => {
       }
     }
 
+    // If order status becomes Completed, free the table
+    if (status === 'Completed' && order.reservationId) {
+      const reservation = await Reservation.findById(order.reservationId).populate('table');
+      if (reservation && reservation.table) {
+        await Table.findByIdAndUpdate(reservation.table._id, { status: 'Free' });
+      }
+    }
+
     res.json(order);
   } catch (err) {
     res.status(500).json({
@@ -175,6 +183,21 @@ router.patch('/:orderId/items/:itemId/status', auth, async (req, res) => {
       return res.status(404).json({
         message: 'Order or item not found'
       });
+    }
+
+    // Check if all items are now 'Served', if so mark order as 'Completed'
+    const allItemsServed = order.items.every(item => item.status === 'Served');
+    if (allItemsServed) {
+      await Order.findByIdAndUpdate(req.params.orderId, { status: 'Completed' });
+      order.status = 'Completed';
+
+      // Free the table associated with the reservation
+      if (order.reservationId) {
+        const reservation = await Reservation.findById(order.reservationId).populate('table');
+        if (reservation && reservation.table) {
+          await Table.findByIdAndUpdate(reservation.table._id, { status: 'Free' });
+        }
+      }
     }
 
     res.json(order);

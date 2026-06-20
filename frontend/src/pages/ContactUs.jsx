@@ -257,6 +257,7 @@ const ContactUs = () => {
                       id="phone"
                       name="phone"
                       className="x_form_input"
+                      maxLength={10}
                       placeholder="+1 (555) 123-4567"
                       value={formData.phone}
                       onChange={handleChange}

@@ -243,7 +243,6 @@ export default function POS() {
         </div>
         <div className="d-flex gap-2">
           <button className="d-btn-outline">Today's Sales</button>
-          <button className="d-btn-gold">Open Cash Drawer</button>
         </div>
       </div>
 

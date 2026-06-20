@@ -192,7 +192,6 @@ export default function Inventory() {
           <div className="d-page-sub">Monitor supplies for your kitchen and bar</div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline d-hide-mobile"><MdHistory /> View Logs</button>
           <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> Add Stock</button>
         </div>
       </div>

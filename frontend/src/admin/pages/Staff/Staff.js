@@ -216,7 +216,6 @@ export default function Staff() {
           <div className="d-page-sub">Manage your service team and schedules</div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline d-hide-mobile">Shift Roster</button>
           {canAddEditDelete && <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> Add Member</button>}
         </div>
       </div>

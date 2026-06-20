@@ -56,11 +56,11 @@ export default function Reviews() {
         {REVIEWS.map((r, i) => (
           <div key={i} className="d-card">
             <div className="d-flex justify-content-between align-items-start mb-3">
-              <div className="d-flex gap-3 align-items-center">
+              <div className="d-flex gap-3 align-items-start">
                 <div className="d-avatar" style={{ width: '44px', height: '44px', fontSize: '0.9rem' }}>{r.avatar}</div>
                 <div>
                   <h6 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{r.name}</h6>
-                  <div className="d-flex align-items-center gap-2">
+                  <div className="d-block d-sm-flex align-items-center gap-2">
                     <Stars n={r.rating} />
                     <span style={{ fontSize: '0.75rem', color: 'var(--d-text-muted)', fontFamily: 'Lato,sans-serif' }}>• {r.date}</span>
                   </div>
@@ -77,7 +77,8 @@ export default function Reviews() {
               padding: '12px',
               background: 'var(--d-bg)',
               borderRadius: 'var(--d-radius-sm)',
-              fontStyle: 'italic'
+              fontStyle: 'italic',
+              textWrap: 'wrap'
             }}>
               "{r.comment}"
             </p>

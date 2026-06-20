@@ -111,36 +111,42 @@ export const payReservationAdvance = async ({
 
   // Handle UPI payment
   if (paymentMethod === "UPI") {
-    const upiResult = await stripe.confirmPayment({
-      clientSecret,
-      confirmParams: {
-        return_url: window.location.origin + '/admin/dashboard',
-      },
-    });
+    try {
+      const upiResult = await stripe.confirmPayment({
+        clientSecret,
+        confirmParams: {
+          return_url: window.location.origin + '/admin/dashboard',
+        },
+      });
 
-    if (upiResult.error) {
-      throw new Error(upiResult.error.message || "UPI payment failed.");
-    }
-
-    // UPI payment might require redirect or QR code
-    if (upiResult.paymentIntent?.status === 'requires_action') {
-      const redirectUrl = upiResult.paymentIntent.next_action?.redirect_to_url?.url;
-      const qrCodeUrl = upiResult.paymentIntent.next_action?.upi_display_qr_code?.image_data_url;
-
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-        return { redirected: true };
+      if (upiResult.error) {
+        console.error('UPI Payment Error:', upiResult.error);
+        throw new Error(upiResult.error.message || "UPI payment failed.");
       }
 
-      if (qrCodeUrl) {
-        return { requiresAction: true, qrCodeUrl, paymentIntentId: upiResult.paymentIntent.id };
-      }
-    }
+      // UPI payment might require redirect or QR code
+      if (upiResult.paymentIntent?.status === 'requires_action') {
+        const redirectUrl = upiResult.paymentIntent.next_action?.redirect_to_url?.url;
+        const qrCodeUrl = upiResult.paymentIntent.next_action?.upi_display_qr_code?.image_data_url;
 
-    return {
-      paymentIntentId: upiResult.paymentIntent?.id,
-      redirected: false,
-    };
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+          return { redirected: true };
+        }
+
+        if (qrCodeUrl) {
+          return { requiresAction: true, qrCodeUrl, paymentIntentId: upiResult.paymentIntent.id };
+        }
+      }
+
+      return {
+        paymentIntentId: upiResult.paymentIntent?.id,
+        redirected: false,
+      };
+    } catch (error) {
+      console.error('UPI Payment Exception:', error);
+      throw new Error("UPI payment is currently unavailable. Please use Card payment instead.");
+    }
   }
 
   // Handle Card payment
@@ -207,36 +213,43 @@ const confirmStripePayment = async ({
     throw new Error("Please enter a valid UPI ID.");
   }
 
-  // For UPI in India, Stripe typically uses a QR code flow
-  // We'll use confirmPayment without payment_method_data to let Stripe handle the flow
-  const upiResult = await stripe.confirmPayment({
-    clientSecret,
-    confirmParams: {
-      return_url: window.location.origin + '/admin/dashboard',
-    },
-  });
+  try {
+    // For UPI in India, Stripe typically uses a QR code flow
+    // We'll use confirmPayment without payment_method_data to let Stripe handle the flow
+    const upiResult = await stripe.confirmPayment({
+      clientSecret,
+      confirmParams: {
+        return_url: window.location.origin + '/admin/dashboard',
+      },
+    });
 
-  if (upiResult.error) {
-    throw new Error(upiResult.error.message || "UPI payment failed.");
-  }
-
-  // UPI payment might require redirect or QR code
-  if (upiResult.paymentIntent?.status === 'requires_action') {
-    const redirectUrl = upiResult.paymentIntent.next_action?.redirect_to_url?.url;
-    const qrCodeUrl = upiResult.paymentIntent.next_action?.upi_display_qr_code?.image_data_url;
-    
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
-      return { redirected: true };
+    if (upiResult.error) {
+      console.error('UPI Payment Error:', upiResult.error);
+      throw new Error(upiResult.error.message || "UPI payment failed.");
     }
-    
-    if (qrCodeUrl) {
-      // Return QR code URL for display
-      return { requiresAction: true, qrCodeUrl, paymentIntentId: upiResult.paymentIntent.id };
-    }
-  }
 
-  return { paymentIntentId: upiResult.paymentIntent?.id, requiresAction: false };
+    // UPI payment might require redirect or QR code
+    if (upiResult.paymentIntent?.status === 'requires_action') {
+      const redirectUrl = upiResult.paymentIntent.next_action?.redirect_to_url?.url;
+      const qrCodeUrl = upiResult.paymentIntent.next_action?.upi_display_qr_code?.image_data_url;
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+        return { redirected: true };
+      }
+
+      if (qrCodeUrl) {
+        // Return QR code URL for display
+        return { requiresAction: true, qrCodeUrl, paymentIntentId: upiResult.paymentIntent.id };
+      }
+    }
+
+    return { paymentIntentId: upiResult.paymentIntent?.id, requiresAction: false };
+  } catch (error) {
+    console.error('UPI Payment Exception:', error);
+    // If UPI fails, suggest using card payment
+    throw new Error("UPI payment is currently unavailable. Please use Card payment instead.");
+  }
 };
 
 export const payBill = async ({
