@@ -91,9 +91,6 @@ export default function Orders() {
           </div>
           <div className="d-page-sub">Real-time order management for Café & Bar</div>
         </div>
-        <div className="d-flex gap-2">
-          <button className="d-btn-outline" onClick={loadData}><MdRefresh /> Refresh Feed</button>
-        </div>
       </div>
 
       <Row className="g-3 mb-4">

@@ -43,10 +43,10 @@ export default function Bar() {
         menuAPI.getAll(),
         categoriesAPI.getAll()
       ]);
-      
+
       const data = Array.isArray(menuRes.data) ? menuRes.data : [];
       setDrinks(data.filter(i => itemHasType(i, 'Bar')));
-      
+
       const allCats = catRes.data || [];
       setCategories(['All', ...allCats.filter(c => c.type === 'Bar').map(c => c.name)]);
     } catch (error) {
@@ -70,6 +70,8 @@ export default function Bar() {
   const handleAdd = () => {
     setCurrentItem(null);
     setFormData({ name: '', category: categories[1] || '', price: '', available: true, description: '', ingredients: '', alcoholContent: '', prepTime: 5 });
+    setImageFile(null);
+    setImagePreview(null);
     setShowForm(true);
   };
 
@@ -85,6 +87,7 @@ export default function Bar() {
       alcoholContent: item.alcoholContent || '',
       prepTime: item.prepTime || 5
     });
+    setImagePreview(item.img || null);
     setShowForm(true);
   };
 
@@ -114,6 +117,10 @@ export default function Bar() {
     data.append('alcoholContent', formData.alcoholContent || '');
     data.append('prepTime', formData.prepTime || 5);
 
+    if (imageFile) {
+      data.append('img', imageFile);
+    }
+
     try {
       if (currentItem) {
         await menuAPI.update(currentItem._id, data);
@@ -123,6 +130,8 @@ export default function Bar() {
       }
       await loadData();
       setShowForm(false);
+      setImageFile(null);
+      setImagePreview(null);
     } catch (error) {
       console.error('Error saving drink:', error);
       alert('Failed to save drink');
@@ -266,7 +275,20 @@ export default function Bar() {
                     )}
                   </div>
                   <div className="d-page-sub mb-1">{d.category}{d.alcoholContent && <span className="ml-2" style={{ fontSize: '0.8rem' }}>• {d.alcoholContent}</span>}</div>
-                  {d.description && <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{d.description}</div>}
+                  {d.description && (
+                    <div
+                      className="text-muted small mb-2"
+                      style={{
+                        fontSize: "0.8rem",
+                        wordBreak: "break-word",
+                        whiteSpace: "normal",
+                      }}
+                    >
+                      {d.description.length > 70
+                        ? `${d.description.slice(0, 70)}...`
+                        : d.description}
+                    </div>
+                  )}
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
                       <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
@@ -299,11 +321,11 @@ export default function Bar() {
           <Col xs={12}>
             <Form.Group>
               <Form.Label className="small fw-bold">Drink Name *</Form.Label>
-              <Form.Control 
-                type="text" 
+              <Form.Control
+                type="text"
                 placeholder="e.g. Classic Mojito"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
             </Form.Group>
@@ -311,9 +333,9 @@ export default function Bar() {
           <Col xs={12} md={6}>
             <Form.Group>
               <Form.Label className="small fw-bold">Category *</Form.Label>
-              <Form.Select 
+              <Form.Select
                 value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               >
                 <option value="">Select Category</option>
                 {categories.filter(c => c !== 'All').map(c => (
@@ -325,11 +347,11 @@ export default function Bar() {
           <Col xs={12} md={6}>
             <Form.Group>
               <Form.Label className="small fw-bold">Price (₹) *</Form.Label>
-              <Form.Control 
-                type="number" 
+              <Form.Control
+                type="number"
                 placeholder="0"
                 value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 required
               />
             </Form.Group>
@@ -337,31 +359,31 @@ export default function Bar() {
           <Col xs={12} md={4}>
             <Form.Group>
               <Form.Label className="small fw-bold">Alcohol Content</Form.Label>
-              <Form.Control 
-                type="text" 
+              <Form.Control
+                type="text"
                 placeholder="e.g. 12%"
                 value={formData.alcoholContent}
-                onChange={(e) => setFormData({...formData, alcoholContent: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, alcoholContent: e.target.value })}
               />
             </Form.Group>
           </Col>
           <Col xs={12} md={4}>
             <Form.Group>
               <Form.Label className="small fw-bold">Prep Time (mins)</Form.Label>
-              <Form.Control 
-                type="number" 
+              <Form.Control
+                type="number"
                 placeholder="5"
                 value={formData.prepTime}
-                onChange={(e) => setFormData({...formData, prepTime: parseInt(e.target.value) || 5})}
+                onChange={(e) => setFormData({ ...formData, prepTime: parseInt(e.target.value) || 5 })}
               />
             </Form.Group>
           </Col>
           <Col xs={12} md={4}>
             <Form.Group>
               <Form.Label className="small fw-bold">Availability</Form.Label>
-              <Form.Select 
+              <Form.Select
                 value={formData.available ? 'In Stock' : 'Out of Stock'}
-                onChange={(e) => setFormData({...formData, available: e.target.value === 'In Stock'})}
+                onChange={(e) => setFormData({ ...formData, available: e.target.value === 'In Stock' })}
               >
                 <option value="In Stock">In Stock</option>
                 <option value="Out of Stock">Out of Stock</option>
@@ -371,27 +393,73 @@ export default function Bar() {
           <Col xs={12}>
             <Form.Group>
               <Form.Label className="small fw-bold">Description</Form.Label>
-              <Form.Control 
-                as="textarea" 
+              <Form.Control
+                as="textarea"
                 rows={2}
                 placeholder="Brief description of the drink..."
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </Form.Group>
           </Col>
           <Col xs={12}>
             <Form.Group>
               <Form.Label className="small fw-bold">Ingredients</Form.Label>
-              <Form.Control 
-                as="textarea" 
+              <Form.Control
+                as="textarea"
                 rows={2}
                 placeholder="List of ingredients..."
                 value={formData.ingredients}
-                onChange={(e) => setFormData({...formData, ingredients: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
               />
             </Form.Group>
           </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Image</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                  }
+                }}
+              />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img src={imagePreview} alt="Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                </div>
+              )}
+            </Form.Group>
+          </Col>
+          {/* <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Drink Image</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                  }
+                }}
+              />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'cover', borderRadius: '8px' }}
+                  />
+                </div>
+              )}
+            </Form.Group>
+          </Col> */}
         </Row>
       </FormModal>
 

@@ -112,62 +112,62 @@ export default function GalleryManagement() {
   };
 
 
-// In the handleSave function, around line 130
+  // In the handleSave function, around line 130
 
-const handleSave = async (data, fileData) => {
-  try {
-    // Validation
-    if (!data.title || !data.category || !data.tag || !data.description) {
-      alert('Please fill in all required fields (Title, Category, Tag, Description)');
-      return;
-    }
-
-    const formDataToSend = new FormData();
-
-    Object.keys(data).forEach(key => {
-      if (FORM_SKIP_KEYS.includes(key)) return;
-
-      const value = data[key];
-
-      // Handle boolean values properly
-      if (key === 'featured') {
-        // Send as boolean, not string
-        formDataToSend.append(key, value === true);
+  const handleSave = async (data, fileData) => {
+    try {
+      // Validation
+      if (!data.title || !data.category || !data.tag || !data.description) {
+        alert('Please fill in all required fields (Title, Category, Tag, Description)');
         return;
       }
 
-      if (
-        value === null ||
-        value === undefined ||
-        (typeof value === 'object' && !(value instanceof File))
-      ) {
-        return;
+      const formDataToSend = new FormData();
+
+      Object.keys(data).forEach(key => {
+        if (FORM_SKIP_KEYS.includes(key)) return;
+
+        const value = data[key];
+
+        // Handle boolean values properly
+        if (key === 'featured') {
+          // Send as boolean, not string
+          formDataToSend.append(key, value === true);
+          return;
+        }
+
+        if (
+          value === null ||
+          value === undefined ||
+          (typeof value === 'object' && !(value instanceof File))
+        ) {
+          return;
+        }
+
+        formDataToSend.append(key, value);
+      });
+
+      if (fileData?.file) {
+        formDataToSend.append(fileData.name, fileData.file);
       }
 
-      formDataToSend.append(key, value);
-    });
+      if (currentItem) {
+        // Edit
+        await galleryAPI.update(currentItem._id, formDataToSend);
+        alert('Gallery item updated successfully');
+      } else {
+        // Add
+        await galleryAPI.create(formDataToSend);
+        alert('Gallery item added successfully');
+      }
 
-    if (fileData?.file) {
-      formDataToSend.append(fileData.name, fileData.file);
+      await loadData();
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving gallery item:', error);
+      alert('Failed to save gallery item');
     }
-
-    if (currentItem) {
-      // Edit
-      await galleryAPI.update(currentItem._id, formDataToSend);
-      alert('Gallery item updated successfully');
-    } else {
-      // Add
-      await galleryAPI.create(formDataToSend);
-      alert('Gallery item added successfully');
-    }
-
-    await loadData();
-    setShowForm(false);
-  } catch (error) {
-    console.error('Error saving gallery item:', error);
-    alert('Failed to save gallery item');
-  }
-};
+  };
 
   const confirmDelete = async () => {
     try {
@@ -268,12 +268,12 @@ const handleSave = async (data, fileData) => {
       {featuredItems.length > 0 && (
         <>
           <div className="d-section-title mb-3 d-flex align-items-center gap-2">
-            <MdStar style={{ color: '#FFB800' }} /> Featured Items
+            <MdStar style={{ color: '#c9a84c' }} /> Featured Items
           </div>
           <Row className="g-3 mb-5">
             {featuredItems.map(item => (
               <Col key={item._id} xs={12} sm={6} xl={4}>
-                <div className="d-card h-100 position-relative" style={{ border: '2px solid #FFB800' }}>
+                <div className="d-card h-100 position-relative" style={{ border: '1px solid #ba9c45' }}>
                   {item.image && (
                     <div style={{
                       width: '100%',
@@ -367,7 +367,18 @@ const handleSave = async (data, fileData) => {
                         )}
                       </div>
                       <div className="d-page-sub mb-2">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
-                      <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>
+                      <div
+                        className="text-muted small mb-2"
+                        style={{
+                          fontSize: '0.8rem',
+                          wordBreak: 'break-word',
+                          whiteSpace: 'normal'
+                        }}
+                      >
+                        {item.description?.length > 70
+                          ? `${item.description.slice(0, 70)}...`
+                          : item.description}
+                      </div>
                       <div className="d-flex justify-content-between align-items-center">
                         {(item.featured === true || item.featured === 'true') && (
                           <span className="badge bg-warning text-dark" style={{ fontSize: '0.75rem' }}>Featured</span>

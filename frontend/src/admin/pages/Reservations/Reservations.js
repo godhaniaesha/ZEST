@@ -172,10 +172,6 @@ export default function Reservations() {
           </div>
           <div className="d-page-sub">Manage guest bookings and table assignments</div>
         </div>
-        <div className="d-flex gap-2">
-          <button className="d-btn-outline d-hide-mobile">View Floor Plan</button>
-          {canAddEditDelete && <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> New Booking</button>}
-        </div>
       </div>
 
       <Row className="g-3 mb-4">
@@ -320,123 +316,6 @@ export default function Reservations() {
           </table>
         </div>
       </div>
-
-      {/* <FormModal
-        show={showForm}
-        onHide={() => setShowForm(false)}
-        title={currentItem ? "Edit Reservation" : "New Booking"}
-        onSubmit={handleSave}
-      >
-        <Row className="g-3">
-          <Col xs={12}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Guest Name *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter guest name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Phone Number *</Form.Label>
-              <Form.Control
-                type="tel"
-                placeholder="+91 98765 43210"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Email</Form.Label>
-              <Form.Control
-                type="email"
-                placeholder="guest@email.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={4}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Date *</Form.Label>
-              <Form.Control
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={4}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Time *</Form.Label>
-              <Form.Select
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                required
-              >
-                {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={4}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Guests *</Form.Label>
-              <Form.Control
-                type="number"
-                min="1"
-                max="20"
-                value={formData.guests}
-                onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Table</Form.Label>
-              <Form.Select
-                value={formData.table}
-                onChange={(e) => setFormData({ ...formData, table: e.target.value })}
-              >
-                {TABLES.map(t => <option key={t} value={t}>{t}</option>)}
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Status</Form.Label>
-              <Form.Select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              >
-                <option value="Pending">Pending</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Cancelled">Cancelled</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col xs={12}>
-            <Form.Group>
-              <Form.Label className="small fw-bold">Notes</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Any special requests or notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              />
-            </Form.Group>
-          </Col>
-        </Row>
-      </FormModal> */}
 
       <DeleteModal
         show={showDelete}

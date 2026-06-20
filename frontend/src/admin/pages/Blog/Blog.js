@@ -396,10 +396,8 @@ const convertPlainTextToHTML = (text) => {
                 <p className="d-blog-card-excerpt">{item.excerpt}</p>
                 
                 <div className="d-blog-card-meta" style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  paddingTop: '20px',
+                  paddingTop: '15px',
                   borderTop: '1px solid var(--border-subtle)'
                 }}>
                   <div className="d-blog-card-author" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>

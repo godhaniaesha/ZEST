@@ -45,10 +45,10 @@ export default function Menu() {
         categoriesAPI.getAll(),
         cuisinesAPI.getAll()
       ]);
-      
+
       const data = Array.isArray(menuRes.data) ? menuRes.data : [];
       setItems(data.filter(i => itemHasType(i, 'Cafe')));
-      
+
       const allCats = catRes.data || [];
       setCategories([{ name: 'All', icon: <MdFilterList /> }, ...allCats.filter(c => c.type === 'Cafe').map(c => ({ name: c.name, icon: <MdRestaurant />, type: 'Cafe' }))]);
       setCuisines((cuiRes.data || []).map(c => c.name));
@@ -287,7 +287,20 @@ export default function Menu() {
                     )}
                   </div>
                   <div className="d-page-sub mb-2">{item.category} {item.cuisine ? `• ${item.cuisine}` : ''}</div>
-                  {item.description && <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>}
+                  {item.description && (
+                    <div
+                      className="text-muted small mb-2"
+                      style={{
+                        fontSize: "0.8rem",
+                        wordBreak: "break-word",
+                        whiteSpace: "normal",
+                      }}
+                    >
+                      {item.description.length > 70
+                        ? `${item.description.slice(0, 70)}...`
+                        : item.description}
+                    </div>
+                  )}
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
                       <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--d-primary)', fontFamily: 'Playfair Display' }}>
