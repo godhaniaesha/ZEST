@@ -128,7 +128,7 @@ router.patch('/:id/payment-status', auth, async (req, res) => {
     if (status === 'Paid' && order.reservationId) {
       await Reservation.findByIdAndUpdate(
         order.reservationId,
-        { fullPaymentDone: true }
+        { fullPaymentDone: true, status: 'Completed' }
       );
 
       // Free the table associated with the reservation

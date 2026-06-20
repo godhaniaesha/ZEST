@@ -880,6 +880,11 @@
   color: #991b1b;
 }
 
+.x_res_status_tag.completed {
+  background: #dbeafe;
+  color: #075985;
+}
+
 .x_res_main {
   padding: 30px;
   display: flex;

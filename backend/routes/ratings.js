@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ItemRating = require('../models/ItemRating');
+const ReservationRating = require('../models/ReservationRating');
 const Order = require('../models/Order');
 const Reservation = require('../models/Reservation');
 const Menu = require('../models/Menu');
@@ -33,6 +34,22 @@ router.get('/my', auth, async (req, res) => {
   }
 });
 
+router.get('/reservation/pending', auth, async (req, res) => {
+  try {
+    const reservation = await Reservation.findOne({
+      userId: req.user.id,
+      status: 'Completed',
+      rated: { $ne: true },
+    })
+      .populate('table')
+      .sort({ updatedAt: 1 });
+
+    res.json({ reservation });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
   try {
     const ratings = await ItemRating.find()
@@ -41,6 +58,64 @@ router.get('/', auth, authorizeRoles('manager', 'superadmin'), async (req, res) 
     res.json(ratings);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/reservation', auth, async (req, res) => {
+  try {
+    const { reservationId, rating, review, comment } = req.body;
+
+    if (!reservationId || !rating) {
+      return res.status(400).json({ message: 'reservationId and rating are required' });
+    }
+
+    const numericRating = Number(rating);
+    if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    const reservation = await Reservation.findById(reservationId);
+    if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
+
+    if (reservation.userId?.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You can only rate your own reservations' });
+    }
+
+    if (reservation.status !== 'Completed') {
+      return res.status(400).json({ message: 'Reservation must be completed before rating' });
+    }
+
+    if (reservation.rated) {
+      return res.status(409).json({ message: 'This reservation has already been rated' });
+    }
+
+    const existingRating = await ReservationRating.findOne({ reservationId });
+    if (existingRating) {
+      await Reservation.findByIdAndUpdate(reservationId, {
+        rated: true,
+        ratedAt: existingRating.createdAt || new Date(),
+      });
+      return res.status(409).json({ message: 'This reservation has already been rated' });
+    }
+
+    const reservationRating = await ReservationRating.create({
+      userId: req.user.id,
+      reservationId,
+      rating: numericRating,
+      review: (review ?? comment ?? '').trim(),
+    });
+
+    await Reservation.findByIdAndUpdate(reservationId, {
+      rated: true,
+      ratedAt: new Date(),
+    });
+
+    res.status(201).json(reservationRating);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'This reservation has already been rated' });
+    }
+    res.status(400).json({ message: err.message });
   }
 });
 

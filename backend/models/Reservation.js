@@ -32,12 +32,19 @@ const reservationSchema = new mongoose.Schema({
   stripePaymentIntentId: { type: String },
   status: {
     type: String,
-    enum: ['Confirmed', 'Pending', 'Cancelled'],
+    enum: ['Confirmed', 'Pending', 'Cancelled', 'Completed'],
     default: 'Pending',
   },
   fullPaymentDone: {
     type: Boolean,
     default: false,
+  },
+  rated: {
+    type: Boolean,
+    default: false,
+  },
+  ratedAt: {
+    type: Date,
   },
 }, { timestamps: true });
 

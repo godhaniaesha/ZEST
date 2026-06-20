@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
   Award,
@@ -25,6 +25,9 @@ import { ordersAPI, ratingsAPI, reservationsAPI } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/profile.css";
 import { MdOutlineCancel } from "react-icons/md";
+import RatingModal from "./RatingModal";
+
+const RATING_CANCEL_SNOOZE_MS = 60000;
 
 const defaultPreferences = {
   newsletter: true,
@@ -60,7 +63,7 @@ const StarRating = ({ value = 0, onRate, disabled = false, size = 18 }) => (
 );
 
 const mapBooking = (booking) => {
-  const createdDate = new Date(booking.createdAt);
+  const reservationDate = new Date(booking.date || booking.createdAt);
 
   const status = booking.status?.toLowerCase() || "pending";
 
@@ -79,22 +82,21 @@ const mapBooking = (booking) => {
   return {
     id: booking._id,
 
-    // createdAt mathi date extract karse
-    date: createdDate.toLocaleDateString("en-US", {
+    date: reservationDate.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
     }),
 
-    month: createdDate.toLocaleString("en-US", {
+    month: reservationDate.toLocaleString("en-US", {
       month: "short",
     }),
 
-    day: createdDate.getDate(),
+    day: reservationDate.getDate(),
 
     time:
       booking.time ||
-      createdDate.toLocaleTimeString("en-US", {
+      reservationDate.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
       }),
@@ -108,10 +110,33 @@ const mapBooking = (booking) => {
     tableStatus,
 
     type:
-      status === "confirmed"
+      status === "completed"
+        ? "Completed Dining"
+        : status === "confirmed"
         ? "Confirmed Dining"
         : "Dining Reservation",
   };
+};
+
+const getBookingFooterMessage = (status) => {
+  if (status === "completed") return "Reservation Completed";
+  if (status === "cancelled") return "Reservation Cancelled";
+  if (status === "reserved" || status === "confirmed") return "Reservation Confirmed";
+  return null;
+};
+
+const notifyCompletedReservationForRating = (reservations = []) => {
+  const completedUnratedReservation = reservations.find(
+    (reservation) => reservation.status === "Completed" && !reservation.rated,
+  );
+
+  if (!completedUnratedReservation) return;
+
+  window.dispatchEvent(
+    new CustomEvent("reservation-rating:completed", {
+      detail: { reservationId: completedUnratedReservation._id },
+    }),
+  );
 };
 
 const Profile = () => {
@@ -135,6 +160,10 @@ const Profile = () => {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ratingSubmitting, setRatingSubmitting] = useState(null);
+  const [ratingReservation, setRatingReservation] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const ratingSnoozeUntilRef = useRef(0);
+  const ratingReopenTimerRef = useRef(null);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -157,6 +186,21 @@ const Profile = () => {
 
   const rewardPoints = bookings.length * 100;
 
+  const openCompletedReservationRating = useCallback((reservations = []) => {
+    const completedUnratedReservation = reservations.find(
+      (reservation) => reservation.status === "Completed" && !reservation.rated,
+    );
+
+    setRatingReservation(completedUnratedReservation || null);
+
+    if (
+      completedUnratedReservation &&
+      Date.now() >= ratingSnoozeUntilRef.current
+    ) {
+      setShowRatingModal(true);
+    }
+  }, []);
+
   const loadBookings = useCallback(async () => {
     try {
       setBookingsLoading(true);
@@ -165,13 +209,16 @@ const Profile = () => {
 
       console.log("Reservations:", res.data);
 
-      setBookings((res.data || []).map(mapBooking));
+      const reservations = res.data || [];
+      setBookings(reservations.map(mapBooking));
+      notifyCompletedReservationForRating(reservations);
+      openCompletedReservationRating(reservations);
     } catch (error) {
       console.error(error);
     } finally {
       setBookingsLoading(false);
     }
-  }, []);
+  }, [openCompletedReservationRating]);
 
   const loadOrders = useCallback(async () => {
     if (!user) return;
@@ -216,12 +263,49 @@ const Profile = () => {
     }
   };
 
+  const handleReservationRatingClose = () => {
+    setShowRatingModal(false);
+
+    if (!ratingReservation) return;
+
+    ratingSnoozeUntilRef.current = Date.now() + RATING_CANCEL_SNOOZE_MS;
+    clearTimeout(ratingReopenTimerRef.current);
+    ratingReopenTimerRef.current = setTimeout(() => {
+      setShowRatingModal(true);
+    }, RATING_CANCEL_SNOOZE_MS);
+  };
+
+  const handleReservationRatingSubmit = async ({ rating, review }) => {
+    if (!ratingReservation?._id) return;
+
+    try {
+      await ratingsAPI.submitReservation({
+        reservationId: ratingReservation._id,
+        rating,
+        review,
+      });
+    } catch (error) {
+      if (error.response?.status !== 409) {
+        throw error;
+      }
+    } finally {
+      setRatingReservation(null);
+      setShowRatingModal(false);
+      clearTimeout(ratingReopenTimerRef.current);
+      loadBookings();
+    }
+  };
+
   useEffect(() => {
     AOS.init({
       duration: 700,
       once: true,
       easing: "ease-out-cubic",
     });
+  }, []);
+
+  useEffect(() => {
+    return () => clearTimeout(ratingReopenTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -660,13 +744,9 @@ const Profile = () => {
                             <button className="x_res_cancel_link" onClick={() => handleCancelBooking(booking.id)}>
                               Cancel Reservation
                             </button>
-                          ) : booking.status === "reserved" || booking.status === "confirmed" ? (
-                            <span className="x_res_confirmed_msg">
-                              Reservation Confirmed
-                            </span>
                           ) : (
                             <span className="x_res_confirmed_msg">
-                              Reservation Cancelled
+                              {getBookingFooterMessage(booking.status)}
                             </span>
                           )}
                           <span className="x_res_details_btn">{booking.date}</span>
@@ -842,6 +922,14 @@ const Profile = () => {
           </div>
         </div>
       )}
+
+      <RatingModal
+        isOpen={showRatingModal}
+        onClose={handleReservationRatingClose}
+        onSubmit={handleReservationRatingSubmit}
+        cafeOrBarName="ZEST Cafe & Bar"
+        reservation={ratingReservation}
+      />
     </main>
   );
 };

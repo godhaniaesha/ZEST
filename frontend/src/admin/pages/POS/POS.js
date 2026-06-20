@@ -193,9 +193,13 @@ export default function POS() {
         cardElement: cardElementRef.current,
         reservationId: selectedReservation,
         subtotal: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
-        tax: 0,
+        tax,
         orderIds: reservationOrders.map(order => order._id),
       });
+
+      if (!result?.redirected) {
+        await reservationsAPI.updateStatus(selectedReservation, "Completed");
+      }
 
       console.log("Payment Success:", result);
 

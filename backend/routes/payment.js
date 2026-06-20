@@ -210,8 +210,10 @@ router.post("/bill/complete", auth, async (req, res) => {
         await Order.updateMany({ _id: { $in: orderIds } }, { status: "Paid" });
       }
 
-      // Mark reservation as fully paid
-      await Reservation.findByIdAndUpdate(reservationId, { fullPaymentDone: true });
+      await Reservation.findByIdAndUpdate(reservationId, {
+        fullPaymentDone: true,
+        status: "Completed",
+      });
 
       if (reservation.table) {
         const Table = require("../models/Table");
@@ -252,8 +254,10 @@ router.post("/bill/complete", auth, async (req, res) => {
       await Order.updateMany({ _id: { $in: orderIds } }, { status: "Paid" });
     }
 
-    // Mark reservation as fully paid
-    await Reservation.findByIdAndUpdate(reservationId, { fullPaymentDone: true });
+    await Reservation.findByIdAndUpdate(reservationId, {
+      fullPaymentDone: true,
+      status: "Completed",
+    });
 
     if (reservation.table) {
       const Table = require("../models/Table");

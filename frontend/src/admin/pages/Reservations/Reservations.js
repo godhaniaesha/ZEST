@@ -16,6 +16,7 @@ const STATUS_CLASS = {
   Confirmed: 'd-chip-green',
   Pending: 'd-chip-gold',
   Cancelled: 'd-chip-red',
+  Completed: 'd-chip-blue',
 };
 
 export default function Reservations() {
@@ -61,6 +62,7 @@ export default function Reservations() {
   const confirmedCount = reservations.filter(r => r.status === 'Confirmed').length;
   const pendingCount = reservations.filter(r => r.status === 'Pending').length;
   const cancelledCount = reservations.filter(r => r.status === 'Cancelled').length;
+  const completedCount = reservations.filter(r => r.status === 'Completed').length;
 
   const handleAdd = () => {
     if (!canAddEditDelete) return;
@@ -182,9 +184,10 @@ export default function Reservations() {
         {[
           { label: 'Confirmed', value: confirmedCount, icon: <MdCheckCircle />, color: 'd-green' },
           { label: 'Pending', value: pendingCount, icon: <MdPendingActions />, color: 'd-gold' },
-          { label: 'Cancelled', value: cancelledCount, icon: <MdCancel />, color: 'd-red' }
+          { label: 'Cancelled', value: cancelledCount, icon: <MdCancel />, color: 'd-red' },
+          { label: 'Completed', value: completedCount, icon: <MdCheckCircle />, color: 'd-green' }
         ].map((s) => (
-          <Col key={s.label} xs={12} sm={4}>
+          <Col key={s.label} xs={12} sm={6} lg={3}>
             <div className="d-stat-card">
               <div className={`d-stat-icon ${s.color}`} style={{ width: '42px', height: '42px', fontSize: '1.1rem' }}>
                 {s.icon}
@@ -287,6 +290,7 @@ export default function Reservations() {
                         <option value="Pending">Pending</option>
                         <option value="Confirmed">Confirmed</option>
                         <option value="Cancelled">Cancelled</option>
+                        <option value="Completed">Completed</option>
                       </Form.Select>
                     ) : (
                       <span

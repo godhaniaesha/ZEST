@@ -178,14 +178,22 @@ router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'waiter'),
   }
 );
 
-router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waiter'),
+router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waiter', 'cashier'),
   async (req, res) => {
     try {
       const { status } = req.body;
+      const validStatuses = ['Pending', 'Confirmed', 'Cancelled', 'Completed'];
+
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: 'Invalid reservation status' });
+      }
 
       const reservation = await Reservation.findByIdAndUpdate(
         req.params.id,
-        { status },
+        {
+          status,
+          ...(status === 'Completed' ? { fullPaymentDone: true } : {}),
+        },
         { new: true }
       ).populate('table');
 
@@ -201,7 +209,7 @@ router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waite
         await Table.findByIdAndUpdate(reservation.table, { status: 'Reserved' });
       }
 
-      if (status === 'Cancelled' && reservation.table) {
+      if ((status === 'Cancelled' || status === 'Completed') && reservation.table) {
         await Table.findByIdAndUpdate(reservation.table, { status: 'Free' });
       }
 
