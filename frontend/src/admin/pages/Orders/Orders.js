@@ -11,10 +11,16 @@ import { ordersAPI } from '../../../api';
 const ORDERS = [{}];
 
 const STATUS_MAP = {
-  Served: 'd-chip-green',
-  Preparing: 'd-chip-gold',
   Pending: 'd-chip-blue',
+  Paid: 'd-chip-green',
+  Cancelled: 'd-chip-red',
+};
+
+const ITEM_STATUS_MAP = {
+  Pending: 'd-chip-blue',
+  Preparing: 'd-chip-gold',
   Ready: 'd-chip-gray',
+  Served: 'd-chip-green',
 };
 
 export default function Orders() {
@@ -26,7 +32,7 @@ export default function Orders() {
   const [currentItem, setCurrentItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const itemsPerPage = 10;
-  const statuses = ['All', 'Pending', 'Preparing', 'Served', 'Ready'];
+  const statuses = ['All', 'Pending', 'Paid', 'Cancelled'];
   const orderData = orders.length > 0 ? orders : ORDERS;
   const filtered = filter === 'All' ? orderData : orderData.filter(o => o.status === filter);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -77,8 +83,8 @@ export default function Orders() {
   };
 
   const stats = {
-    active: orders.filter(o => ['Pending', 'Preparing'].includes(o.status)).length,
-    served: orders.filter(o => o.status === 'Served').length,
+    active: orders.filter(o => o.status === 'Pending').length,
+    served: orders.filter(o => o.status === 'Paid').length,
     cancelled: orders.filter(o => o.status === 'Cancelled').length
   };
 
@@ -288,11 +294,12 @@ export default function Orders() {
                           >
                             <option value="Pending">Pending</option>
                             <option value="Preparing">Preparing</option>
+                            <option value="Ready">Ready</option>
                             <option value="Served">Served</option>
                           </Form.Select>
                         ) : (
                           <span
-                            className={`d-chip ${STATUS_MAP[item.status]}`}
+                            className={`d-chip ${ITEM_STATUS_MAP[item.status]}`}
                             style={{
                               cursor: "pointer",
                               fontSize: "0.7rem",

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Form } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import {
   MdAdd, MdPhone, MdPeople, MdEventSeat,
   MdCheckCircle, MdPendingActions, MdCancel, MdMoreVert,
@@ -8,9 +9,8 @@ import {
 import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import { useAuth } from '../../../contexts/AuthContext';
-import { reservationsAPI } from '../../../api';
+import { reservationsAPI, tablesAPI } from '../../../api';
 
-const TABLES = ['Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5', 'Table 6', 'Table 7', 'Table 8', 'Tables 1+2', 'Tables 3+4', 'Bar Counter'];
 const TIME_SLOTS = ['12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM'];
 const STATUS_CLASS = {
   Confirmed: 'd-chip-green',
@@ -19,7 +19,9 @@ const STATUS_CLASS = {
 };
 
 export default function Reservations() {
+  const navigate = useNavigate();
   const [reservations, setReservations] = useState([]);
+  const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -29,7 +31,7 @@ export default function Reservations() {
     date: new Date().toISOString().split('T')[0],
     time: '7:00 PM',
     guests: 2,
-    table: 'Table 1',
+    table: '',
     phone: '',
     email: '',
     status: 'Pending',
@@ -45,10 +47,19 @@ export default function Reservations() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const response = await reservationsAPI.getAll();
-      setReservations(response.data || []);
+      const [reservationsRes, tablesRes] = await Promise.all([
+        reservationsAPI.getAll(),
+        tablesAPI.getAll()
+      ]);
+      setReservations(reservationsRes.data || []);
+      setTables(tablesRes.data || []);
+      
+      // Set default table to first available table
+      if (tablesRes.data && tablesRes.data.length > 0) {
+        setFormData(prev => ({ ...prev, table: tablesRes.data[0]._id }));
+      }
     } catch (error) {
-      console.error('Error fetching reservations:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -70,7 +81,7 @@ export default function Reservations() {
       date: new Date().toISOString().split('T')[0],
       time: '7:00 PM',
       guests: 2,
-      table: 'Table 1',
+      table: tables.length > 0 ? tables[0]._id : '',
       phone: '',
       email: '',
       status: 'Pending',
@@ -79,22 +90,26 @@ export default function Reservations() {
     setShowForm(true);
   };
 
-  // const handleEdit = (item) => {
-  //   if (!canAddEditDelete) return;
-  //   setCurrentItem(item);
-  //   setFormData({
-  //     name: item.name || item.customerName,
-  //     date: item.date,
-  //     time: item.time,
-  //     guests: item.guests,
-  //     table: item.table || `Table ${item.tableNumber}`,
-  //     phone: item.phone,
-  //     email: item.email || '',
-  //     status: item.status,
-  //     notes: item.notes || ''
-  //   });
-  //   setShowForm(true);
-  // };
+  const handleViewFloorPlan = () => {
+    navigate('/admin/tables');
+  };
+
+  const handleEdit = (item) => {
+    if (!canAddEditDelete) return;
+    setCurrentItem(item);
+    setFormData({
+      name: item.name || item.customerName,
+      date: item.date,
+      time: item.time,
+      guests: item.guests,
+      table: typeof item.table === 'object' ? item.table._id : item.table,
+      phone: item.phone,
+      email: item.email || '',
+      status: item.status,
+      notes: item.notes || ''
+    });
+    setShowForm(true);
+  };
 
   const handleDeleteClick = (item) => {
     if (!canAddEditDelete) return;
@@ -116,7 +131,6 @@ export default function Reservations() {
       time: formData.time,
       guests: formData.guests,
       table: formData.table,
-      // tableNumber: parseInt(formData.table.replace(/[^0-9]/g, '')) || 0,
       status: formData.status,
       notes: formData.notes
     };
@@ -125,7 +139,7 @@ export default function Reservations() {
       if (currentItem) {
         await reservationsAPI.update(currentItem._id, payload);
       } else {
-        await reservationsAPI.create(payload);
+        await reservationsAPI.createAdmin(payload);
       }
       await loadData();
       setShowForm(false);
@@ -171,6 +185,10 @@ export default function Reservations() {
             <MdEventSeat /> Reservations
           </div>
           <div className="d-page-sub">Manage guest bookings and table assignments</div>
+        </div>
+        <div className="d-flex gap-2">
+          <button className="d-btn-outline d-hide-mobile" onClick={handleViewFloorPlan}>View Floor Plan</button>
+          {canAddEditDelete && <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> New Booking</button>}
         </div>
       </div>
 
@@ -301,9 +319,9 @@ export default function Reservations() {
                   {canAddEditDelete && (
                     <td>
                       <div className="d-flex gap-1">
-                        {/* <button className="d-navbar-icon-btn" onClick={() => handleEdit(r)}>
+                        <button className="d-navbar-icon-btn" onClick={() => handleEdit(r)}>
                           <MdEdit />
-                        </button> */}
+                        </button>
                         <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(r)}>
                           <MdDelete />
                         </button>
@@ -316,6 +334,127 @@ export default function Reservations() {
           </table>
         </div>
       </div>
+
+      <FormModal
+        show={showForm}
+        onHide={() => setShowForm(false)}
+        title={currentItem ? "Edit Reservation" : "New Booking"}
+        onSubmit={handleSave}
+      >
+        <Row className="g-3">
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Guest Name *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter guest name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Phone Number *</Form.Label>
+              <Form.Control
+                type="tel"
+                placeholder="+91 98765 43210"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Email</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="guest@email.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Date *</Form.Label>
+              <Form.Control
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Time *</Form.Label>
+              <Form.Select
+                value={formData.time}
+                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                required
+              >
+                {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={4}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Guests *</Form.Label>
+              <Form.Control
+                type="number"
+                min="1"
+                max="20"
+                value={formData.guests}
+                onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
+                required
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Table</Form.Label>
+              <Form.Select
+                value={formData.table}
+                onChange={(e) => setFormData({ ...formData, table: e.target.value })}
+              >
+                {tables.map(t => (
+                  <option key={t._id} value={t._id}>
+                    {t.displayId || `${t.type === 'Bar' ? 'B' : 'C'}-${String(t.number).padStart(2, '0')}`} (Capacity: {t.capacity})
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Status</Form.Label>
+              <Form.Select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Cancelled">Cancelled</option>
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small fw-bold">Notes</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Any special requests or notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+      </FormModal>
 
       <DeleteModal
         show={showDelete}

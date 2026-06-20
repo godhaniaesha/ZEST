@@ -40,6 +40,7 @@ const galleryRoutes = require('./routes/gallery');
 const paymentRoutes = require("./routes/payment");
 const attendanceRoutes = require('./routes/attendance');
 const leaveRoutes = require('./routes/leave');
+const reportsRouter = require('./routes/reports');
 
 const Menu = require('./models/Menu');
 const Table = require('./models/Table');
@@ -88,6 +89,7 @@ app.use('/api/contacts', contactRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leave', leaveRoutes);
+app.use('/api/reports', reportsRouter);
 // MongoDB connection
 mongoose
   .connect(
