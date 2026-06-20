@@ -100,6 +100,7 @@ export const reservationsAPI = {
   getAll: () => api.get('/reservations'),
   getMy: () => api.get('/reservations/my'),
   create: (data) => api.post('/reservations', data),
+  createAdmin: (data) => api.post('/reservations/admin', data),
   update: (id, data) => api.put(`/reservations/${id}`, data),
   delete: (id) => api.delete(`/reservations/${id}`),
   updateStatus: (id, status) =>  api.patch(`/reservations/${id}/status`, { status,}),
@@ -213,4 +214,12 @@ export const galleryAPI = {
     }
   }),
   delete: (id) => api.delete(`/gallery/${id}`),
+};
+
+export const reportsAPI = {
+  getSummary: (range) => api.get('/reports/analytics/summary', { params: { range } }),
+  getWeekly: (range) => api.get('/reports/analytics/weekly', { params: { range } }),
+  getSources: (range) => api.get('/reports/analytics/sources', { params: { range } }),
+  getRevenue: (range) => api.get('/reports/analytics/revenue', { params: { range } }),
+  getPeak: (range) => api.get('/reports/analytics/peak', { params: { range } }),
 };

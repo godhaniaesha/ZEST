@@ -149,6 +149,56 @@ router.post('/', optionalAuth, async (req, res) => {
   }
 });
 
+// Admin route to create reservation without payment requirement
+router.post('/admin', auth, authorizeRoles('manager', 'superadmin', 'waiter'), async (req, res) => {
+  try {
+    const tableId = await resolveTableId(req.body);
+
+    if (!tableId) {
+      return res.status(400).json({
+        message: 'Table is required. Please select a valid table.',
+      });
+    }
+
+    const tableDoc = await Table.findById(tableId);
+    if (!tableDoc) {
+      return res.status(400).json({ message: 'Selected table not found.' });
+    }
+
+    const reservation = new Reservation({
+      customerName: req.body.customerName,
+      phone: req.body.phone,
+      email: req.body.email,
+      userId: req.user.id,
+      date: req.body.date,
+      time: req.body.time,
+      guests: req.body.guests,
+      table: tableId,
+      seatingArea: req.body.seatingArea,
+      specialOccasion: req.body.specialOccasion || 'none',
+      specialRequests: req.body.specialRequests || req.body.notes,
+      advanceAmount: ADVANCE_AMOUNT,
+      advancePaid: 0,
+      advancePaymentStatus: 'None',
+      status: req.body.status || 'Pending',
+    });
+
+    const newReservation = await reservation.save();
+
+    // Update table status if reservation is confirmed
+    if (req.body.status === 'Confirmed') {
+      await Table.findByIdAndUpdate(tableId, { status: 'Reserved' });
+    }
+
+    const populatedReservation = await Reservation.findById(newReservation._id)
+      .populate('table');
+
+    res.status(201).json(populatedReservation);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'waiter'),
   async (req, res) => {
     try {
