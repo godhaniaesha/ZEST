@@ -10,6 +10,11 @@ import {
   MdDelete,
   MdVisibility,
   MdPeople,
+  MdEmail,
+  MdPhone,
+  MdLocationOn,
+  MdCalendarToday,
+  MdAttachMoney,
 } from "react-icons/md";
 import DeleteModal from "../../components/DeleteModal";
 import FormModal from "../../components/FormModal";
@@ -21,17 +26,6 @@ import {
   deleteStaffUser,
 } from "../../../store/slices/usersSlice";
 import { useAuth } from "../../../contexts/AuthContext";
-
-const COLORS = [
-  "#C9A84C",
-  "#3498db",
-  "#2ecc71",
-  "#9b59b6",
-  "#e74c3c",
-  "#16302B",
-  "#1abc9c",
-  "#f39c12",
-];
 
 const STAFF_ROLE_OPTIONS = [
   { label: "Super Admin", value: "superadmin" },
@@ -49,9 +43,6 @@ const getInitials = (name = "") =>
     .join("")
     .toUpperCase()
     .slice(0, 2);
-
-const getStaffColor = (member, index) =>
-  COLORS[(member?.name?.length || index) % COLORS.length];
 
 const formatRole = (role = "") =>
   role
@@ -307,17 +298,6 @@ export default function Staff() {
     { name: 'leavesTotal', label: 'Total Leaves', type: 'number', col: 4, min: 0, placeholder: '12' },
     { name: 'joiningDate', label: 'Joining Date', type: 'date', col: 6, placeholder: 'Select joining date' },
     {
-      name: "shift",
-      label: "Shift",
-      type: "select",
-      required: true,
-      col: 6,
-      options: [
-        { label: "Morning", value: "Morning" },
-        { label: "Evening", value: "Evening" },
-      ],
-    },
-    {
       name: "shiftStart",
       label: "Shift Start Time",
       type: "time",
@@ -331,24 +311,6 @@ export default function Staff() {
       col: 3,
       disabled: true,
     },
-    { name: "salary", label: "Salary (₹)", type: "number", col: 4 },
-    {
-      name: "leavesTaken",
-      label: "Leaves Taken",
-      type: "number",
-      col: 4,
-      min: 0,
-      disabled: true,
-    },
-    {
-      name: "leavesTotal",
-      label: "Total Leaves",
-      type: "number",
-      col: 4,
-      min: 0,
-      disabled: true,
-    },
-    { name: "joiningDate", label: "Joining Date", type: "date", col: 6 },
     {
       name: "password",
       label: currentItem
@@ -401,7 +363,6 @@ export default function Staff() {
           </div>
         </div>
         <div className="d-flex gap-2">
-          {/* {canAddEditDelete && <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> Add Member</button>} */}
           <button className="d-btn-outline d-hide-mobile">Shift Roster</button>
           {canAddEditDelete && (
             <button className="d-btn-gold" onClick={handleAdd}>
@@ -478,273 +439,138 @@ export default function Staff() {
         />
       </div>
 
-      <Row className="g-4">
+      <div className="d-card">
         {staffLoading ? (
-          Array(3)
-            .fill(0)
-            .map((_, i) => (
-              <Col key={i} xs={12} sm={6} xl={4}>
-                <div
-                  className="d-card h-100"
-                  style={{
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                    border: "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      background: "var(--d-bg)",
-                      padding: "24px",
-                      borderBottom: "1px solid var(--d-border)",
-                    }}
-                  >
-                    <div className="d-flex gap-4 align-items-center">
-                      <div
-                        style={{
-                          width: 70,
-                          height: 70,
-                          borderRadius: "18px",
-                          background: "var(--d-border)",
-                          opacity: 0.5,
-                        }}
-                      ></div>
-                      <div>
-                        <div
-                          style={{
-                            width: "120px",
-                            height: "20px",
-                            background: "var(--d-border)",
-                            borderRadius: "4px",
-                            marginBottom: "8px",
-                            opacity: 0.5,
-                          }}
-                        ></div>
-                        <div
-                          style={{
-                            width: "80px",
-                            height: "16px",
-                            background: "var(--d-border)",
-                            borderRadius: "4px",
-                            opacity: 0.5,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Col>
-            ))
+          <div className="text-center py-5">
+            <div className="text-muted">Loading staff members...</div>
+          </div>
         ) : filtered.length === 0 ? (
-          <Col xs={12}>
-            <div className="d-card text-center py-5 text-muted">
-              No staff members found
-            </div>
-          </Col>
+          <div className="text-center py-5 text-muted">
+            No staff members found
+          </div>
         ) : (
-          filtered.map((s, index) => {
-            const color = getStaffColor(s, index);
-            const initials = getInitials(s.name);
-
-            return (
-              <Col key={s._id} xs={12} sm={6} xl={4}>
-                <div
-                  className="d-card h-100"
-                  style={{
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                    border: "none",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.transform = "translateY(-4px)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.transform = "translateY(0)")
-                  }
-                >
-                  <div
-                    style={{
-                      background: `linear-gradient(135deg, ${color}20 0%, ${color}05 100%)`,
-                      padding: "24px",
-                      borderBottom: "1px solid var(--d-border)",
-                    }}
-                  >
-                    <div className="d-flex justify-content-between align-items-start">
-                      <div className="d-flex gap-4 align-items-center">
-                        <div
-                          style={{
-                            width: 70,
-                            height: 70,
-                            borderRadius: "18px",
-                            background: `${color}25`,
-                            color,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: 800,
-                            fontSize: "1.5rem",
-                            flexShrink: 0,
-                            boxShadow: `0 4px 12px ${color}15`,
-                          }}
-                        >
-                          {initials}
-                        </div>
-                        <div>
-                          <h5
-                            className="d-section-title mb-1"
-                            style={{ fontSize: "1.15rem", margin: 0 }}
-                          >
-                            {s.name}
-                          </h5>
+          <div className="table-responsive">
+            <table className="table table-hover" style={{ marginBottom: 0 }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid var(--d-border)" }}>
+                  <th style={{ padding: "16px", fontWeight: 600, color: "var(--d-text)" }}>Staff Member</th>
+                  <th style={{ padding: "16px", fontWeight: 600, color: "var(--d-text)" }}>Role</th>
+                  <th style={{ padding: "16px", fontWeight: 600, color: "var(--d-text)" }}>Contact</th>
+                  <th style={{ padding: "16px", fontWeight: 600, color: "var(--d-text)" }}>Shift</th>
+                  <th style={{ padding: "16px", fontWeight: 600, color: "var(--d-text)" }}>Status</th>
+                  <th style={{ padding: "16px", fontWeight: 600, color: "var(--d-text)" }}>Salary</th>
+                  <th style={{ padding: "16px", fontWeight: 600, color: "var(--d-text)" }}>Leaves</th>
+                  <th style={{ padding: "16px", fontWeight: 600, color: "var(--d-text)", textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((s) => {
+                  const initials = getInitials(s.name);
+                  return (
+                    <tr key={s._id} style={{ borderBottom: "1px solid var(--d-border)" }}>
+                      <td style={{ padding: "16px" }}>
+                        <div className="d-flex align-items-center gap-3">
                           <div
-                            className="d-page-sub text-capitalize"
-                            style={{ fontSize: "0.95rem", margin: 0 }}
+                            style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "12px",
+                              background: "var(--d-bg)",
+                              color: "var(--d-primary)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 700,
+                              fontSize: "1rem",
+                              flexShrink: 0,
+                            }}
                           >
-                            {formatRole(s.role)}
+                            {initials}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "4px" }}>
+                              {s.name}
+                            </div>
+                            <div style={{ fontSize: "0.85rem", color: "var(--d-text-muted)" }}>
+                              {s.email}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="d-flex gap-1">
-                        <button
-                          className="d-navbar-icon-btn"
-                          style={{
-                            width: "38px",
-                            height: "38px",
-                            borderRadius: "10px",
-                          }}
-                          onClick={() => handleViewClick(s)}
-                        >
-                          <MdVisibility />
-                        </button>
-                        {canAddEditDelete && (
-                          <>
-                            <button
-                              className="d-navbar-icon-btn"
-                              style={{
-                                width: "38px",
-                                height: "38px",
-                                borderRadius: "10px",
-                              }}
-                              onClick={() => handleEdit(s)}
-                            >
-                              <MdEdit />
-                            </button>
-                            <button
-                              className="d-navbar-icon-btn text-danger"
-                              style={{
-                                width: "38px",
-                                height: "38px",
-                                borderRadius: "10px",
-                              }}
-                              onClick={() => handleDeleteClick(s)}
-                            >
-                              <MdDelete />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ padding: "20px" }}>
-                    <div className="d-flex gap-3 mb-4">
-                      <div
-                        className="flex-grow-1"
-                        style={{
-                          background: "var(--d-bg)",
-                          padding: "12px 16px",
-                          borderRadius: "12px",
-                        }}
-                      >
-                        <div
-                          className="text-muted"
-                          style={{ fontSize: "0.75rem", marginBottom: "4px" }}
-                        >
-                          Shift
+                      </td>
+                      <td style={{ padding: "16px" }}>
+                        <span className="d-chip" style={{ fontSize: "0.85rem", padding: "6px 12px" }}>
+                          {formatRole(s.role)}
+                        </span>
+                      </td>
+                      <td style={{ padding: "16px" }}>
+                        <div style={{ fontSize: "0.9rem", marginBottom: "4px" }}>
+                          {s.phone ? (
+                            <div className="d-flex align-items-center gap-2">
+                              <MdPhone style={{ fontSize: "0.9rem", color: "var(--d-text-muted)" }} />
+                              {s.phone}
+                            </div>
+                          ) : (
+                            <span style={{ color: "var(--d-text-muted)" }}>-</span>
+                          )}
                         </div>
-                        <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>
+                      </td>
+                      <td style={{ padding: "16px" }}>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 500 }}>
                           {s.shift || "-"}
                         </div>
-                        <div
-                          style={{
-                            fontSize: "0.75rem",
-                            color: "var(--d-text-muted)",
-                          }}
-                        >
+                        <div style={{ fontSize: "0.8rem", color: "var(--d-text-muted)" }}>
                           {s.shiftStart || "-"} - {s.shiftEnd || "-"}
                         </div>
-                      </div>
-                      <div
-                        className="flex-grow-1"
-                        style={{
-                          background: "var(--d-bg)",
-                          padding: "12px 16px",
-                          borderRadius: "12px",
-                        }}
-                      >
-                        <div
-                          className="text-muted"
-                          style={{ fontSize: "0.75rem", marginBottom: "4px" }}
-                        >
-                          Status
-                        </div>
+                      </td>
+                      <td style={{ padding: "16px" }}>
                         <span
                           className={`d-chip ${s.status === "On Duty" || s.status === "Active" ? "d-chip-green" : "d-chip-gray"}`}
-                          style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                          style={{ fontSize: "0.85rem", padding: "6px 12px" }}
                         >
                           {s.status}
                         </span>
-                      </div>
-                    </div>
-
-                    <div className="row g-3 mb-4">
-                      <div className="col-6">
-                        <div
-                          className="text-muted"
-                          style={{ fontSize: "0.8rem" }}
-                        >
-                          Salary
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "1.15rem",
-                            fontWeight: 700,
-                            color: "var(--d-primary)",
-                          }}
-                        >
+                      </td>
+                      <td style={{ padding: "16px" }}>
+                        <div style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--d-primary)" }}>
                           {formatSalary(s.salary)}
                         </div>
-                      </div>
-                      <div className="col-6">
-                        <div
-                          className="text-muted"
-                          style={{ fontSize: "0.8rem" }}
-                        >
-                          Leaves
-                        </div>
-                        <div style={{ fontSize: "1.15rem", fontWeight: 700 }}>
+                      </td>
+                      <td style={{ padding: "16px" }}>
+                        <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>
                           {s.leavesTaken || 0}
-                          <span
-                            style={{
-                              fontSize: "0.9rem",
-                              color: "var(--d-text-muted)",
-                              fontWeight: 400,
-                            }}
-                          >
+                          <span style={{ fontSize: "0.85rem", color: "var(--d-text-muted)", fontWeight: 400 }}>
                             /{s.leavesTotal || 12}
                           </span>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Col>
-            );
-          })
+                      </td>
+                      <td style={{ padding: "16px", textAlign: "right" }}>
+                        <div className="d-flex gap-2" style={{ justifyContent: "flex-end" }}>
+                          <button
+                            className="d-navbar-icon-btn"
+                            onClick={() => handleViewClick(s)}
+                            title="View Details"
+                          >
+                            <MdVisibility />
+                          </button>
+                          {canAddEditDelete && (
+                            <button
+                              className="d-navbar-icon-btn"
+                              onClick={() => handleEdit(s)}
+                              title="Edit"
+                            >
+                              <MdEdit />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </Row>
+      </div>
 
       <Modal
         show={showView}
@@ -756,156 +582,140 @@ export default function Staff() {
           <Modal.Title>Staff Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {currentItem &&
-            (() => {
-              const color = getStaffColor(currentItem, 0);
-              const initials = getInitials(currentItem.name);
-
-              return (
-                <Row className="g-4">
-                  <Col
-                    xs={12}
-                    md={4}
-                    className="d-flex flex-column align-items-center"
-                  >
-                    <div
-                      style={{
-                        width: 100,
-                        height: 100,
-                        borderRadius: "var(--d-radius-md)",
-                        background: `${color}15`,
-                        color,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 800,
-                        fontSize: "2.5rem",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {initials}
+          {currentItem && (
+            <Row className="g-4">
+              <Col xs={12} md={4} className="d-flex flex-column align-items-center">
+                <div
+                  style={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: "var(--d-radius-md)",
+                    background: "var(--d-bg)",
+                    color: "var(--d-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: "2.5rem",
+                    flexShrink: 0,
+                  }}
+                >
+                  {getInitials(currentItem.name)}
+                </div>
+                <h4 className="mt-3 mb-0">{currentItem.name}</h4>
+                <p className="text-muted mb-0 text-capitalize">
+                  {formatRole(currentItem.role)}
+                </p>
+                <span
+                  className={`d-chip mt-2 ${currentItem.status === "On Duty" || currentItem.status === "Active" ? "d-chip-green" : "d-chip-gray"}`}
+                >
+                  {currentItem.status}
+                </span>
+              </Col>
+              <Col xs={12} md={8}>
+                <Row className="g-3">
+                  {currentItem.email && (
+                    <Col xs={12} sm={6}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small d-flex align-items-center gap-2">
+                          <MdEmail /> Email
+                        </span>
+                        <span className="fw-medium">{currentItem.email}</span>
+                      </div>
+                    </Col>
+                  )}
+                  {currentItem.phone && (
+                    <Col xs={12} sm={6}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small d-flex align-items-center gap-2">
+                          <MdPhone /> Phone
+                        </span>
+                        <span className="fw-medium">{currentItem.phone}</span>
+                      </div>
+                    </Col>
+                  )}
+                  {currentItem.address && (
+                    <Col xs={12}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small d-flex align-items-center gap-2">
+                          <MdLocationOn /> Address
+                        </span>
+                        <span className="fw-medium">{currentItem.address}</span>
+                      </div>
+                    </Col>
+                  )}
+                  <Col xs={12} sm={6}>
+                    <div className="d-flex flex-column">
+                      <span className="text-muted small d-flex align-items-center gap-2">
+                        <MdAccessTime /> Shift
+                      </span>
+                      <span className="fw-medium">{currentItem.shift || "-"}</span>
                     </div>
-                    <h4 className="mt-3 mb-0">{currentItem.name}</h4>
-                    <p className="text-muted mb-0 text-capitalize">
-                      {formatRole(currentItem.role)}
-                    </p>
-                    <span
-                      className={`d-chip mt-2 ${currentItem.status === "On Duty" || currentItem.status === "Active" ? "d-chip-green" : "d-chip-gray"}`}
-                    >
-                      {currentItem.status}
-                    </span>
                   </Col>
-                  <Col xs={12} md={8}>
-                    <Row className="g-3">
-                      {currentItem.email && (
-                        <Col xs={12} sm={6}>
-                          <div className="d-flex flex-column">
-                            <span className="text-muted small">Email</span>
-                            <span className="fw-medium">
-                              {currentItem.email}
-                            </span>
-                          </div>
-                        </Col>
-                      )}
-                      {currentItem.phone && (
-                        <Col xs={12} sm={6}>
-                          <div className="d-flex flex-column">
-                            <span className="text-muted small">Phone</span>
-                            <span className="fw-medium">
-                              {currentItem.phone}
-                            </span>
-                          </div>
-                        </Col>
-                      )}
-                      {currentItem.address && (
-                        <Col xs={12}>
-                          <div className="d-flex flex-column">
-                            <span className="text-muted small">Address</span>
-                            <span className="fw-medium">
-                              {currentItem.address}
-                            </span>
-                          </div>
-                        </Col>
-                      )}
-                      <Col xs={12} sm={6}>
-                        <div className="d-flex flex-column">
-                          <span className="text-muted small">Shift</span>
-                          <span className="fw-medium">
-                            {currentItem.shift || "-"}
-                          </span>
-                        </div>
-                      </Col>
-                      <Col xs={12} sm={6}>
-                        <div className="d-flex flex-column">
-                          <span className="text-muted small">Shift Time</span>
-                          <span className="fw-medium">
-                            {currentItem.shiftStart || "-"} -{" "}
-                            {currentItem.shiftEnd || "-"}
-                          </span>
-                        </div>
-                      </Col>
-                      {currentItem.salary && (
-                        <Col xs={12} sm={6}>
-                          <div className="d-flex flex-column">
-                            <span className="text-muted small">Salary</span>
-                            <span className="fw-medium">
-                              ₹{currentItem.salary}
-                            </span>
-                          </div>
-                        </Col>
-                      )}
-                      <Col xs={12} sm={6}>
-                        <div className="d-flex flex-column">
-                          <span className="text-muted small">Leaves Taken</span>
-                          <span className="fw-medium">
-                            {currentItem.leavesTaken || 0}/
-                            {currentItem.leavesTotal || 12}
-                          </span>
-                        </div>
-                      </Col>
-                      {currentItem.joiningDate && (
-                        <Col xs={12} sm={6}>
-                          <div className="d-flex flex-column">
-                            <span className="text-muted small">
-                              Joining Date
-                            </span>
-                            <span className="fw-medium">
-                              {new Date(
-                                currentItem.joiningDate,
-                              ).toLocaleDateString("en-IN")}
-                            </span>
-                          </div>
-                        </Col>
-                      )}
-                      {currentItem.createdAt && (
-                        <Col xs={12} sm={6}>
-                          <div className="d-flex flex-column">
-                            <span className="text-muted small">Created At</span>
-                            <span className="fw-medium">
-                              {new Date(currentItem.createdAt).toLocaleString(
-                                "en-IN",
-                              )}
-                            </span>
-                          </div>
-                        </Col>
-                      )}
-                      {currentItem.updatedAt && (
-                        <Col xs={12} sm={6}>
-                          <div className="d-flex flex-column">
-                            <span className="text-muted small">Updated At</span>
-                            <span className="fw-medium">
-                              {new Date(currentItem.updatedAt).toLocaleString(
-                                "en-IN",
-                              )}
-                            </span>
-                          </div>
-                        </Col>
-                      )}
-                    </Row>
+                  <Col xs={12} sm={6}>
+                    <div className="d-flex flex-column">
+                      <span className="text-muted small d-flex align-items-center gap-2">
+                        <MdAccessTime /> Shift Time
+                      </span>
+                      <span className="fw-medium">
+                        {currentItem.shiftStart || "-"} - {currentItem.shiftEnd || "-"}
+                      </span>
+                    </div>
                   </Col>
+                  {currentItem.salary && (
+                    <Col xs={12} sm={6}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small d-flex align-items-center gap-2">
+                          <MdAttachMoney /> Salary
+                        </span>
+                        <span className="fw-medium">₹{currentItem.salary}</span>
+                      </div>
+                    </Col>
+                  )}
+                  <Col xs={12} sm={6}>
+                    <div className="d-flex flex-column">
+                      <span className="text-muted small">Leaves Taken</span>
+                      <span className="fw-medium">
+                        {currentItem.leavesTaken || 0}/{currentItem.leavesTotal || 12}
+                      </span>
+                    </div>
+                  </Col>
+                  {currentItem.joiningDate && (
+                    <Col xs={12} sm={6}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small d-flex align-items-center gap-2">
+                          <MdCalendarToday /> Joining Date
+                        </span>
+                        <span className="fw-medium">
+                          {new Date(currentItem.joiningDate).toLocaleDateString("en-IN")}
+                        </span>
+                      </div>
+                    </Col>
+                  )}
+                  {currentItem.createdAt && (
+                    <Col xs={12} sm={6}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small">Created At</span>
+                        <span className="fw-medium">
+                          {new Date(currentItem.createdAt).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </Col>
+                  )}
+                  {currentItem.updatedAt && (
+                    <Col xs={12} sm={6}>
+                      <div className="d-flex flex-column">
+                        <span className="text-muted small">Updated At</span>
+                        <span className="fw-medium">
+                          {new Date(currentItem.updatedAt).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </Col>
+                  )}
                 </Row>
-              );
-            })()}
+              </Col>
+            </Row>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <button className="d-btn-outline" onClick={() => setShowView(false)}>

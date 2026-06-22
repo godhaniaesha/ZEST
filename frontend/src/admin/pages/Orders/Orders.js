@@ -201,7 +201,7 @@ export default function Orders() {
                         </strong>
                       </td>
 
-                      <td>
+                      {/* <td>
                         <div
                           className="d-flex align-items-center gap-1"
                           style={{
@@ -211,7 +211,7 @@ export default function Orders() {
                         >
                           <MdAccessTime /> {order.time}
                         </div>
-                      </td>
+                      </td> */}
 
                       <td>
                         <div className="d-flex gap-1">
@@ -334,7 +334,7 @@ export default function Orders() {
                       </td>
 
                       {/* Time */}
-                      <td>
+                      {/* <td>
                         {isFirstItem && (
                           <div
                             className="d-flex align-items-center gap-1"
@@ -346,7 +346,7 @@ export default function Orders() {
                             <MdAccessTime /> {order.time}
                           </div>
                         )}
-                      </td>
+                      </td> */}
 
                       {/* Actions */}
                       <td>

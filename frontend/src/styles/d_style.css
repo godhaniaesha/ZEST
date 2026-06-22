@@ -323,9 +323,9 @@ body {
   position: relative;
   background: none;
   border: none;
-  min-width: 40px;
+  /* min-width: 40px; */
   min-height: 40px;
-  padding: 0 12px;
+  /* padding: 0 12px; */
   border-radius: var(--d-radius-sm);
   display: flex;
   align-items: center;

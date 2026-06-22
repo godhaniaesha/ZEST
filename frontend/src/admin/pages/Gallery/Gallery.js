@@ -374,7 +374,7 @@ export default function GalleryManagement() {
                     <div className="d-page-sub mb-2">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
                     <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>
                     <div className="d-flex justify-content-between align-items-center mt-2">
-                      <span className="badge d-chip-gold " style={{ fontSize: '0.75rem',color: '#8a6a1a' }}>Featured</span>
+                      <span className="badge d-chip-gold " style={{ fontSize: '0.75rem', color: '#8a6a1a' }}>Featured</span>
                       <span className="text-muted small" style={{ fontSize: '0.8rem' }}>
                         {formatDate(item.createdAt)}
                       </span>
@@ -445,7 +445,7 @@ export default function GalleryManagement() {
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
                         {(item.featured === true || item.featured === 'true') && (
-                          <span className="badge bg-warning text-dark" style={{ fontSize: '0.75rem' }}>Featured</span>
+                          <span className="badge d-chip-gold " style={{ fontSize: '0.75rem', color: '#8a6a1a' }}>Featured</span>
                         )}
                         <span className="text-muted small" style={{ fontSize: '0.8rem' }}>
                           {formatDate(item.createdAt)}
