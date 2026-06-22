@@ -35,7 +35,7 @@ export default function Menu() {
   const { user } = useAuth();
   const userRole = user?.role || 'chef';
 
-  const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
+  const canAddEditDelete = userRole === 'manager' || userRole === 'superadmin';
 
   const loadData = async () => {
     try {
