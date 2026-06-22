@@ -33,18 +33,21 @@ const ContactUs = () => {
       label: 'Location',
       value: '123 Cafe Street, City Center',
       subtext: 'Visit us for coffee, food & cocktails',
+      href: 'https://www.google.com/maps/search/?api=1&query=123+Cafe+Street,+City+Center',
     },
     {
       icon: <Phone size={28} />,
       label: 'Phone',
       value: '+1 (555) 123-4567',
       subtext: 'Mon - Sun: 8am - Midnight',
+      href: 'tel:+15551234567',
     },
     {
       icon: <Mail size={28} />,
       label: 'Email',
       value: 'hello@zestcafe.com',
       subtext: 'We reply within 24 hours',
+      href: 'mailto:hello@zestcafe.com',
     },
     {
       icon: <Clock size={28} />,
@@ -91,7 +94,7 @@ const ContactUs = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await contactAPI.submit(formData);
       if (response.data.success) {
@@ -143,15 +146,15 @@ const ContactUs = () => {
           </div>
           <div className="x_contact_hero_right">
             <div className="x_contact_hero_image_container">
-              <div 
-                className="x_contact_hero_image" 
-                style={{ 
+              <div
+                className="x_contact_hero_image"
+                style={{
                   backgroundImage: 'url("https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=75")',
-                  backgroundSize: 'cover', 
-                  backgroundPosition: 'center' 
-                }} 
-                role="img" 
-                aria-label="Zest Cafe" 
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+                role="img"
+                aria-label="Zest Cafe"
               />
               <div className="x_contact_hero_badge">
                 <div className="x_badge_text">
@@ -181,7 +184,20 @@ const ContactUs = () => {
                 <div className="x_contact_info_icon">{info.icon}</div>
                 <div className="x_contact_info_text">
                   <h3>{info.label}</h3>
-                  <p className="x_contact_info_value">{info.value}</p>
+
+                  {info.href ? (
+                    <a
+                      href={info.href}
+                      className="x_contact_info_value x_contact_link"
+                      target={info.label === 'Location' ? '_blank' : undefined}
+                      rel={info.label === 'Location' ? 'noreferrer' : undefined}
+                    >
+                      {info.value}
+                    </a>
+                  ) : (
+                    <p className="x_contact_info_value">{info.value}</p>
+                  )}
+
                   <p className="x_contact_info_subtext">{info.subtext}</p>
                 </div>
               </div>
@@ -333,10 +349,10 @@ const ContactUs = () => {
                   title="Zest Cafe Location"
                 />
               </div>
-              <a 
-                href="https://maps.google.com" 
-                target="_blank" 
-                rel="noreferrer" 
+              <a
+                href="https://maps.google.com"
+                target="_blank"
+                rel="noreferrer"
                 className="x_contact_direction"
               >
                 Get Directions

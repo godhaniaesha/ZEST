@@ -260,7 +260,7 @@ const Services = () => {
             <a href="/reservations" className="x_services_cta_btn x_services_cta_primary">
               Make Reservation
             </a>
-            <a href="/contact" className="x_services_cta_btn x_services_cta_secondary">
+            <a href="/contactus" className="x_services_cta_btn x_services_cta_secondary">
               Get in Touch
             </a>
           </div>
