@@ -17,7 +17,13 @@ const userOwnsOrder = async (userId, order) => {
 const updateMenuAverage = async (menuItemId) => {
   if (!menuItemId) return;
   const ratings = await ItemRating.find({ menuItemId });
-  if (ratings.length === 0) return;
+  if (ratings.length === 0) {
+    await Menu.findByIdAndUpdate(menuItemId, {
+      rating: null,
+      reviews: 0
+    });
+    return;
+  }
   const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
   await Menu.findByIdAndUpdate(menuItemId, {
     rating: Math.round(avg * 10) / 10,

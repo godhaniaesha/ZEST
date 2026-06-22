@@ -157,14 +157,78 @@ export default function Staff() {
   };
 
   const handleSave = async (formData) => {
-    if (!formData.name || !formData.email || !formData.role) {
-      alert("Please fill in all required fields");
+    // Name validation
+    if (!formData.name || !formData.name.trim()) {
+      alert('Please enter a valid name');
       return;
     }
 
+    // Email validation
+    if (!formData.email || !formData.email.trim()) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert('Please enter a valid email format (e.g., user@example.com)');
+      return;
+    }
+
+    // Phone validation (if provided)
+    if (formData.phone && formData.phone.trim()) {
+      const phoneRegex = /^[0-9]{10}$/;
+      const cleanPhone = formData.phone.replace(/\D/g, '');
+      if (!phoneRegex.test(cleanPhone)) {
+        alert('Please enter a valid 10-digit phone number');
+        return;
+      }
+    }
+
+    // Role validation
+    if (!formData.role) {
+      alert('Please select a role');
+      return;
+    }
+
+    // Status validation
+    if (!formData.status) {
+      alert('Please select a status');
+      return;
+    }
+
+    // Shift validation
+    if (!formData.shift) {
+      alert('Please select a shift');
+      return;
+    }
+
+    // Salary validation (if provided)
+    if (formData.salary && formData.salary < 0) {
+      alert('Salary cannot be negative');
+      return;
+    }
+
+    // Leaves validation
+    if (formData.leavesTaken < 0) {
+      alert('Leaves taken cannot be negative');
+      return;
+    }
+
+    if (formData.leavesTotal < 0) {
+      alert('Total leaves cannot be negative');
+      return;
+    }
+
+    if (formData.leavesTaken > formData.leavesTotal) {
+      alert('Leaves taken cannot exceed total leaves');
+      return;
+    }
+
+    // Password validation for new users
     if (!currentItem) {
       if (!formData.password || formData.password.length < 6) {
-        alert("Please enter a password (minimum 6 characters)");
+        alert('Password must be at least 6 characters long');
         return;
       }
       if (formData.password !== formData.confirmPassword) {
@@ -173,20 +237,20 @@ export default function Staff() {
       }
     }
 
-    // Auto-set shift times based on shift
-    if (formData.shift === "Morning") {
-      formData.shiftStart = "11:00";
-      formData.shiftEnd = "18:00";
-    } else if (formData.shift === "Evening") {
-      formData.shiftStart = "18:00";
-      formData.shiftEnd = "00:00";
+    // Password validation for existing users (if changing password)
+    if (currentItem && formData.password && formData.password.trim()) {
+      if (formData.password.length < 6) {
+        alert('Password must be at least 6 characters long');
+        return;
+      }
     }
 
-    // Set default leave values
-    formData.leavesTaken = formData.leavesTaken || 0;
-    formData.leavesTotal = formData.leavesTotal || 12;
-
     const payload = buildStaffPayload(formData);
+
+    // Clean phone number if provided
+    if (formData.phone) {
+      payload.phone = formData.phone.replace(/\D/g, '');
+    }
 
     try {
       if (currentItem) {
@@ -216,42 +280,32 @@ export default function Staff() {
   };
 
   const formFields = [
-    { name: "name", label: "Full Name", type: "text", required: true, col: 12 },
+    { name: 'name', label: 'Full Name', type: 'text', required: true, col: 12, placeholder: 'Enter full name' },
+    { name: 'email', label: 'Email Address', type: 'email', required: true, col: 6, placeholder: 'Enter email address' },
+    { name: 'phone', label: 'Phone Number', type: 'text', col: 6, placeholder: 'Enter phone number' },
+    { name: 'address', label: 'Address', type: 'text', col: 12, placeholder: 'Enter address' },
     {
-      name: "email",
-      label: "Email Address",
-      type: "email",
-      required: true,
-      col: 6,
+      name: 'role', label: 'Role', type: 'select', required: true, col: 6, placeholder: 'Select role',
+      options: STAFF_ROLE_OPTIONS
     },
     {
-      name: "phone",
-      label: "Phone Number",
-      type: "text",
-      col: 6,
-      maxLength: 10,
-    },
-    { name: "address", label: "Address", type: "text", col: 12 },
-    {
-      name: "role",
-      label: "Role",
-      type: "select",
-      required: true,
-      col: 6,
-      options: STAFF_ROLE_OPTIONS,
+      name: 'status', label: 'Status', type: 'select', required: true, col: 6, placeholder: 'Select status', options: [
+        { label: 'Active', value: 'Active' },
+        { label: 'Inactive', value: 'Inactive' },
+        { label: 'On Duty', value: 'On Duty' }
+      ]
     },
     {
-      name: "status",
-      label: "Status",
-      type: "select",
-      required: true,
-      col: 6,
-      options: [
-        { label: "Active", value: "Active" },
-        { label: "Inactive", value: "Inactive" },
-        { label: "On Duty", value: "On Duty" },
-      ],
+      name: 'shift', label: 'Shift', type: 'select', required: true, col: 6, placeholder: 'Select shift', options: [
+        { label: 'Morning', value: 'Morning' },
+        { label: 'Evening', value: 'Evening' },
+        { label: 'Both', value: 'Both' }
+      ]
     },
+    { name: 'salary', label: 'Salary (₹)', type: 'number', col: 4, placeholder: 'Enter salary' },
+    { name: 'leavesTaken', label: 'Leaves Taken', type: 'number', col: 4, min: 0, placeholder: '0' },
+    { name: 'leavesTotal', label: 'Total Leaves', type: 'number', col: 4, min: 0, placeholder: '12' },
+    { name: 'joiningDate', label: 'Joining Date', type: 'date', col: 6, placeholder: 'Select joining date' },
     {
       name: "shift",
       label: "Shift",
@@ -303,18 +357,9 @@ export default function Staff() {
       type: "password",
       required: !currentItem,
       col: 6,
+      placeholder: currentItem ? 'Leave empty to keep current' : 'Enter password'
     },
-    ...(!currentItem
-      ? [
-          {
-            name: "confirmPassword",
-            label: "Confirm Password",
-            type: "password",
-            required: true,
-            col: 6,
-          },
-        ]
-      : []),
+    ...(!currentItem ? [{ name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true, col: 6, placeholder: 'Confirm password' }] : []),
   ];
 
   const statCards = [

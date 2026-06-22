@@ -120,14 +120,66 @@ export default function Reservations() {
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.phone || !formData.date || !formData.time || formData.guests < 1) {
-      alert('Please fill in all required fields');
+    // Name validation
+    if (!formData.name || !formData.name.trim()) {
+      alert('Please enter a valid guest name');
+      return;
+    }
+
+    // Phone validation - must be exactly 10 digits
+    if (!formData.phone || !formData.phone.trim()) {
+      alert('Please enter a phone number');
+      return;
+    }
+
+    const phoneRegex = /^[0-9]{10}$/;
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    if (!phoneRegex.test(cleanPhone)) {
+      alert('Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    // Email validation (if provided)
+    if (formData.email && formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        alert('Please enter a valid email format (e.g., guest@example.com)');
+        return;
+      }
+    }
+
+    // Date validation
+    if (!formData.date) {
+      alert('Please select a date');
+      return;
+    }
+
+    // Time validation
+    if (!formData.time) {
+      alert('Please select a time');
+      return;
+    }
+
+    // Guests validation
+    if (!formData.guests || formData.guests < 1) {
+      alert('Please enter at least 1 guest');
+      return;
+    }
+
+    if (formData.guests > 20) {
+      alert('Maximum 20 guests allowed per reservation');
+      return;
+    }
+
+    // Table validation
+    if (!formData.table) {
+      alert('Please select a table');
       return;
     }
 
     const payload = {
       customerName: formData.name,
-      phone: formData.phone,
+      phone: cleanPhone,
       email: formData.email,
       date: formData.date,
       time: formData.time,
@@ -355,6 +407,7 @@ export default function Reservations() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                minLength={2}
               />
             </Form.Group>
           </Col>
@@ -363,11 +416,18 @@ export default function Reservations() {
               <Form.Label className="small fw-bold">Phone Number *</Form.Label>
               <Form.Control
                 type="tel"
-                placeholder="+91 98765 43210"
+                placeholder="9876543210"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setFormData({ ...formData, phone: value });
+                }}
                 required
+                maxLength={10}
               />
+              <Form.Text className="text-muted" style={{ fontSize: '0.75rem' }}>
+                Enter 10-digit phone number (numbers only)
+              </Form.Text>
             </Form.Group>
           </Col>
           <Col xs={12} md={6}>
@@ -379,6 +439,9 @@ export default function Reservations() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
+              <Form.Text className="text-muted" style={{ fontSize: '0.75rem' }}>
+                Optional
+              </Form.Text>
             </Form.Group>
           </Col>
           <Col xs={12} md={4}>

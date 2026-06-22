@@ -23,21 +23,22 @@ const FORM_SKIP_KEYS = ['_id', '__v', 'createdAt', 'updatedAt'];
 
 
 const BLOG_FORM_FIELDS = [
-  { name: 'title', label: 'Article Title *', type: 'text', required: true, col: 12, placeholder: 'e.g. The Art of Single-Origin Coffee' },
+  { name: 'title', label: 'Article Title *', type: 'text', required: true, col: 12, placeholder: 'e.g. The Art of Single-Origin Coffee', minLength: 5, maxLength: 200 },
   { name: 'category', label: 'Category *', type: 'select', required: true, col: 6, options: CATEGORIES.filter(c => c.name !== 'All').map(c => ({ label: c.name, value: c.name })) },
-  { name: 'author', label: 'Author *', type: 'text', required: true, col: 6, placeholder: 'Author name' },
+  { name: 'author', label: 'Author *', type: 'text', required: true, col: 6, placeholder: 'Author name', minLength: 2, maxLength: 50 },
   { name: 'authorImage', label: 'Author Image URL', type: 'text', col: 6, placeholder: 'https://example.com/author.jpg' },
-  { name: 'readTime', label: 'Read Time (minutes) *', type: 'number', required: true, col: 6, placeholder: '5' },
+  { name: 'readTime', label: 'Read Time (minutes) *', type: 'number', required: true, col: 6, placeholder: '5', min: 1, max: 120 },
   { name: 'image', label: 'Featured Image', type: 'file', col: 12 },
-  { name: 'excerpt', label: 'Excerpt *', type: 'textarea', required: true, col: 12, placeholder: 'Brief excerpt of the article...' },
-  { 
-    name: 'content', 
-    label: 'Content * (Write normally, will auto-format to HTML)', 
-    type: 'textarea-html', 
-    required: true, 
-    col: 12, 
+  { name: 'excerpt', label: 'Excerpt *', type: 'textarea', required: true, col: 12, placeholder: 'Brief excerpt of the article...', minLength: 20, maxLength: 300 },
+  {
+    name: 'content',
+    label: 'Content * (Write normally, will auto-format to HTML)',
+    type: 'textarea-html',
+    required: true,
+    col: 12,
     placeholder: 'Write your article here. Lines will become paragraphs, **text** becomes bold, etc.',
-    rows: 10
+    rows: 10,
+    minLength: 50
   },
 ];
 
@@ -216,15 +217,104 @@ const convertPlainTextToHTML = (text) => {
       if (data.content) {
         data.content = convertPlainTextToHTML(data.content);
       }
-      
-      if (!data.title || !data.category || !data.author || !data.excerpt || !data.content) {
-        alert('Please fill in all required fields (Title, Category, Author, Excerpt, Content)');
+
+      // Title validation
+      if (!data.title || !data.title.trim()) {
+        alert('Please enter a title');
         return;
       }
 
+      if (data.title.length < 5) {
+        alert('Title must be at least 5 characters long');
+        return;
+      }
 
-      if (data.readTime <= 0) {
+      if (data.title.length > 200) {
+        alert('Title must not exceed 200 characters');
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9\s\-.,'&!?():]+$/.test(data.title)) {
+        alert('Title can only contain letters, numbers, spaces, and basic punctuation');
+        return;
+      }
+
+      // Category validation
+      if (!data.category) {
+        alert('Please select a category');
+        return;
+      }
+
+      // Author validation
+      if (!data.author || !data.author.trim()) {
+        alert('Please enter an author name');
+        return;
+      }
+
+      if (data.author.length < 2) {
+        alert('Author name must be at least 2 characters long');
+        return;
+      }
+
+      if (data.author.length > 50) {
+        alert('Author name must not exceed 50 characters');
+        return;
+      }
+
+      if (!/^[a-zA-Z\s\-']+$/.test(data.author)) {
+        alert('Author name can only contain letters, spaces, hyphens, and apostrophes');
+        return;
+      }
+
+      // Author Image URL validation (if provided)
+      if (data.authorImage && data.authorImage.trim()) {
+        const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+        if (!urlRegex.test(data.authorImage)) {
+          alert('Please enter a valid URL for author image');
+          return;
+        }
+      }
+
+      // Read Time validation
+      if (!data.readTime || data.readTime <= 0) {
         alert('Read time must be greater than 0');
+        return;
+      }
+
+      if (data.readTime > 120) {
+        alert('Read time must not exceed 120 minutes');
+        return;
+      }
+
+      if (!/^\d+$/.test(data.readTime.toString())) {
+        alert('Read time must be a number');
+        return;
+      }
+
+      // Excerpt validation
+      if (!data.excerpt || !data.excerpt.trim()) {
+        alert('Please enter an excerpt');
+        return;
+      }
+
+      if (data.excerpt.length < 20) {
+        alert('Excerpt must be at least 20 characters long');
+        return;
+      }
+
+      if (data.excerpt.length > 300) {
+        alert('Excerpt must not exceed 300 characters');
+        return;
+      }
+
+      // Content validation
+      if (!data.content || !data.content.trim()) {
+        alert('Please enter content');
+        return;
+      }
+
+      if (data.content.length < 50) {
+        alert('Content must be at least 50 characters long');
         return;
       }
 

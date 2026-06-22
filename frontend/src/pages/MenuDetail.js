@@ -106,8 +106,12 @@ const MenuDetail = () => {
                   <h3 className="chef_recommended_name">{item.name}</h3>
                   <div className="chef_recommended_meta">
                     <span>{item.category}</span>
-                    <span className="meta_dot">•</span>
-                    <span className="meta_rating">{item.rating || 4.9} ★</span>
+                    {item.reviews > 0 && item.rating && (
+                      <>
+                        <span className="meta_dot">•</span>
+                    <span className="meta_rating">{item.rating} ★</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <button className="chef_recommended_icon_btn">
@@ -129,15 +133,17 @@ const MenuDetail = () => {
             </p>
 
             <div className="menu_detail_stats_row">
-              <div className="stat_pill_v2">
+              {item.reviews > 0 && item.rating && (
+                <div className="stat_pill_v2">
                 <div className="stat_stars">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={12} fill={i < Math.floor(item.rating || 4.5) ? "#C9A84C" : "none"} stroke="#C9A84C" />
+                    <Star key={i} size={12} fill={i < Math.floor(item.rating) ? "#C9A84C" : "none"} stroke="#C9A84C" />
                   ))}
                 </div>
-                <span className="stat_value">{item.rating || 4.9}</span>
-                <span className="stat_reviews">({item.reviews || 45} reviews)</span>
+                <span className="stat_value">{item.rating}</span>
+                <span className="stat_reviews">({item.reviews} reviews)</span>
               </div>
+              )}
               <div className="stat_pill_v2">
                 <Clock size={14} />
                 <span className="stat_value">{item.prepTime || '18 MIN'}</span>
@@ -151,9 +157,10 @@ const MenuDetail = () => {
             <div className="dietary_row">
               <div className="dietary_pill_v2">
                 <Leaf size={12} />
-                <span>{item.dietary || 'VEGETARIAN'}</span>
+                <span>{'VEGETARIAN'}</span>
               </div>
             </div>
+          
 
             <div className="menu_detail_price_section">
               <span className="currency">₹</span>
@@ -207,3 +214,4 @@ const MenuDetail = () => {
 };
 
 export default MenuDetail;
+

@@ -113,6 +113,7 @@ export const paymentAPI = {
   getConfig: () => api.get('/payment/config'),
   createAdvanceIntent: (data) => api.post('/payment/reservation-advance-intent', data),
   completeAdvancePayment: (data) => api.post('/payment/reservation-advance-complete', data),
+  completeAdvanceDirect: (data) => api.post('/payment/reservation-advance-complete-direct', data),
   createBillIntent: (data) => api.post('/payment/bill-intent', data),
   completeBill: (data) => api.post('/payment/bill/complete', data),
   createPaymentIntent: (data) => api.post('/payment/create-payment-intent', data),

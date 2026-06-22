@@ -206,7 +206,7 @@ export default function Dashboard() {
         <Col xs={12} xl={8}>
           <div className="d-card h-100">
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <div>
+              <div style={{ textWrap : 'wrap' }}>
                 <div className="d-section-title">Live Orders</div>
                 <div className="d-section-sub">Tracking Café & Bar active sessions</div>
               </div>
@@ -221,7 +221,6 @@ export default function Dashboard() {
                     <th>Items</th>
                     <th>Amount</th>
                     <th>Status</th>
-                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -237,7 +236,6 @@ export default function Dashboard() {
                       <td style={{ color: 'var(--d-text-muted)' }}>{o.items}</td>
                       <td><strong>{o.amount}</strong></td>
                       <td><span className={`d-chip ${o.statusClass}`}>{o.status}</span></td>
-                      <td><button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--d-text-muted)' }}><MdMoreVert /></button></td>
                     </tr>
                   ))}
                 </tbody>

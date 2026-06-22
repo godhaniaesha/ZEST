@@ -64,13 +64,13 @@ const Menu = () => {
     .sort((a, b) => {
       if (sortBy === 'price-low') return a.price - b.price;
       if (sortBy === 'price-high') return b.price - a.price;
-      if (sortBy === 'rating') return b.rating - a.rating;
+      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       return 0;
     });
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage); 
 
   /* ── Handlers ── */
   const handleCategoryChange = (id) => { setActiveCategory(id); setCurrentPage(1); };
@@ -261,10 +261,12 @@ const Menu = () => {
                           <span className="x_menu_card_orig_price">₹{item.originalPrice}</span>
                         )}
                       </div>
-                      <div className="x_menu_card_rating">
-                        <Star size={14} fill="currentColor" />
-                        <span>{item.rating} ({item.reviews})</span>
-                      </div>
+                      {item.reviews > 0 && item.rating && (
+                        <div className="x_menu_card_rating">
+                          <Star size={14} fill="currentColor" />
+                          <span>{item.rating} ({item.reviews})</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </article>
