@@ -97,12 +97,13 @@ router.post('/', auth, async (req, res) => {
     const { staffId, date, status, checkIn, checkOut, notes } = req.body;
     console.log('Creating attendance - checkIn:', checkIn, 'checkOut:', checkOut);
 
-    // Check if user is trying to create their own attendance or is a manager/superadmin
-    const isOwnAttendance = req.user.id.toString() === staffId;
-    const isManager = req.user.role === 'manager' || req.user.role === 'superadmin';
+    // Check if user is authorized to set status
+    const canManageStatus = ['superadmin', 'manager'].includes(req.user.role);
+    let finalStatus = status;
     
-    if (!isOwnAttendance && !isManager) {
-      return res.status(403).json({ message: 'Access denied. You can only create your own attendance.' });
+    if (!canManageStatus) {
+      // For non-managers, default to present or keep existing logic
+      finalStatus = 'present';
     }
 
     // Get staff details
@@ -126,7 +127,7 @@ router.post('/', auth, async (req, res) => {
     }
 
     // Check if staff is on approved leave (only for present/absent status)
-    if (status === 'present' || status === 'absent') {
+    if (finalStatus === 'present' || finalStatus === 'absent') {
       const onLeave = await isStaffOnLeave(staffId, attendanceDate);
       if (onLeave) {
         return res.status(400).json({ message: 'Staff is on approved leave for this date' });
@@ -134,8 +135,7 @@ router.post('/', auth, async (req, res) => {
     }
 
     // Auto-detect late status if check-in time is provided and status is present - COMMENTED OUT as per user request
-    let finalStatus = status;
-    // if (status === 'present' && checkIn && isLateCheckIn(checkIn)) {
+    // if (finalStatus === 'present' && checkIn && isLateCheckIn(checkIn)) {
     //   finalStatus = 'late';
     // }
 
@@ -170,16 +170,17 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Attendance record not found' });
     }
 
-    // Check if user is trying to update their own attendance or is a manager/superadmin
-    const isOwnAttendance = req.user.id.toString() === existingAttendance.staffId.toString();
-    const isManager = req.user.role === 'manager' || req.user.role === 'superadmin';
+    // Check if user is authorized to set status
+    const canManageStatus = ['superadmin', 'manager'].includes(req.user.role);
     
-    if (!isOwnAttendance && !isManager) {
-      return res.status(403).json({ message: 'Access denied. You can only update your own attendance.' });
-    }
-
     // If staffId is being updated, get new staff details
     let updateData = { ...req.body };
+    
+    if (!canManageStatus) {
+      // For non-managers, keep the original status
+      updateData.status = existingAttendance.status;
+    }
+    
     if (staffId) {
       const staff = await User.findById(staffId);
       if (!staff) {
@@ -235,14 +236,6 @@ router.post('/mark-present/:staffId', auth, async (req, res) => {
     }
     
     console.log('Marking present for staffId:', req.params.staffId, 'on date:', attendanceDate);
-
-    // Check if user is trying to mark their own attendance or is a manager/superadmin
-    const isOwnAttendance = req.user.id.toString() === req.params.staffId;
-    const isManager = req.user.role === 'manager' || req.user.role === 'superadmin';
-    
-    if (!isOwnAttendance && !isManager) {
-      return res.status(403).json({ message: 'Access denied. You can only mark your own attendance.' });
-    }
 
     const staff = await User.findById(req.params.staffId);
     if (!staff) {
@@ -313,14 +306,6 @@ router.post('/mark-absent/:staffId', auth, async (req, res) => {
     }
     
     console.log('Marking absent for staffId:', req.params.staffId, 'on date:', attendanceDate);
-
-    // Check if user is trying to mark their own attendance or is a manager/superadmin
-    const isOwnAttendance = req.user.id.toString() === req.params.staffId;
-    const isManager = req.user.role === 'manager' || req.user.role === 'superadmin';
-    
-    if (!isOwnAttendance && !isManager) {
-      return res.status(403).json({ message: 'Access denied. You can only mark your own attendance.' });
-    }
 
     const staff = await User.findById(req.params.staffId);
     if (!staff) {
@@ -470,14 +455,6 @@ router.post('/auto-mark-leave/:staffId', auth, async (req, res) => {
     }
     
     console.log('Auto-marking leave for staffId:', req.params.staffId, 'on date:', attendanceDate);
-
-    // Check if user is trying to mark their own attendance or is a manager/superadmin
-    const isOwnAttendance = req.user.id.toString() === req.params.staffId;
-    const isManager = req.user.role === 'manager' || req.user.role === 'superadmin';
-    
-    if (!isOwnAttendance && !isManager) {
-      return res.status(403).json({ message: 'Access denied. You can only mark your own attendance.' });
-    }
 
     const staff = await User.findById(req.params.staffId);
     if (!staff) {

@@ -127,7 +127,7 @@ function UserLayout({ children }) {
       </main>
 
       <Footer />
-      
+
       {location.pathname !== "/profile" && (
         <RatingModal
           isOpen={showRatingModal}

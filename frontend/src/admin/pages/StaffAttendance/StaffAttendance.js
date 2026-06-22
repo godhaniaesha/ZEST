@@ -34,7 +34,7 @@ export default function StaffAttendance() {
 
   // Transform staff data from Redux to match component format
   const staffList = useMemo(() =>
-    staffRedux.filter(staff => staff.role !== 'customer' && staff.role !== 'superadmin').map(staff => ({
+    staffRedux.filter(staff => staff.role !== 'customer').map(staff => ({
       _id: staff._id,
       name: staff.name,
       role: staff.role,
@@ -46,26 +46,55 @@ export default function StaffAttendance() {
     }))
     , [staffRedux]);
 
+  // Generate last 30 days
+  const getLast30Days = () => {
+    const dates = [];
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    return dates;
+  };
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('Loading attendance for date:', selectedDate);
-      const attendanceRes = await attendanceAPI.getAll({ date: selectedDate });
-      console.log('Attendance response:', attendanceRes.data);
-      setAttendance(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
+      
+      // For non-full-managers, load last 30 days of their own attendance
+      if (!canFullManage) {
+        const last30Days = getLast30Days();
+        const startDate = last30Days[last30Days.length - 1];
+        const endDate = last30Days[0];
+        
+        const attendanceRes = await attendanceAPI.getAll({ 
+          startDate, 
+          endDate,
+          staffId: user._id 
+        });
+        
+        console.log('Attendance response (last 30 days):', attendanceRes.data);
+        setAttendance(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
+      } else {
+        // For full-managers, load attendance for the selected date
+        console.log('Loading attendance for date:', selectedDate);
+        const attendanceRes = await attendanceAPI.getAll({ date: selectedDate });
+        console.log('Attendance response:', attendanceRes.data);
+        setAttendance(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       setAttendance([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, canFullManage, user]);
 
   useEffect(() => {
     dispatch(fetchStaffUsers());
   }, [dispatch]);
 
-  // Load attendance when date changes
+  // Load attendance when date changes or for 30 days
   useEffect(() => {
     loadData();
   }, [selectedDate, loadData]);
@@ -97,10 +126,37 @@ export default function StaffAttendance() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]); // Only depend on selectedDate to prevent infinite loop
 
-  const filtered = attendance.filter(a =>
-    a.role !== 'superadmin' &&
-    (a.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.role.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Prepare data for display
+  const displayData = useMemo(() => {
+    if (canFullManage) {
+      // For full managers, show all staff for selected date
+      return staffList.map(staff => {
+        const attendanceRecord = attendance.find(a => a.staffId === staff._id);
+        if (attendanceRecord) {
+          return attendanceRecord;
+        }
+        return {
+          _id: `virtual-${staff._id}`,
+          staffId: staff._id,
+          staffName: staff.name,
+          role: staff.role,
+          date: selectedDate,
+          status: null,
+          checkIn: null,
+          checkOut: null,
+          notes: null,
+          isVirtual: true
+        };
+      });
+    } else {
+      // For non-full managers, show their own attendance for last 30 days
+      return attendance.map(a => a);
+    }
+  }, [canFullManage, staffList, attendance, selectedDate]);
+
+  const filtered = displayData.filter(item =>
+    (item.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getShiftTime = (shift) => {
@@ -304,14 +360,22 @@ export default function StaffAttendance() {
   };
 
   const getStats = () => {
-    const filteredAttendance = attendance.filter(a => a.role !== 'superadmin');
-    const total = filteredAttendance.length;
-    const present = filteredAttendance.filter(a => a.status === 'present').length;
-    const absent = filteredAttendance.filter(a => a.status === 'absent').length;
-    const late = filteredAttendance.filter(a => a.status === 'late').length;
-    const onLeave = filteredAttendance.filter(a => a.status === 'on-leave').length;
-
-    return { total, present, absent, late, onLeave };
+    if (canFullManage) {
+      const total = staffList.length;
+      const present = displayData.filter(a => a.status === 'present').length;
+      const absent = displayData.filter(a => a.status === 'absent').length;
+      const late = displayData.filter(a => a.status === 'late').length;
+      const onLeave = displayData.filter(a => a.status === 'on-leave').length;
+      return { total, present, absent, late, onLeave };
+    } else {
+      // For non-full-managers, show stats for last 30 days
+      const total = attendance.length;
+      const present = attendance.filter(a => a.status === 'present').length;
+      const absent = attendance.filter(a => a.status === 'absent').length;
+      const late = attendance.filter(a => a.status === 'late').length;
+      const onLeave = attendance.filter(a => a.status === 'on-leave').length;
+      return { total, present, absent, late, onLeave };
+    }
   };
 
   const stats = getStats();
@@ -323,7 +387,9 @@ export default function StaffAttendance() {
           <div className="d-page-heading d-flex align-items-center gap-2">
             <MdAccessTime /> Staff Attendance
           </div>
-          <div className="d-page-sub">Manage daily attendance of staff members</div>
+          <div className="d-page-sub">
+            {canFullManage ? 'Manage daily attendance of staff members' : 'View your attendance history for the last 30 days'}
+          </div>
         </div>
         <div className="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
           {canManageAttendance && (
@@ -361,7 +427,7 @@ export default function StaffAttendance() {
           ))
         ) : (
           [
-            { label: 'Total Staff', value: stats.total, icon: <MdPeople />, color: 'd-gold' },
+            { label: canFullManage ? 'Total Staff' : 'Total Records', value: stats.total, icon: <MdPeople />, color: 'd-gold' },
             { label: 'Present', value: stats.present, icon: <MdCheckCircle />, color: 'd-green' },
             { label: 'Absent', value: stats.absent, icon: <MdCancel />, color: 'd-red' },
             { label: 'Late', value: stats.late, icon: <MdCalendarToday />, color: 'd-blue' },
@@ -395,16 +461,18 @@ export default function StaffAttendance() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="d-d-navbar-search-box p-0">
-          <Form.Group className="mb-0">
-            <Form.Control
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={{ width: 'auto', height: '44px' }}
-            />
-          </Form.Group>
-        </div>
+        {canFullManage && (
+          <div className="d-d-navbar-search-box p-0">
+            <Form.Group className="mb-0">
+              <Form.Control
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                style={{ width: 'auto', height: '44px' }}
+              />
+            </Form.Group>
+          </div>
+        )}
       </div>
 
       <div className="d-card">
@@ -430,7 +498,9 @@ export default function StaffAttendance() {
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={canManageAttendance ? 7 : 6} className="text-center py-4 text-muted">No attendance records found</td>
+                  <td colSpan={canManageAttendance ? 7 : 6} className="text-center py-4 text-muted">
+                    {canFullManage ? 'No staff members found' : 'No attendance records found for the last 30 days'}
+                  </td>
                 </tr>
               ) : (
                 filtered.map((item) => (
@@ -452,22 +522,32 @@ export default function StaffAttendance() {
                     <td>{item.role}</td>
                     <td>{new Date(item.date).toLocaleDateString('en-IN')}</td>
                     <td>
-                      <span className={`d-chip ${item.status === 'present' ? 'd-chip-green' : item.status === 'absent' ? 'd-chip-red' : item.status === 'late' ? 'd-chip-gold' : 'd-chip-blue'}`} style={{ fontSize: '0.7rem' }}>
-                        {item.status.toUpperCase()}
-                      </span>
+                      {item.status ? (
+                        <span className={`d-chip ${item.status === 'present' ? 'd-chip-green' : item.status === 'absent' ? 'd-chip-red' : item.status === 'late' ? 'd-chip-gold' : 'd-chip-blue'}`} style={{ fontSize: '0.7rem' }}>
+                          {item.status.toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="d-chip" style={{ fontSize: '0.7rem', background: '#f3f4f6', color: '#6b7280' }}>
+                          NOT MARKED
+                        </span>
+                      )}
                     </td>
                     <td>{item.checkIn || '-'}</td>
                     <td>{item.checkOut || '-'}</td>
                     {canManageAttendance ? (
                       <td>
                         <div className="d-flex gap-1">
-                          <button className="d-navbar-icon-btn" onClick={() => handleEdit(item)}>
-                            <MdEdit />
-                          </button>
-                          {canFullManage && (
-                            <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(item)}>
-                              <MdDelete />
-                            </button>
+                          {!item.isVirtual && (
+                            <>
+                              <button className="d-navbar-icon-btn" onClick={() => handleEdit(item)}>
+                                <MdEdit />
+                              </button>
+                              {canFullManage && (
+                                <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(item)}>
+                                  <MdDelete />
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
@@ -482,11 +562,9 @@ export default function StaffAttendance() {
         </div>
       </div>
 
-      {canManageAttendance && (
+      {canManageAttendance && canFullManage && (
         <>
-          <h5 className="mt-5 mb-3">
-            {canFullManage ? 'Quick Actions - Mark Today\'s Attendance' : 'Mark Your Attendance'}
-          </h5>
+          <h5 className="mt-5 mb-3">Quick Actions - Mark Attendance</h5>
           <Row className="g-3">
             {loading ? (
               Array(6).fill(0).map((_, i) => (
@@ -500,7 +578,6 @@ export default function StaffAttendance() {
               ))
             ) : (
               staffList
-                .filter(staff => canFullManage || staff._id === user._id)
                 .map((staff) => {
                   const todayAttendance = attendance.find(a => a.staffId === staff._id && a.date === selectedDate);
                   const staffLeaveStatus = leaveStatus[staff._id] || { onLeave: false };
@@ -621,6 +698,7 @@ export default function StaffAttendance() {
               <Form.Select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                disabled={!canFullManage}
               >
                 <option value="present">Present</option>
                 <option value="absent">Absent</option>
@@ -628,6 +706,11 @@ export default function StaffAttendance() {
                 <option value="half-day">Half Day</option>
                 <option value="on-leave">On Leave</option>
               </Form.Select>
+              {!canFullManage && (
+                <Form.Text className="text-muted">
+                  Only Super Admin and Manager can edit status
+                </Form.Text>
+              )}
             </Form.Group>
           </Col>
           <Col xs={12} md={6}>
