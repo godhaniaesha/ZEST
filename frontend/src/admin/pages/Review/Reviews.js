@@ -117,7 +117,7 @@ export default function Reviews() {
                     </div>
                   </div>
                 </div>
-                <button className="d-btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Reply</button>
+                {/* <button className="d-btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Reply</button> */}
               </div>
               {r.review && (
                 <p style={{ 

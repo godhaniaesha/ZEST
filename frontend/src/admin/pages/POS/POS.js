@@ -498,7 +498,7 @@ export default function POS() {
                     opacity: 0.5,
                   }}
                 />
-                <p>
+                <p style={{ textWrap: "wrap" }}>
                   Select a table from the dropdown above to view and manage the
                   bill
                 </p>

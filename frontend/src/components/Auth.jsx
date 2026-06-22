@@ -75,7 +75,13 @@ export default function Auth() {
     setLoading(false);
     if (result.success) {
       toast("Welcome to the ZEST experience.");
-      navigate('/');
+      // Redirect non-customer users to admin panel
+      const userRole = localStorage.getItem('user_role');
+      if (userRole && userRole !== 'customer') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
     } else {
       setAlert({ type: "error", msg: result.message });
     }

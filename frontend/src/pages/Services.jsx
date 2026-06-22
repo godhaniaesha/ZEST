@@ -100,7 +100,7 @@ const Services = () => {
   return (
     <main className="x_services_page">
       <div className="x_services_glow x_services_glow_one" />
-      <div className="x_services_glow x_services_glow_two" />
+      {/* <div className="x_services_glow x_services_glow_two" /> */}
 
       {/* Hero Section */}
       <section className="x_services_hero container">

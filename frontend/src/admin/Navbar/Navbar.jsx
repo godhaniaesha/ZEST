@@ -168,6 +168,9 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
               <Link to="/admin/profile" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
                 <MdPerson /> Profile
               </Link>
+              <Link to="/" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
+                <MdPerson /> User Panel
+              </Link>
               {/* <Link to="/admin/settings" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
                 <MdSettings /> Settings
               </Link> */}

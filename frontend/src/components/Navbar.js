@@ -71,7 +71,6 @@ export default function Navbar() {
     { label: 'Menu', to: '/menu' },
     { label: 'Gallery', to: '/gallery' },
     { label: 'Contact', to: '/contactus' },
-    { label: user ? 'My Reservations' : 'Reservations', to: '/reservations' },
     ...(user ? [{ label: 'Profile', to: '/profile' }] : [{ label: 'Sign In', to: '/auth' }]),
   ];
 
@@ -167,10 +166,12 @@ export default function Navbar() {
                     <span className="x_navbar_dropdown_item_dot" />
                     My Profile
                   </Link>
-                  <Link to="/reservations" className="x_navbar_dropdown_item" role="menuitem" onClick={() => setProfileOpen(false)}>
-                    <span className="x_navbar_dropdown_item_dot" />
-                    My Reservations
-                  </Link>
+                  {user?.role && user.role !== 'customer' && (
+                    <Link to="/admin/dashboard" className="x_navbar_dropdown_item" role="menuitem" onClick={() => setProfileOpen(false)}>
+                      <span className="x_navbar_dropdown_item_dot" />
+                      Admin Panel
+                    </Link>
+                  )}
                   <div className="x_navbar_dropdown_divider" />
                   <button type="button" className="x_navbar_dropdown_item logout" role="menuitem" onClick={handleLogout}>
                     <span className="x_navbar_dropdown_item_dot" />
@@ -182,7 +183,8 @@ export default function Navbar() {
               <Link to="/auth" className="x_navbar_action_icon x_reservation-btn" onClick={closeOffcanvas}>
                 Sign In
               </Link>
-            )}
+            )
+            }
 
             <Link to="/reservations" className="x_reservation-btn">
               Reserve a Table

@@ -121,7 +121,7 @@ export default function TakeOrder() {
     <div className="d-pos-container">
       <Row className="g-4">
         {/* Left Side: Menu Selection */}
-        <Col xs={12} lg={8}>
+        <Col lg={12} xl={8}>
           <div className="d-page-header">
             <div>
             <div className="d-page-heading d-flex align-items-center gap-2">
@@ -226,7 +226,7 @@ export default function TakeOrder() {
         </Col>
 
         {/* Right Side: Order Summary / Cart */}
-        <Col xs={12} lg={4}>
+        <Col lg={12} xl={4}>
           <div className="d-pos-cart">
             <div className="d-pos-cart-header">
               <div className="d-section-title d-flex justify-content-between align-items-center mb-0">
@@ -282,12 +282,12 @@ export default function TakeOrder() {
               </div>
               
               <div className="d-flex gap-2">
-                <button className="d-btn-outline flex-grow-1" style={{ height: '52px', borderRadius: '12px' }}>
+                {/* <button className="d-btn-outline flex-grow-1" style={{ height: '52px', borderRadius: '12px' }}>
                   Hold
-                </button>
+                </button> */}
                 <button 
-                  className="d-btn-gold flex-grow-1" 
-                  style={{ height: '52px', borderRadius: '12px', fontWeight: 800 }}
+                  className="d-btn-outline flex-grow-1" 
+                  style={{ height: '50px', borderRadius: '12px', fontWeight: 800 }}
                   disabled={cart.length === 0 || !selectedTable}
                   onClick={handleSendToKitchen}
                 >

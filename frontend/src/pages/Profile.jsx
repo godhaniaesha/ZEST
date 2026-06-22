@@ -524,11 +524,11 @@ const Profile = () => {
                 <span>Security</span>
                 <ChevronRight className="x_arrow" size={18} />
               </button>
-              <button className={`x_profile_menu_item ${activeTab === "settings" ? "x_active" : ""}`} onClick={() => setActiveTab("settings")}>
+              {/* <button className={`x_profile_menu_item ${activeTab === "settings" ? "x_active" : ""}`} onClick={() => setActiveTab("settings")}>
                 <div className="x_menu_icon_wrap"><Settings size={20} /></div>
                 <span>Preferences</span>
                 <ChevronRight className="x_arrow" size={18} />
-              </button>
+              </button> */}
               <div className="x_menu_separator" />
               <button className="x_profile_menu_item x_logout_btn" onClick={handleLogout}>
                 <div className="x_menu_icon_wrap"><LogOut size={20} /></div>
@@ -645,7 +645,7 @@ const Profile = () => {
               </div>
             )}
 
-            {activeTab === "settings" && (
+            {/* {activeTab === "settings" && (
               <div className="x_profile_tab">
                 <div className="x_tab_header_simple">
                   <h2>Preferences</h2>
@@ -702,7 +702,7 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {activeTab === "bookings" && (
               <div className="x_profile_tab">
