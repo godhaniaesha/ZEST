@@ -668,6 +668,7 @@ body {
   overflow-wrap: anywhere;
   word-break: break-word;
   font-family: "Playfair Display", serif;
+  text-decoration: none;
 }
 
 .x_contact_info_subtext {
