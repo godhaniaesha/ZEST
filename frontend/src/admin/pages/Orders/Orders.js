@@ -14,6 +14,7 @@ const STATUS_MAP = {
   Pending: 'd-chip-blue',
   Paid: 'd-chip-green',
   Cancelled: 'd-chip-red',
+  Completed: 'd-chip-gray'
 };
 
 const ITEM_STATUS_MAP = {

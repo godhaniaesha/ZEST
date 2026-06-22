@@ -61,6 +61,18 @@ router.get('/', auth, authorizeRoles('manager', 'superadmin'), async (req, res) 
   }
 });
 
+router.get('/reservation/all', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
+  try {
+    const ratings = await ReservationRating.find()
+      .populate('userId', 'name email')
+      .populate('reservationId', 'customerName date time guests table')
+      .sort({ createdAt: -1 });
+    res.json(ratings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post('/reservation', auth, async (req, res) => {
   try {
     const { reservationId, rating, review, comment } = req.body;

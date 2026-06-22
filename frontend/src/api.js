@@ -75,6 +75,7 @@ export const ratingsAPI = {
   submit: (data) => api.post('/ratings', data),
   getPendingReservationRating: () => api.get('/ratings/reservation/pending'),
   submitReservation: (data) => api.post('/ratings/reservation', data),
+  getAllReservationRatings: () => api.get('/ratings/reservation/all'),
 };
 
 export const tablesAPI = {

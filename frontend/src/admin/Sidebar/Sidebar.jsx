@@ -55,7 +55,7 @@ const NAV_GROUPS = [
       { to: '/admin/menu', icon: <MdRestaurantMenu />, label: 'Menu Items', badge: null, roles: ['chef', 'manager', 'superadmin'] },
       { to: '/admin/bar', icon: <MdLocalBar />, label: 'Bar & Drinks', badge: null, roles: ['manager', 'superadmin'] },
       { to: '/admin/categories', icon: <MdLocalDining />, label: 'Categories & Cuisines', badge: null, roles: ['chef', 'manager', 'superadmin'] },
-      { to: '/admin/inventory', icon: <MdInventory2 />, label: 'Inventory Stock', roles: ['chef', 'manager', 'superadmin'] }
+      // { to: '/admin/inventory', icon: <MdInventory2 />, label: 'Inventory Stock', roles: ['chef', 'manager', 'superadmin'] }
     ]
   },
   {
