@@ -471,7 +471,7 @@ router.post('/auto-mark-leave/:staffId', auth, async (req, res) => {
     
     console.log('Auto-marking leave for staffId:', req.params.staffId, 'on date:', attendanceDate);
 
-    // Check if user is trying to mark their own attendance or is a manager/superadmin
+    // Check if user is trying   to mark their own attendance or is a manager/superadmin
     const isOwnAttendance = req.user.id.toString() === req.params.staffId;
     const isManager = req.user.role === 'manager' || req.user.role === 'superadmin';
     

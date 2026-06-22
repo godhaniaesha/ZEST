@@ -25,7 +25,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 export default function LeaveManagement() {
   const { user } = useAuth();
 
-  const isAdmin = user?.role === 'superadmin' || user?.role === 'manager';
+  const isAdmin = user?.role === "superadmin" || user?.role === "manager";
 
   const [leaves, setLeaves] = useState([]);
 
@@ -69,14 +69,25 @@ export default function LeaveManagement() {
     reason: "",
   });
 
+  const [startTime12, setStartTime12] = useState({
+    hour: "9",
+    minute: "00",
+    period: "AM",
+  });
+  const [endTime12, setEndTime12] = useState({
+    hour: "5",
+    minute: "00",
+    period: "PM",
+  });
+
   const loadData = async () => {
     try {
       setLoading(true);
 
-      const isAdmin = user?.role === 'superadmin' || user?.role === 'manager';
-      
+      const isAdmin = user?.role === "superadmin" || user?.role === "manager";
+
       const requests = [leaveAPI.getAll()];
-      
+
       // Only load staff list for admins
       if (isAdmin) {
         requests.push(usersAPI.getAll());
@@ -86,7 +97,7 @@ export default function LeaveManagement() {
       const leavesRes = responses[0];
       const staffRes = isAdmin ? responses[1] : null;
 
-      console.log('Leaves response:', leavesRes.data);
+      console.log("Leaves response:", leavesRes.data);
       setLeaves(Array.isArray(leavesRes.data) ? leavesRes.data : []);
 
       if (isAdmin && staffRes) {
@@ -94,7 +105,10 @@ export default function LeaveManagement() {
           Array.isArray(staffRes.data)
             ? staffRes.data
 
-                .filter((staff) => staff.role !== "customer" && staff.role !== "superadmin")
+                .filter(
+                  (staff) =>
+                    staff.role !== "customer" && staff.role !== "superadmin",
+                )
 
                 .map((staff) => ({
                   _id: staff._id,
@@ -102,6 +116,12 @@ export default function LeaveManagement() {
                   name: staff.name,
 
                   role: staff.role,
+
+                  shift: staff.shift || "Morning",
+
+                  shiftStart: staff.shiftStart || "11:00",
+
+                  shiftEnd: staff.shiftEnd || "18:00",
 
                   initials: staff.name
 
@@ -124,15 +144,24 @@ export default function LeaveManagement() {
       } else {
         // For non-admin users, just add themselves to staff list
         if (user) {
-          setStaffList([{
-            _id: user._id,
-            name: user.name,
-            role: user.role,
-            initials: user.name.split(" ").map((n) => n[0]).join("").toUpperCase(),
-            color: "#C9A84C",
-            leavesTotal: user.leavesTotal || 12,
-            leavesTaken: user.leavesTaken || 0,
-          }]);
+          setStaffList([
+            {
+              _id: user._id,
+              name: user.name,
+              role: user.role,
+              shift: user.shift || "Morning",
+              shiftStart: user.shiftStart || "11:00",
+              shiftEnd: user.shiftEnd || "18:00",
+              initials: user.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase(),
+              color: "#C9A84C",
+              leavesTotal: user.leavesTotal || 12,
+              leavesTaken: user.leavesTaken || 0,
+            },
+          ]);
         }
       }
     } catch (error) {
@@ -188,8 +217,37 @@ export default function LeaveManagement() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
+  const getShiftTime = (shift, shiftStart, shiftEnd) => {
+    return { start: shiftStart || "11:00", end: shiftEnd || "18:00" };
+  };
+
+  // Convert 24-hour format to 12-hour format components
+  const convertTo12Hour = (time24) => {
+    if (!time24) return { hour: "9", minute: "00", period: "AM" };
+    const [hours, minutes] = time24.split(":");
+    const hour = parseInt(hours);
+    const period = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return { hour: hour12.toString(), minute: minutes, period };
+  };
+
+  // Convert 12-hour format components to 24-hour format
+  const convertTo24Hour = (hour, minute, period) => {
+    let hour24 = parseInt(hour);
+    if (period === "PM" && hour24 !== 12) hour24 += 12;
+    if (period === "AM" && hour24 === 12) hour24 = 0;
+    return `${hour24.toString().padStart(2, "0")}:${minute}`;
+  };
+
   const handleAdd = () => {
     setCurrentItem(null);
+
+    // Get default times based on user's shift
+    const shiftTimes = getShiftTime(
+      user?.shift || "Morning",
+      user?.shiftStart,
+      user?.shiftEnd,
+    );
 
     setFormData({
       staffId: user?._id || "",
@@ -198,14 +256,18 @@ export default function LeaveManagement() {
 
       endDate: "",
 
-      startTime: "",
+      startTime: shiftTimes.start,
 
-      endTime: "",
+      endTime: shiftTimes.end,
 
       type: "sick",
 
       reason: "",
     });
+
+    // Set 12-hour format state
+    setStartTime12(convertTo12Hour(shiftTimes.start));
+    setEndTime12(convertTo12Hour(shiftTimes.end));
 
     setShowForm(true);
   };
@@ -213,21 +275,48 @@ export default function LeaveManagement() {
   const handleEdit = (item) => {
     setCurrentItem(item);
 
+    console.log("Editing leave item:", item);
+    console.log("startTime:", item.startTime, "endTime:", item.endTime);
+
+    // Format date for HTML date input (YYYY-MM-DD)
+    const formatDateForInput = (dateValue) => {
+      if (!dateValue) return "";
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return "";
+      return date.toISOString().split("T")[0];
+    };
+
+    // Get staff member's shift to set default times
+    const staff = staffList.find((s) => s._id === item.staffId);
+    const shiftTimes = getShiftTime(
+      staff?.shift || "Morning",
+      staff?.shiftStart,
+      staff?.shiftEnd,
+    );
+
+    // Use existing times if available, otherwise use shift defaults
+    const defaultStartTime = item.startTime || shiftTimes.start;
+    const defaultEndTime = item.endTime || shiftTimes.end;
+
     setFormData({
       staffId: item.staffId,
 
-      startDate: item.startDate,
+      startDate: formatDateForInput(item.startDate),
 
-      endDate: item.endDate,
+      endDate: formatDateForInput(item.endDate),
 
-      startTime: item.startTime || "",
+      startTime: defaultStartTime,
 
-      endTime: item.endTime || "",  
+      endTime: defaultEndTime,
 
       type: item.type,
 
       reason: item.reason,
     });
+
+    // Set 12-hour format state
+    setStartTime12(convertTo12Hour(defaultStartTime));
+    setEndTime12(convertTo12Hour(defaultEndTime));
 
     setShowForm(true);
   };
@@ -299,10 +388,28 @@ export default function LeaveManagement() {
         return;
       }
 
+      // Convert 12-hour format to 24-hour format for saving
+      const startTime24 = convertTo24Hour(
+        startTime12.hour,
+        startTime12.minute,
+        startTime12.period,
+      );
+      const endTime24 = convertTo24Hour(
+        endTime12.hour,
+        endTime12.minute,
+        endTime12.period,
+      );
+
+      const dataToSend = {
+        ...formData,
+        startTime: startTime24,
+        endTime: endTime24,
+      };
+
       if (currentItem) {
-        await leaveAPI.update(currentItem._id, formData);
+        await leaveAPI.update(currentItem._id, dataToSend);
       } else {
-        await leaveAPI.create(formData);
+        await leaveAPI.create(dataToSend);
       }
 
       setShowForm(false);
@@ -363,7 +470,7 @@ export default function LeaveManagement() {
         <div>
           <div className="d-page-heading d-flex align-items-center gap-2">
             <MdEvent /> Leave Management
-          </div>  
+          </div>
 
           <div className="d-page-sub">
             Manage staff leave requests and approvals
@@ -744,7 +851,10 @@ export default function LeaveManagement() {
                         )}
 
                         {/* Non-admin users can only edit their own pending leaves */}
-                        {(!isAdmin && item.staffId === user._id && item.status === "pending") || isAdmin ? (
+                        {(!isAdmin &&
+                          item.staffId === user._id &&
+                          item.status === "pending") ||
+                        isAdmin ? (
                           <button
                             className="d-navbar-icon-btn"
                             onClick={() => handleEdit(item)}
@@ -776,7 +886,9 @@ export default function LeaveManagement() {
       {filtered.length > 0 && (
         <div className="d-flex justify-content-between align-items-center mt-3">
           <div className="text-muted small">
-            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filtered.length)} of {filtered.length} entries
+            Showing {indexOfFirstItem + 1} to{" "}
+            {Math.min(indexOfLastItem, filtered.length)} of {filtered.length}{" "}
+            entries
           </div>
           <div className="d-flex gap-2">
             <button
@@ -788,16 +900,22 @@ export default function LeaveManagement() {
               Previous
             </button>
             <div className="d-flex align-items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-                <button
-                  key={pageNumber}
-                  className={`d-btn-outline ${currentPage === pageNumber ? "d-btn-gold" : ""}`}
-                  onClick={() => handlePageChange(pageNumber)}
-                  style={{ padding: "6px 12px", fontSize: "0.8rem", minWidth: "40px" }}
-                >
-                  {pageNumber}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    className={`d-btn-outline ${currentPage === pageNumber ? "d-btn-gold" : ""}`}
+                    onClick={() => handlePageChange(pageNumber)}
+                    style={{
+                      padding: "6px 12px",
+                      fontSize: "0.8rem",
+                      minWidth: "40px",
+                    }}
+                  >
+                    {pageNumber}
+                  </button>
+                ),
+              )}
             </div>
             <button
               className="d-btn-outline"
@@ -867,13 +985,44 @@ export default function LeaveManagement() {
             <Form.Group>
               <Form.Label className="small fw-bold">Start Time</Form.Label>
 
-              <Form.Control
-                type="time"
-                value={formData.startTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, startTime: e.target.value })
-                }
-              />
+              <div className="d-flex gap-2">
+                <Form.Select
+                  style={{ width: "80px" }}
+                  value={startTime12.hour}
+                  onChange={(e) =>
+                    setStartTime12({ ...startTime12, hour: e.target.value })
+                  }
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                    <option key={h} value={h.toString()}>
+                      {h}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Select
+                  style={{ width: "80px" }}
+                  value={startTime12.minute}
+                  onChange={(e) =>
+                    setStartTime12({ ...startTime12, minute: e.target.value })
+                  }
+                >
+                  {["00", "15", "30", "45"].map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Select
+                  style={{ width: "80px" }}
+                  value={startTime12.period}
+                  onChange={(e) =>
+                    setStartTime12({ ...startTime12, period: e.target.value })
+                  }
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </Form.Select>
+              </div>
             </Form.Group>
           </Col>
 
@@ -881,13 +1030,44 @@ export default function LeaveManagement() {
             <Form.Group>
               <Form.Label className="small fw-bold">End Time</Form.Label>
 
-              <Form.Control
-                type="time"
-                value={formData.endTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, endTime: e.target.value })
-                }
-              />
+              <div className="d-flex gap-2">
+                <Form.Select
+                  style={{ width: "80px" }}
+                  value={endTime12.hour}
+                  onChange={(e) =>
+                    setEndTime12({ ...endTime12, hour: e.target.value })
+                  }
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                    <option key={h} value={h.toString()}>
+                      {h}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Select
+                  style={{ width: "80px" }}
+                  value={endTime12.minute}
+                  onChange={(e) =>
+                    setEndTime12({ ...endTime12, minute: e.target.value })
+                  }
+                >
+                  {["00", "15", "30", "45"].map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Select
+                  style={{ width: "80px" }}
+                  value={endTime12.period}
+                  onChange={(e) =>
+                    setEndTime12({ ...endTime12, period: e.target.value })
+                  }
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </Form.Select>
+              </div>
             </Form.Group>
           </Col>
 
@@ -956,7 +1136,7 @@ export default function LeaveManagement() {
           />
         </Form.Group>
       </FormModal>
- 
+
       {/* Delete Modal */}
 
       <DeleteModal

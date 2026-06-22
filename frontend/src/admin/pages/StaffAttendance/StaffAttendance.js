@@ -33,12 +33,14 @@ export default function StaffAttendance() {
   const [formData, setFormData] = useState({ staffId: '', date: selectedDate, status: 'present', checkIn: '', checkOut: '' });
 
   // Transform staff data from Redux to match component format
-  const staffList = useMemo(() => 
+  const staffList = useMemo(() =>
     staffRedux.filter(staff => staff.role !== 'customer' && staff.role !== 'superadmin').map(staff => ({
       _id: staff._id,
       name: staff.name,
       role: staff.role,
       shift: staff.shift || 'Morning',
+      shiftStart: staff.shiftStart || '11:00',
+      shiftEnd: staff.shiftEnd || '18:00',
       initials: staff.name.split(' ').map(n => n[0]).join('').toUpperCase(),
       color: '#C9A84C',
       leavesTotal: staff.leavesTotal || 12,
@@ -103,31 +105,30 @@ export default function StaffAttendance() {
     a.role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const getShiftTime = (shift) => {
-    switch(shift) {
-      case 'Morning':
-        return '09:00';
-      case 'Evening':
-        return '17:00';
-      case 'Both':
-        return '09:00';
-      default:
-        return '09:00';
-    }
+  const getShiftTime = (shift, shiftStart) => {
+    return shiftStart || '09:00';
   };
 
   const handleAdd = () => {
     setCurrentItem(null);
     // Pre-select current user for non-managers
     const initialStaffId = canFullManage ? '' : user._id;
-    const initialCheckIn = canFullManage ? '' : getShiftTime(user?.shift || 'Morning');
-    
-    setFormData({ 
-      staffId: initialStaffId, 
-      date: selectedDate, 
-      status: 'present', 
-      checkIn: initialCheckIn, 
-      checkOut: '' 
+    const initialCheckIn = canFullManage ? '' : getShiftTime(user?.shift || 'Morning', user?.shiftStart);
+
+    // Format date for HTML date input (YYYY-MM-DD)
+    const formatDateForInput = (dateValue) => {
+      if (!dateValue) return '';
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    };
+
+    setFormData({
+      staffId: initialStaffId,
+      date: formatDateForInput(selectedDate),
+      status: 'present',
+      checkIn: initialCheckIn,
+      checkOut: ''
     });
     setShowForm(true);
   };
@@ -135,11 +136,11 @@ export default function StaffAttendance() {
   const handleStaffChange = (staffId) => {
     const selectedStaff = staffList.find(staff => staff._id === staffId);
     if (selectedStaff) {
-      const defaultCheckIn = getShiftTime(selectedStaff.shift);
-      setFormData({ 
-        ...formData, 
-        staffId, 
-        checkIn: defaultCheckIn 
+      const defaultCheckIn = getShiftTime(selectedStaff.shift, selectedStaff.shiftStart);
+      setFormData({
+        ...formData,
+        staffId,
+        checkIn: defaultCheckIn
       });
     } else {
       setFormData({ ...formData, staffId, checkIn: '' });
@@ -155,10 +156,19 @@ export default function StaffAttendance() {
 
     setCurrentItem(item);
     const staff = staffList.find(s => s._id === item.staffId);
-    const defaultCheckIn = item.checkIn || (staff ? getShiftTime(staff.shift) : '');
+    const defaultCheckIn = item.checkIn || (staff ? getShiftTime(staff.shift, staff.shiftStart) : '');
+
+    // Format date for HTML date input (YYYY-MM-DD)
+    const formatDateForInput = (dateValue) => {
+      if (!dateValue) return '';
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    };
+
     setFormData({
       staffId: item.staffId,
-      date: item.date,
+      date: formatDateForInput(item.date),
       status: item.status,
       checkIn: defaultCheckIn,
       checkOut: item.checkOut || ''
@@ -337,9 +347,9 @@ export default function StaffAttendance() {
           {canManageAttendance && (
             <button className="d-btn-gold" onClick={handleAdd}><MdEdit /> Add Attendance</button>
           )}
-          {canFullManage && (
+          {/* {canFullManage && (
             <button className="d-btn-outline" onClick={handleUpdateLateToPresent}>Update Late to Present</button>
-          )}
+          )} */}
         </div>
       </div>
 
@@ -398,7 +408,7 @@ export default function StaffAttendance() {
                 <th>Role</th>
                 <th>Date</th>
                 <th>Status</th>
-                <th>Check In</th>
+                <th>Check In</th> 
                 <th>Check Out</th>
                 {canManageAttendance && <th>Actions</th>}
               </tr>
