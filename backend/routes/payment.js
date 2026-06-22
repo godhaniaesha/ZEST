@@ -37,15 +37,6 @@ const createPaymentIntent = async (amount, paymentMethod) => {
     payment_method_types: paymentMethod === "UPI" ? ["upi"] : ["card"],
   };
 
-  // Add UPI-specific configuration
-  if (paymentMethod === "UPI") {
-    paymentIntentConfig.payment_method_options = {
-      upi: {
-        customer_reference: "ZEST_CAFE_BILL",
-      },
-    };
-  }
-
   return stripe.paymentIntents.create(paymentIntentConfig);
 };
 
@@ -138,6 +129,39 @@ router.post("/reservation-advance-complete", async (req, res) => {
   }
 });
 
+// Complete advance payment without Stripe (for UPI/Cash in admin)
+router.post("/reservation-advance-complete-direct", auth, async (req, res) => {
+  try {
+    const { paymentMethod, upiVpa } = req.body;
+
+    if (paymentMethod !== "UPI") {
+      return res.status(400).json({ message: "This endpoint is for UPI payments only." });
+    }
+
+    if (!upiVpa) {
+      return res.status(400).json({ message: "UPI VPA is required." });
+    }
+
+    // Create payment record directly without Stripe
+    const payment = await Payment.create({
+      paymentType: "Advance",
+      paymentMethod: "UPI",
+      status: "Succeeded",
+      amount: ADVANCE_AMOUNT,
+    });
+
+    res.json({
+      success: true,
+      paymentIntentId: payment._id,
+      amount: ADVANCE_AMOUNT,
+      message: "Advance payment completed successfully.",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.post("/bill-intent", auth, async (req, res) => {
   try {
     const { reservationId, subtotal, tax, paymentMethod } = req.body;
@@ -190,7 +214,7 @@ router.post("/bill-intent", auth, async (req, res) => {
 
 router.post("/bill/complete", auth, async (req, res) => {
   try {
-    const { reservationId, orderIds, paymentIntentId, subtotal, tax } = req.body;
+    const { reservationId, orderIds, paymentIntentId, subtotal, tax, paymentMethod } = req.body;
 
     if (!reservationId) {
       return res.status(400).json({ message: "Reservation is required." });
@@ -227,6 +251,44 @@ router.post("/bill/complete", auth, async (req, res) => {
         grossTotal,
         finalAmount: 0,
         message: "Bill settled. Advance payment covered the full amount.",
+      });
+    }
+
+    // Handle UPI payments without Stripe verification
+    if (paymentMethod === "UPI") {
+      const primaryOrderId = Array.isArray(orderIds) ? orderIds[0] : null;
+
+      await Payment.create({
+        orderId: primaryOrderId,
+        reservationId,
+        amount: finalAmount,
+        advanceDeducted,
+        paymentMethod: "UPI",
+        paymentType: "Bill",
+        status: "Succeeded",
+      });
+
+      if (Array.isArray(orderIds) && orderIds.length) {
+        await Order.updateMany({ _id: { $in: orderIds } }, { status: "Paid" });
+      }
+
+      await Reservation.findByIdAndUpdate(reservationId, {
+        fullPaymentDone: true,
+        status: "Completed",
+      });
+
+      if (reservation.table) {
+        const Table = require("../models/Table");
+        await Table.findByIdAndUpdate(reservation.table, { status: "Free" });
+      }
+
+      return res.json({
+        success: true,
+        amountPaid: finalAmount,
+        advanceDeducted,
+        grossTotal,
+        finalAmount,
+        message: "UPI payment completed successfully.",
       });
     }
 

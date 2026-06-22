@@ -52,21 +52,72 @@ export default function Users() {
 
   const handleSave = async (formData) => {
     // Validation
-    if (!formData.name || !formData.email) {
-      alert('Please fill in all required fields');
+    if (!formData.name || !formData.name.trim()) {
+      alert('Please enter a valid name');
       return;
+    }
+
+    if (!formData.email || !formData.email.trim()) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert('Please enter a valid email format (e.g., user@example.com)');
+      return;
+    }
+
+    // Phone validation (if provided)
+    if (formData.phone && formData.phone.trim()) {
+      const phoneRegex = /^[0-9]{10}$/;
+      if (!phoneRegex.test(formData.phone.replace(/\D/g, ''))) {
+        alert('Please enter a valid 10-digit phone number');
+        return;
+      }
     }
 
     // Password validation for new users
     if (!currentItem) {
       if (!formData.password || formData.password.length < 6) {
-        alert('Please enter a password (minimum 6 characters)');
+        alert('Password must be at least 6 characters long');
         return;
       }
       if (formData.password !== formData.confirmPassword) {
         alert('Passwords do not match');
         return;
       }
+    }
+
+    // Password validation for existing users (if changing password)
+    if (currentItem && formData.password && formData.password.trim()) {
+      if (formData.password.length < 6) {
+        alert('Password must be at least 6 characters long');
+        return;
+      }
+    }
+
+    // Salary validation (if provided)
+    if (formData.salary && formData.salary < 0) {
+      alert('Salary cannot be negative');
+      return;
+    }
+
+    // Leaves validation
+    if (formData.leavesTaken < 0) {
+      alert('Leaves taken cannot be negative');
+      return;
+    }
+
+    if (formData.leavesTotal < 0) {
+      alert('Total leaves cannot be negative');
+      return;
+    }
+
+    if (formData.leavesTaken > formData.leavesTotal) {
+      alert('Leaves taken cannot exceed total leaves');
+      return;
     }
 
     try {
@@ -93,11 +144,11 @@ export default function Users() {
   };
 
   const formFields = [
-    { name: 'name', label: 'Full Name', type: 'text', required: true, col: 12 },
-    { name: 'email', label: 'Email Address', type: 'email', required: true, col: 6 },
-    { name: 'phone', label: 'Phone Number', type: 'text', col: 6 },
-    { name: 'address', label: 'Address', type: 'text', col: 12 },
-    { name: 'role', label: 'Role', type: 'select', required: true, col: 6, options: [
+    { name: 'name', label: 'Full Name', type: 'text', required: true, col: 12, placeholder: 'Enter full name' },
+    { name: 'email', label: 'Email Address', type: 'email', required: true, col: 6, placeholder: 'Enter email address' },
+    { name: 'phone', label: 'Phone Number', type: 'text', col: 6, placeholder: 'Enter phone number' },
+    { name: 'address', label: 'Address', type: 'text', col: 12, placeholder: 'Enter address' },
+    { name: 'role', label: 'Role', type: 'select', required: true, col: 6, placeholder: 'Select role', options: [
       { label: 'Super Admin', value: 'superadmin' },
       { label: 'Manager', value: 'manager' },
       { label: 'Chef', value: 'chef' },
@@ -105,22 +156,22 @@ export default function Users() {
       { label: 'Cashier', value: 'cashier' },
       { label: 'Customer', value: 'customer' }
     ] },
-    { name: 'status', label: 'Status', type: 'select', required: true, col: 6, options: [
+    { name: 'status', label: 'Status', type: 'select', required: true, col: 6, placeholder: 'Select status', options: [
       { label: 'Active', value: 'Active' },
       { label: 'Inactive', value: 'Inactive' },
       { label: 'On Duty', value: 'On Duty' }
     ] },
-    { name: 'shift', label: 'Shift', type: 'select', required: true, col: 6, options: [
+    { name: 'shift', label: 'Shift', type: 'select', required: true, col: 6, placeholder: 'Select shift', options: [
       { label: 'Morning', value: 'Morning' },
       { label: 'Evening', value: 'Evening' },
       { label: 'Both', value: 'Both' }
     ] },
-    { name: 'salary', label: 'Salary (₹)', type: 'number', col: 4 },
-    { name: 'leavesTaken', label: 'Leaves Taken', type: 'number', col: 4, min: 0 },
-    { name: 'leavesTotal', label: 'Total Leaves', type: 'number', col: 4, min: 0 },
-    { name: 'joiningDate', label: 'Joining Date', type: 'date', col: 6 },
-    { name: 'password', label: currentItem ? 'Password (leave empty to keep current)' : 'Password', type: 'password', required: !currentItem, col: 6 },
-    ...(!currentItem ? [{ name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true, col: 6 }] : []),
+    { name: 'salary', label: 'Salary (₹)', type: 'number', col: 4, placeholder: 'Enter salary' },
+    { name: 'leavesTaken', label: 'Leaves Taken', type: 'number', col: 4, min: 0, placeholder: '0' },
+    { name: 'leavesTotal', label: 'Total Leaves', type: 'number', col: 4, min: 0, placeholder: '12' },
+    { name: 'joiningDate', label: 'Joining Date', type: 'date', col: 6, placeholder: 'Select joining date' },
+    { name: 'password', label: currentItem ? 'Password (leave empty to keep current)' : 'Password', type: 'password', required: !currentItem, col: 6, placeholder: currentItem ? 'Leave empty to keep current' : 'Enter password' },
+    ...(!currentItem ? [{ name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true, col: 6, placeholder: 'Confirm password' }] : []),
   ];
 
   return (

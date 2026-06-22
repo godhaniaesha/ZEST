@@ -240,6 +240,55 @@ export default function StaffAttendance() {
         return;
       }
 
+      // Date validation
+      if (!formData.date) {
+        alert('Please select a date');
+        return;
+      }
+
+      // Validate date is not in the future (for attendance marking)
+      const selectedDate = new Date(formData.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate > today) {
+        alert('Cannot mark attendance for future dates');
+        return;
+      }
+
+      // Status validation
+      if (!formData.status) {
+        alert('Please select a status');
+        return;
+      }
+
+      // Check In validation (time format)
+      if (formData.checkIn && formData.checkIn.trim()) {
+        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timeRegex.test(formData.checkIn)) {
+          alert('Please enter a valid check-in time (HH:MM format)');
+          return;
+        }
+      }
+
+      // Check Out validation (time format)
+      if (formData.checkOut && formData.checkOut.trim()) {
+        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timeRegex.test(formData.checkOut)) {
+          alert('Please enter a valid check-out time (HH:MM format)');
+          return;
+        }
+      }
+
+      // Validate check-out is after check-in
+      if (formData.checkIn && formData.checkOut) {
+        const checkInTime = new Date(`2000-01-01T${formData.checkIn}`);
+        const checkOutTime = new Date(`2000-01-01T${formData.checkOut}`);
+        if (checkOutTime <= checkInTime) {
+          alert('Check-out time must be after check-in time');
+          return;
+        }
+      }
+
       // Non-managers can only edit their own attendance
       if (!canFullManage && currentItem && currentItem.staffId !== user._id) {
         alert('You can only edit your own attendance');

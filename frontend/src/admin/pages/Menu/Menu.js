@@ -111,15 +111,95 @@ export default function Menu() {
 
   const handleSave = async () => {
     try {
-      // Validation
-      if (!formData.name || !formData.price || !formData.category) {
-        alert('Please fill in all required fields (Name, Price, Category)');
+      // Name validation
+      if (!formData.name || !formData.name.trim()) {
+        alert('Please enter an item name');
         return;
       }
 
-      if (parseFloat(formData.price) <= 0) {
+      if (formData.name.length < 3) {
+        alert('Item name must be at least 3 characters long');
+        return;
+      }
+
+      if (formData.name.length > 100) {
+        alert('Item name must not exceed 100 characters');
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9\s\-.,'&]+$/.test(formData.name)) {
+        alert('Item name can only contain letters, numbers, spaces, and basic punctuation');
+        return;
+      }
+
+      // Category validation
+      if (!formData.category) {
+        alert('Please select a category');
+        return;
+      }
+
+      // Price validation
+      if (!formData.price || formData.price === '') {
+        alert('Please enter a price');
+        return;
+      }
+
+      const price = parseFloat(formData.price);
+
+      if (isNaN(price)) {
+        alert('Price must be a valid number');
+        return;
+      }
+
+      if (price <= 0) {
         alert('Price must be greater than 0');
         return;
+      }
+
+      if (price > 999999) {
+        alert('Price must not exceed 999,999');
+        return;
+      }
+
+      if (!/^\d+(\.\d{1,2})?$/.test(formData.price.toString())) {
+        alert('Price can have at most 2 decimal places');
+        return;
+      }
+
+      // Prep time validation
+      if (formData.prepTime && formData.prepTime !== '') {
+        const prepTime = parseInt(formData.prepTime, 10);
+
+        if (isNaN(prepTime)) {
+          alert('Prep time must be a valid number');
+          return;
+        }
+
+        if (prepTime < 0) {
+          alert('Prep time cannot be negative');
+          return;
+        }
+
+        if (prepTime > 180) {
+          alert('Prep time must not exceed 180 minutes');
+          return;
+        }
+      }
+
+      // Description validation (if provided)
+      if (formData.description && formData.description.trim()) {
+        if (formData.description.length > 500) {
+          alert('Description must not exceed 500 characters');
+          return;
+        }
+      }
+
+      // Ingredients validation (if provided)
+      if (formData.ingredients && formData.ingredients.trim()) {
+        if (formData.ingredients.length > 1000) {
+          alert('Ingredients must not exceed 1000 characters');
+          return;
+        }
       }
 
       const categoryData = categories.find(
@@ -340,6 +420,8 @@ export default function Menu() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                minLength={3}
+                maxLength={100}
               />
             </Form.Group>
           </Col>
@@ -387,6 +469,9 @@ export default function Menu() {
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 required
+                min={0}
+                max={999999}
+                step="0.01"
               />
             </Form.Group>
           </Col>
@@ -398,6 +483,8 @@ export default function Menu() {
                 placeholder="15"
                 value={formData.prepTime}
                 onChange={(e) => setFormData({ ...formData, prepTime: parseInt(e.target.value) || 15 })}
+                min={0}
+                max={180}
               />
             </Form.Group>
           </Col>
@@ -422,6 +509,7 @@ export default function Menu() {
                 placeholder="Brief description of the item..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                maxLength={500}
               />
             </Form.Group>
           </Col>
@@ -434,6 +522,7 @@ export default function Menu() {
                 placeholder="List of ingredients..."
                 value={formData.ingredients}
                 onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
+                maxLength={1000}
               />
             </Form.Group>
           </Col>

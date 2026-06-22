@@ -104,9 +104,33 @@ export default function Categories() {
   };
 
   const handleSave = async () => {
-    if (!formData.name) {
-      alert('Please fill in the name');
+    // Name validation
+    if (!formData.name || !formData.name.trim()) {
+      alert('Please enter a name');
       return;
+    }
+
+    if (formData.name.length < 2) {
+      alert('Name must be at least 2 characters long');
+      return;
+    }
+
+    if (formData.name.length > 50) {
+      alert('Name must not exceed 50 characters');
+      return;
+    }
+
+    if (!/^[a-zA-Z\s\-']+$/.test(formData.name)) {
+      alert('Name can only contain letters, spaces, hyphens, and apostrophes');
+      return;
+    }
+
+    // Description validation (if provided)
+    if (formData.description && formData.description.trim()) {
+      if (formData.description.length > 500) {
+        alert('Description must not exceed 500 characters');
+        return;
+      }
     }
 
     const data = new FormData();
@@ -338,6 +362,8 @@ export default function Categories() {
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
+            minLength={2}
+            maxLength={50}
           />
         </Form.Group>
         <Form.Group className="mb-3">
@@ -348,6 +374,7 @@ export default function Categories() {
             placeholder="Enter description..."
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            maxLength={500}
           />
         </Form.Group>
         <Form.Group className="mb-3">

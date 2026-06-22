@@ -100,14 +100,66 @@ export default function Tables() {
   };
 
   const handleSave = async (formData) => {
-    if (!formData.number || !formData.capacity || !formData.type || !formData.location || !formData.status) {
-      alert('Please fill in all required fields');
+    // Table number validation
+    if (!formData.number || formData.number === '') {
+      alert('Please enter a table number');
       return;
     }
-    if (parseInt(formData.capacity) <= 0 || parseInt(formData.capacity) > 50) {
-      alert('Capacity must be between 1 and 50');
+
+    if (!/^\d+$/.test(formData.number.toString())) {
+      alert('Table number must be a positive integer');
       return;
     }
+
+    if (parseInt(formData.number) <= 0) {
+      alert('Table number must be greater than 0');
+      return;
+    }
+
+    if (parseInt(formData.number) > 999) {
+      alert('Table number must not exceed 999');
+      return;
+    }
+
+    // Capacity validation
+    if (!formData.capacity || formData.capacity === '') {
+      alert('Please enter capacity');
+      return;
+    }
+
+    if (!/^\d+$/.test(formData.capacity.toString())) {
+      alert('Capacity must be a positive integer');
+      return;
+    }
+
+    if (parseInt(formData.capacity) <= 0) {
+      alert('Capacity must be greater than 0');
+      return;
+    }
+
+    if (parseInt(formData.capacity) > 50) {
+      alert('Capacity must not exceed 50');
+      return;
+    }
+
+    // Type validation
+    if (!formData.type) {
+      alert('Please select a table type');
+      return;
+    }
+
+    // Location validation
+    if (!formData.location) {
+      alert('Please select a location');
+      return;
+    }
+
+    // Status validation
+    if (!formData.status) {
+      alert('Please select a status');
+      return;
+    }
+
     try {
       if (currentItem) {
         await tablesAPI.update(currentItem._id, formData);
@@ -151,11 +203,11 @@ export default function Tables() {
   };
 
   const formFields = [
-    { name: 'number', label: 'Table Number', type: 'number', required: true, col: 6 },
-    { name: 'capacity', label: 'Capacity', type: 'number', required: true, col: 6, min: 1, max: 20 },
-    { name: 'type', label: 'Type', type: 'select', required: true, col: 6, options: TABLE_TYPES.filter(c => c !== 'All').map(c => ({ label: c, value: c })) },
-    { name: 'location', label: 'Location', type: 'select', required: true, col: 6, options: LOCATIONS.map(c => ({ label: c, value: c })) },
-    { name: 'status', label: 'Status', type: 'select', required: true, col: 12, options: STATUSES.filter(c => c !== 'All').map(c => ({ label: c, value: c })) },
+    { name: 'number', label: 'Table Number', type: 'number', required: true, col: 6, min: 1, max: 999, placeholder: 'Enter table number' },
+    { name: 'capacity', label: 'Capacity', type: 'number', required: true, col: 6, min: 1, max: 50, placeholder: 'Enter capacity' },
+    { name: 'type', label: 'Type', type: 'select', required: true, col: 6, placeholder: 'Select type', options: TABLE_TYPES.filter(c => c !== 'All').map(c => ({ label: c, value: c })) },
+    { name: 'location', label: 'Location', type: 'select', required: true, col: 6, placeholder: 'Select location', options: LOCATIONS.map(c => ({ label: c, value: c })) },
+    { name: 'status', label: 'Status', type: 'select', required: true, col: 12, placeholder: 'Select status', options: STATUSES.filter(c => c !== 'All').map(c => ({ label: c, value: c })) },
   ];
 
   return (

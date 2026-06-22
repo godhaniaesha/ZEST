@@ -23,10 +23,10 @@ const FORM_SKIP_KEYS = ['_id', '__v', 'createdAt', 'updatedAt'];
 
 
 const GALLERY_FORM_FIELDS = [
-  { name: 'title', label: 'Title *', type: 'text', required: true, col: 12, placeholder: 'e.g. Creamy Mushroom Pasta' },
+  { name: 'title', label: 'Title *', type: 'text', required: true, col: 12, placeholder: 'e.g. Creamy Mushroom Pasta', minLength: 3, maxLength: 100 },
   { name: 'category', label: 'Category *', type: 'select', required: true, col: 6, options: CATEGORIES.filter(c => c.name !== 'All').map(c => ({ label: c.name.charAt(0).toUpperCase() + c.name.slice(1), value: c.name })) },
-  { name: 'tag', label: 'Tag *', type: 'text', required: true, col: 6, placeholder: 'e.g. Mains' },
-  { name: 'description', label: 'Description *', type: 'textarea', required: true, col: 12, placeholder: 'Brief description of the gallery item...' },
+  { name: 'tag', label: 'Tag *', type: 'text', required: true, col: 6, placeholder: 'e.g. Mains', minLength: 2, maxLength: 30 },
+  { name: 'description', label: 'Description *', type: 'textarea', required: true, col: 12, placeholder: 'Brief description of the gallery item...', minLength: 10, maxLength: 500 },
   { name: 'image', label: 'Image *', type: 'file', col: 12, required: true },
   { name: 'featured', label: 'Featured Item', type: 'checkbox', col: 12 },
 ];
@@ -117,8 +117,72 @@ export default function GalleryManagement() {
   const handleSave = async (data, fileData) => {
     try {
       // Validation
-      if (!data.title || !data.category || !data.tag || !data.description) {
-        alert('Please fill in all required fields (Title, Category, Tag, Description)');
+      if (!data.title || !data.title.trim()) {
+        alert('Please enter a title');
+        return;
+      }
+
+      // Title validation - text only, length
+      if (data.title.length < 3) {
+        alert('Title must be at least 3 characters long');
+        return;
+      }
+
+      if (data.title.length > 100) {
+        alert('Title must not exceed 100 characters');
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9\s\-.,'&]+$/.test(data.title)) {
+        alert('Title can only contain letters, numbers, spaces, and basic punctuation');
+        return;
+      }
+
+      if (!data.category) {
+        alert('Please select a category');
+        return;
+      }
+
+      if (!data.tag || !data.tag.trim()) {
+        alert('Please enter a tag');
+        return;
+      }
+
+      // Tag validation - text only, length
+      if (data.tag.length < 2) {
+        alert('Tag must be at least 2 characters long');
+        return;
+      }
+
+      if (data.tag.length > 30) {
+        alert('Tag must not exceed 30 characters');
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9\s\-]+$/.test(data.tag)) {
+        alert('Tag can only contain letters, numbers, spaces, and hyphens');
+        return;
+      }
+
+      if (!data.description || !data.description.trim()) {
+        alert('Please enter a description');
+        return;
+      }
+
+      // Description validation - length
+      if (data.description.length < 10) {
+        alert('Description must be at least 10 characters long');
+        return;
+      }
+
+      if (data.description.length > 500) {
+        alert('Description must not exceed 500 characters');
+        return;
+      }
+
+      // Image validation for new items
+      if (!currentItem && !fileData?.file) {
+        alert('Please select an image');
         return;
       }
 

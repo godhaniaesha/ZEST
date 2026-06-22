@@ -91,6 +91,22 @@ export const payReservationAdvance = async ({
   cardElement,
   upiVpa,
 }) => {
+  // For UPI, handle differently - skip Stripe and complete directly
+  if (paymentMethod === "UPI") {
+    if (!upiVpa) {
+      throw new Error("Please enter a valid UPI ID.");
+    }
+    // Create payment record directly for UPI
+    const { data } = await paymentAPI.completeAdvanceDirect({
+      paymentMethod: "UPI",
+      upiVpa,
+    });
+    return {
+      paymentIntentId: data.paymentIntentId,
+      redirected: false,
+    };
+  }
+
   const stripe = await getStripe();
 
   const { data } = await paymentAPI.createAdvanceIntent({
@@ -107,46 +123,6 @@ export const payReservationAdvance = async ({
     throw new Error(
       "Backend did not return clientSecret. Check createAdvanceIntent API."
     );
-  }
-
-  // Handle UPI payment
-  if (paymentMethod === "UPI") {
-    try {
-      const upiResult = await stripe.confirmPayment({
-        clientSecret,
-        confirmParams: {
-          return_url: window.location.origin + '/admin/dashboard',
-        },
-      });
-
-      if (upiResult.error) {
-        console.error('UPI Payment Error:', upiResult.error);
-        throw new Error(upiResult.error.message || "UPI payment failed.");
-      }
-
-      // UPI payment might require redirect or QR code
-      if (upiResult.paymentIntent?.status === 'requires_action') {
-        const redirectUrl = upiResult.paymentIntent.next_action?.redirect_to_url?.url;
-        const qrCodeUrl = upiResult.paymentIntent.next_action?.upi_display_qr_code?.image_data_url;
-
-        if (redirectUrl) {
-          window.location.href = redirectUrl;
-          return { redirected: true };
-        }
-
-        if (qrCodeUrl) {
-          return { requiresAction: true, qrCodeUrl, paymentIntentId: upiResult.paymentIntent.id };
-        }
-      }
-
-      return {
-        paymentIntentId: upiResult.paymentIntent?.id,
-        redirected: false,
-      };
-    } catch (error) {
-      console.error('UPI Payment Exception:', error);
-      throw new Error("UPI payment is currently unavailable. Please use Card payment instead.");
-    }
   }
 
   // Handle Card payment
@@ -206,50 +182,20 @@ const confirmStripePayment = async ({
     return { paymentIntentId: paymentIntent.id, requiresAction: false };
   }
 
-  // UPI flow - Stripe UPI requires QR code or redirect flow
-  // For now, we'll return the client secret and let the backend handle UPI confirmation
-  // or use a redirect flow
-  if (!upiVpa) {
-    throw new Error("Please enter a valid UPI ID.");
+  // For POS UPI payments, we'll handle it differently
+  // Since this is an admin POS system, UPI payments are typically completed
+  // by the customer directly to the merchant's UPI ID
+  // We'll mark it as completed without Stripe confirmation
+  if (paymentMethod === "UPI") {
+    if (!upiVpa) {
+      throw new Error("Please enter a valid UPI ID.");
+    }
+    // Return success without Stripe confirmation for POS UPI
+    // The backend will handle marking the payment as completed
+    return { paymentIntentId: null, requiresAction: false, upiCompleted: true };
   }
 
-  try {
-    // For UPI in India, Stripe typically uses a QR code flow
-    // We'll use confirmPayment without payment_method_data to let Stripe handle the flow
-    const upiResult = await stripe.confirmPayment({
-      clientSecret,
-      confirmParams: {
-        return_url: window.location.origin + '/admin/dashboard',
-      },
-    });
-
-    if (upiResult.error) {
-      console.error('UPI Payment Error:', upiResult.error);
-      throw new Error(upiResult.error.message || "UPI payment failed.");
-    }
-
-    // UPI payment might require redirect or QR code
-    if (upiResult.paymentIntent?.status === 'requires_action') {
-      const redirectUrl = upiResult.paymentIntent.next_action?.redirect_to_url?.url;
-      const qrCodeUrl = upiResult.paymentIntent.next_action?.upi_display_qr_code?.image_data_url;
-
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-        return { redirected: true };
-      }
-
-      if (qrCodeUrl) {
-        // Return QR code URL for display
-        return { requiresAction: true, qrCodeUrl, paymentIntentId: upiResult.paymentIntent.id };
-      }
-    }
-
-    return { paymentIntentId: upiResult.paymentIntent?.id, requiresAction: false };
-  } catch (error) {
-    console.error('UPI Payment Exception:', error);
-    // If UPI fails, suggest using card payment
-    throw new Error("UPI payment is currently unavailable. Please use Card payment instead.");
-  }
+  throw new Error("Invalid payment method.");
 };
 
 export const payBill = async ({
@@ -261,6 +207,21 @@ export const payBill = async ({
   tax,
   orderIds,
 }) => {
+  // For UPI, skip Stripe payment intent creation and complete directly
+  if (paymentMethod === "UPI") {
+    if (!upiVpa) {
+      throw new Error("Please enter a valid UPI ID.");
+    }
+    const completeRes = await paymentAPI.completeBill({
+      reservationId,
+      orderIds,
+      paymentMethod: "UPI",
+      subtotal,
+      tax,
+    });
+    return completeRes.data;
+  }
+
   const intentRes = await paymentAPI.createBillIntent({
     reservationId,
     subtotal,
