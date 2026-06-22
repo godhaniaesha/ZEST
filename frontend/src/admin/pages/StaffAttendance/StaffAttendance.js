@@ -39,6 +39,8 @@ export default function StaffAttendance() {
       name: staff.name,
       role: staff.role,
       shift: staff.shift || 'Morning',
+      shiftStart: staff.shiftStart || '11:00',
+      shiftEnd: staff.shiftEnd || '18:00',
       initials: staff.name.split(' ').map(n => n[0]).join('').toUpperCase(),
       color: '#C9A84C',
       leavesTotal: staff.leavesTotal || 12,
@@ -211,10 +213,19 @@ export default function StaffAttendance() {
 
     setCurrentItem(item);
     const staff = staffList.find(s => s._id === item.staffId);
-    const defaultCheckIn = item.checkIn || (staff ? getShiftTime(staff.shift) : '');
+    const defaultCheckIn = item.checkIn || (staff ? getShiftTime(staff.shift, staff.shiftStart) : '');
+
+    // Format date for HTML date input (YYYY-MM-DD)
+    const formatDateForInput = (dateValue) => {
+      if (!dateValue) return '';
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    };
+
     setFormData({
       staffId: item.staffId,
-      date: item.date,
+      date: formatDateForInput(item.date),
       status: item.status,
       checkIn: defaultCheckIn,
       checkOut: item.checkOut || ''
@@ -484,7 +495,7 @@ export default function StaffAttendance() {
                 <th>Role</th>
                 <th>Date</th>
                 <th>Status</th>
-                <th>Check In</th>
+                <th>Check In</th> 
                 <th>Check Out</th>
                 {canManageAttendance && <th>Actions</th>}
               </tr>

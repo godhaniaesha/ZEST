@@ -141,7 +141,7 @@ export default function Orders() {
           </button>
         ))}
       </div>
-
+        
       <div className="d-card p-0 overflow-hidden">
         <div className="d-table-wrap">
           <table className="d-table">
@@ -155,7 +155,6 @@ export default function Orders() {
                 <th>Item Status</th>
                 <th>Amount</th>
                 <th>Payment Status</th>
-                <th>Time</th>
                 <th style={{ width: "100px" }}>Actions</th>
               </tr>
             </thead>

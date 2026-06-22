@@ -26,11 +26,16 @@ const FormModal = ({
     }
   }, [show, initialData]);
 
-  const handleChange = (name, value) => {
+  const handleChange = (name, value, field) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+
+    // Call custom onChange handler if provided
+    if (field?.onChange) {
+      field.onChange(value);
+    }
   };
 
   const handleFileChange = (name, file) => {
@@ -72,9 +77,10 @@ const FormModal = ({
                       <Form.Select
                         value={formData[field.name] || ''}
                         onChange={(e) =>
-                          handleChange(field.name, e.target.value)
+                          handleChange(field.name, e.target.value, field)
                         }
                         required={field.required}
+                        disabled={field.disabled}
                       >
                         <option value="">Select...</option>
 
@@ -90,10 +96,11 @@ const FormModal = ({
                         rows={3}
                         value={formData[field.name] || ''}
                         onChange={(e) =>
-                          handleChange(field.name, e.target.value)
+                          handleChange(field.name, e.target.value, field)
                         }
                         placeholder={field.placeholder}
                         required={field.required}
+                        disabled={field.disabled}
                       />
                     ) : field.type === 'number' ? (
                       <Form.Control
@@ -102,10 +109,11 @@ const FormModal = ({
                         max={field.max}
                         value={formData[field.name] || ''}
                         onChange={(e) =>
-                          handleChange(field.name, Number(e.target.value))
+                          handleChange(field.name, Number(e.target.value), field)
                         }
                         placeholder={field.placeholder}
                         required={field.required}
+                        disabled={field.disabled}
                       />
                     ) : field.type === 'file' ? (
                       <>
@@ -141,13 +149,13 @@ const FormModal = ({
                             height: '20px',
                             cursor: 'pointer'
                           }}
-                          onClick={() => handleChange(field.name, !formData[field.name])}
+                          onClick={() => handleChange(field.name, !formData[field.name], field)}
                         >
                           <input
                             type="checkbox"
                             id={field.name}
                             checked={formData[field.name] || false}
-                            onChange={(e) => handleChange(field.name, e.target.checked)}
+                            onChange={(e) => handleChange(field.name, e.target.checked, field)}
                             style={{
                               position: 'absolute',
                               opacity: 0,
@@ -203,10 +211,11 @@ const FormModal = ({
                         type={field.type || 'text'}
                         value={formData[field.name] || ''}
                         onChange={(e) =>
-                          handleChange(field.name, e.target.value)
+                          handleChange(field.name, e.target.value, field)
                         }
                         placeholder={field.placeholder}
                         required={field.required}
+                        disabled={field.disabled}
                       />
                     )}
                   </Form.Group>

@@ -19,6 +19,8 @@ router.post('/', auth, authorizeRoles('manager', 'superadmin'), async (req, res)
     name: req.body.name,
     role: req.body.role,
     shift: req.body.shift,
+    shiftStart: req.body.shiftStart,
+    shiftEnd: req.body.shiftEnd,
     status: req.body.status,
     initials: req.body.initials,
     color: req.body.color,
