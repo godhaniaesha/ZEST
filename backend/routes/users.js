@@ -62,7 +62,7 @@ const isValidObjectId = (id) =>
 router.get('/', auth, async (req, res) => {
   try {
     if (req.query.staffOnly === 'true') {
-      if (!['manager', 'superadmin'].includes(req.user.role)) {
+      if (!['superadmin', 'manager', 'chef', 'waiter', 'cashier'].includes(req.user.role)) {
         return res.status(403).json({ message: 'Access denied' });
       }
       const staff = await User.find({ role: { $ne: 'customer' } }).select('-password');
