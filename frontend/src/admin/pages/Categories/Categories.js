@@ -18,7 +18,7 @@ export default function Categories() {
   const [activeTab, setActiveTab] = useState('menu');
 
   // Role-based permissions
-  const canAddEditDelete = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
+  const canAddEditDelete = userRole === 'manager' || userRole === 'superadmin';
   const canSeeMenu = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';
   const canSeeBar = userRole === 'manager' || userRole === 'superadmin';
   const canSeeCuisine = userRole === 'chef' || userRole === 'manager' || userRole === 'superadmin';

@@ -178,7 +178,7 @@ const NAV_GROUPS = [
         icon: <MdNotificationsActive />,
         label: "Customer Requests",
         badge: "2",
-        roles: ["waiter", "manager", "superadmin"],
+        roles: ["manager", "superadmin"],
       },
     ],
   },
