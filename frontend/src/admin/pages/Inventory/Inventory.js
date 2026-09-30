@@ -116,7 +116,7 @@ export default function Inventory() {
     if (saving) return;
 
     if (!formData.name || !formData.unit || formData.qty === '' || formData.min === '') {
-      alert('Please fill in all required fields');
+      alert('Please enter an item name');
       return;
     }
 

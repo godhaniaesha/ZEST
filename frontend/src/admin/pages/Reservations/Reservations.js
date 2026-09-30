@@ -43,7 +43,7 @@ export default function Reservations() {
   const { user } = useAuth();
   const userRole = user?.role || 'waiter';
 
-  const canAddEditDelete = userRole === 'waiter' || userRole === 'manager' || userRole === 'superadmin';
+  const canAddEditDelete = userRole === 'manager' || userRole === 'superadmin';
 
   const loadData = async () => {
     try {

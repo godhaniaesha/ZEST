@@ -7,6 +7,7 @@ import {
 import Pagination from '../../components/Pagination';
 import DeleteModal from '../../components/DeleteModal';
 import { ordersAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const ORDERS = [{}];
 
@@ -38,6 +39,9 @@ export default function Orders() {
   const filtered = filter === 'All' ? orderData : orderData.filter(o => o.status === filter);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const currentData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const { user } = useAuth();
+  const userRole = user?.role || 'waiter';
+  const canDelete = userRole === 'manager' || userRole === 'superadmin';
 
   const loadData = async () => {
     try {
@@ -75,10 +79,14 @@ export default function Orders() {
       setShowDelete(false);
     } catch (err) {
       console.error(err);
-    }   
+    }
   };
 
   const openDelete = (item) => {
+    if (!canDelete) {
+      alert('You do not have permission to delete orders');
+      return;
+    }
     setCurrentItem(item);
     setShowDelete(true);
   };
@@ -113,7 +121,7 @@ export default function Orders() {
               </div>
               <div>
                 <div className="d-stat-value" style={{ fontSize: '1.4rem' }}>{v}</div>
-                <div className="d-stat-label">{l}</div> 
+                <div className="d-stat-label">{l}</div>
               </div>
             </div>
           </Col>
@@ -141,7 +149,7 @@ export default function Orders() {
           </button>
         ))}
       </div>
-        
+
       <div className="d-card p-0 overflow-hidden">
         <div className="d-table-wrap">
           <table className="d-table">
@@ -155,7 +163,11 @@ export default function Orders() {
                 <th>Item Status</th>
                 <th>Amount</th>
                 <th>Payment Status</th>
-                <th style={{ width: "100px" }}>Actions</th>
+                <th>Timming</th>
+
+                {canDelete && (
+                  <th style={{ width: "100px" }}>Actions</th>
+                )}
               </tr>
             </thead>
 
@@ -215,12 +227,14 @@ export default function Orders() {
 
                       <td>
                         <div className="d-flex gap-1">
-                          <button
-                            className="d-navbar-icon-btn"
-                            onClick={() => openDelete(order)}
-                          >
-                            <MdDelete />
-                          </button>
+                          {canDelete && (
+                            <button
+                              className="d-navbar-icon-btn"
+                              onClick={() => openDelete(order)}
+                            >
+                              <MdDelete />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -352,12 +366,14 @@ export default function Orders() {
                       <td>
                         {isFirstItem && (
                           <div className="d-flex gap-1">
-                            <button
-                              className="d-navbar-icon-btn"
-                              onClick={() => openDelete(order)}
-                            >
-                              <MdDelete />
-                            </button>
+                            {canDelete && (
+                              <button
+                                className="d-navbar-icon-btn"
+                                onClick={() => openDelete(order)}
+                              >
+                                <MdDelete />
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>
@@ -366,7 +382,7 @@ export default function Orders() {
                 });
               })}
             </tbody>
-          </table>  
+          </table>
         </div>
         <div className="px-4">
           {totalPages > 1 && (
