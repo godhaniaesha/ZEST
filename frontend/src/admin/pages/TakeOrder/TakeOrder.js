@@ -6,7 +6,7 @@ import {
   MdReceipt, MdShoppingCart
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
-import { menuAPI, reservationsAPI, ordersAPI } from '../../../api';
+import { menuAPI, reservationsAPI, ordersAPI, tablesAPI } from '../../../api';
 import { useAuth } from '../../../contexts/AuthContext';
 
 export default function TakeOrder() {
@@ -29,12 +29,55 @@ export default function TakeOrder() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [menuRes, resRes] = await Promise.all([
+
+        // Fetch menu + tables in parallel; reservations may fail for non-manager roles
+        const [menuRes, tablesRes] = await Promise.all([
           menuAPI.getAll(),
-          reservationsAPI.getAll()
+          tablesAPI.getAll(),
         ]);
+
         setMenuItems(Array.isArray(menuRes.data) ? menuRes.data : []);
-        setReservations(Array.isArray(resRes.data) ? resRes.data.filter(r => r.status === 'Confirmed' && !r.fullPaymentDone) : []);
+
+        const allTables = Array.isArray(tablesRes.data) ? tablesRes.data : [];
+
+        // Try fetching reservations (requires manager/superadmin/waiter role)
+        let confirmedReservations = [];
+        try {
+          const resRes = await reservationsAPI.getAll();
+          confirmedReservations = Array.isArray(resRes.data)
+            ? resRes.data.filter(r => r.status === 'Confirmed' && !r.fullPaymentDone)
+            : [];
+        } catch {
+          // Role may not allow reservation access — continue with tables only
+        }
+
+        // Build dropdown entries: one per Reserved table, enriched with reservation data if available
+        const reservedTables = allTables.filter(t => t.status !== 'Reserved');
+
+        const entries = reservedTables.map(table => {
+          // Match reservation by table._id (reservation.table is populated object)
+          const reservation = confirmedReservations.find(r => {
+            const rTableId = r.table?._id || r.table;
+            return String(rTableId) === String(table._id);
+          });
+
+          const displayId = table.displayId
+            || `${table.type === 'Bar' ? 'B' : 'C'}-${String(table.number).padStart(2, '0')}`;
+
+          return {
+            tableId:     table._id,
+            displayId,
+            capacity:    table.capacity,
+            reservation: reservation || null,
+            // Use reservation _id as the select value when available, otherwise table _id
+            value:       reservation ? reservation._id : table._id,
+            label:       reservation
+              ? `${displayId} — ${reservation.customerName} (${reservation.guests} guests)`
+              : `${displayId} — ${table.capacity} seats (no reservation)`,
+          };
+        });
+
+        setReservations(entries);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -80,14 +123,12 @@ export default function TakeOrder() {
   const handleSendToKitchen = async () => {
     if (cart.length === 0 || !selectedTable) return;
 
-    const reservation = reservations.find(r => r._id === selectedTable);
+    const entry = reservations.find(e => e.value === selectedTable);
+    const tableLabel = entry?.displayId || selectedTable;
+
     const orderData = {
       id: `ORD-${Date.now()}`,
-      table: reservation 
-        ? (typeof reservation.table === 'object' && reservation.table !== null 
-            ? `Table ${reservation.table.number}` 
-            : reservation.table || (reservation.tableNumber ? `Table ${reservation.tableNumber}` : selectedTable)) 
-        : selectedTable,
+      table: tableLabel,
       waiter: user?.name || 'Staff',
       items: cart.map(item => ({
         name: item.name,
@@ -96,11 +137,12 @@ export default function TakeOrder() {
         menuItemId: item._id
       })),
       type: activeTab === 'cafe' ? 'Dine-in' : 'Bar',
-      amount: Number(cartTotal), // Ensure amount is a number
+      amount: Number(cartTotal),
       status: 'Pending',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       userId: user?._id,
-      reservationId: selectedTable
+      // Use reservation _id if available, otherwise null
+      reservationId: entry?.reservation ? entry.reservation._id : null,
     };
 
     try {
@@ -152,7 +194,7 @@ export default function TakeOrder() {
           </div>
 
           <div className="row g-3 mb-4">
-            <div className="col-md-8">
+            <div className="col-md-6">
               <div className="d-pos-search-wrapper">
                 <MdSearch className="text-muted" fontSize="1.2rem" />
                 <input 
@@ -163,26 +205,21 @@ export default function TakeOrder() {
                 />
               </div>
             </div>
-            <div className="col-md-4">
+            <div className="col-md-6">
               <div className="d-pos-table-select">
                 <MdTableRestaurant className="text-gold" fontSize="1.2rem" />
                 <select 
                   value={selectedTable} 
                   onChange={(e) => setSelectedTable(e.target.value)}
                 >
-                  <option value="">Select Confirmed Table</option>
-                  {reservations.filter(r => !r.fullPaymentDone).map(r => {
-                    // If r.table is an object (populated), get its number; otherwise use it as-is
-                    const tableDisplay = typeof r.table === 'object' && r.table !== null
-                      ? `Table ${r.table.number}`
-                      : r.table || (r.tableNumber ? `Table ${r.tableNumber}` : '');
-
-                    return (
-                      <option key={r._id} value={r._id}>
-                        {tableDisplay} - {r.customerName || r.name}
-                      </option>
-                    );
-                  })}
+                  <option className='d_cnf_tbl' value="">
+                    {loading ? 'Loading tables…' : reservations.length === 0 ? 'No reserved tables' : 'Select Table'}
+                  </option>
+                  {reservations.map(entry => (
+                    <option key={entry.value} value={entry.value}>
+                      {entry.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -231,11 +268,14 @@ export default function TakeOrder() {
             <div className="d-pos-cart-header">
               <div className="d-section-title d-flex justify-content-between align-items-center mb-0">
                 Order Summary
-                {selectedTable && (
-                  <span className="d-chip d-chip-gold" style={{ fontSize: '0.7rem' }}>
-                    {typeof selectedTable === 'number' ? `TABLE ${selectedTable}` : selectedTable.toUpperCase()}
-                  </span>
-                )}
+                {selectedTable && (() => {
+                  const entry = reservations.find(e => e.value === selectedTable);
+                  return (
+                    <span className="d-chip d-chip-gold" style={{ fontSize: '0.7rem' }}>
+                      {(entry?.displayId || selectedTable).toUpperCase()}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
 

@@ -1,53 +1,465 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import {
-  MdAdd, MdEdit, MdDelete, MdSearch, MdFilterList,
-  MdArticle, MdLocalCafe, MdRestaurant, MdLocalBar, MdFavorite
+  MdAdd, MdEdit, MdDelete, MdFilterList,
+  MdArticle, MdLocalCafe, MdRestaurant, MdLocalBar, MdFavorite,
+  MdSave, MdClose, MdVisibility, MdCode,
 } from 'react-icons/md';
 import DeleteModal from '../../components/DeleteModal';
-import FormModal from '../../components/FormModal';
 import { blogAPI } from '../../../api';
 import { useAuth } from '../../../contexts/AuthContext';
 
+/* ─────────────────────────────────────────────
+   PLAIN-TEXT → HTML  (used at save time)
+───────────────────────────────────────────── */
+const decodeHtmlEntities = (str) => {
+  if (!str) return '';
+  const el = document.createElement('textarea');
+  el.innerHTML = str;
+  return el.value;
+};
 
+const convertPlainTextToHTML = (text) => {
+  if (!text) return '';
+  let raw = text.trim();
+
+  if (raw.includes('&lt;') || raw.includes('&gt;') || raw.includes('&amp;')) {
+    raw = decodeHtmlEntities(raw);
+  }
+  raw = raw.replace(/```html\s*/gi, '').replace(/```\s*/g, '').trim();
+
+  // Already HTML → return as-is
+  if (/<(h[1-6]|p|div|ul|ol|table|blockquote|img|pre|code)\b/i.test(raw)) {
+    return raw;
+  }
+
+  const lines  = raw.split('\n');
+  const output = [];
+  let   list   = [];
+
+  const flush = () => {
+    if (list.length) {
+      output.push(`<ul>${list.map(i => `<li>${i}</li>`).join('')}</ul>`);
+      list = [];
+    }
+  };
+
+  const fmt = (s) =>
+    s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+     .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { flush(); continue; }
+
+    if      (/^###\s/.test(line)) { flush(); output.push(`<h2>${fmt(line.slice(4))}</h2>`); }
+    else if (/^##\s/.test(line))  { flush(); output.push(`<h3>${fmt(line.slice(3))}</h3>`); }
+    else if (/^#\s/.test(line))   { flush(); output.push(`<h4>${fmt(line.slice(2))}</h4>`); }
+    else if (/^>\s/.test(line))   { flush(); output.push(`<blockquote>${fmt(line.slice(2))}</blockquote>`); }
+    else if (/^-\s/.test(line))   { list.push(fmt(line.slice(2))); }
+    else if (/^!\[/.test(line)) {
+      flush();
+      const m = line.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+      if (m) output.push(`<img src="${m[2]}" alt="${m[1]}" style="width:100%;max-width:600px;border-radius:10px;margin:20px 0;" />`);
+    }
+    else { flush(); output.push(`<p>${fmt(line)}</p>`); }
+  }
+  flush();
+  return output.join('\n');
+};
+
+/* ─────────────────────────────────────────────
+   HTML → PLAIN-TEXT MARKDOWN  (used at edit load)
+───────────────────────────────────────────── */
+const convertHTMLToPlainText = (html) => {
+  if (!html) return '';
+  return html
+    .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, (_, t) => `\n### ${t.replace(/<[^>]+>/g,'').trim()}\n`)
+    .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, (_, t) => `\n## ${t.replace(/<[^>]+>/g,'').trim()}\n`)
+    .replace(/<h4[^>]*>([\s\S]*?)<\/h4>/gi, (_, t) => `\n# ${t.replace(/<[^>]+>/g,'').trim()}\n`)
+    .replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, (_, t) => `\n## ${t.replace(/<[^>]+>/g,'').trim()}\n`)
+    .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, t) => `\n> ${t.replace(/<[^>]+>/g,'').trim()}\n`)
+    .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_, t) => `\n- ${t.replace(/<[^>]+>/g,'').trim()}`)
+    .replace(/<\/?ul[^>]*>/gi, '\n')
+    .replace(/<\/?ol[^>]*>/gi, '\n')
+    .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_, t) => `\n${t.replace(/<[^>]+>/g,'').trim()}\n`)
+    .replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, '**$1**')
+    .replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, '*$1*')
+    .replace(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+    .replace(/<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, '![$2]($1)')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g,  '&')
+    .replace(/&lt;/g,   '<')
+    .replace(/&gt;/g,   '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g,  "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
+/* ─────────────────────────────────────────────
+   BLOG CONTENT EDITOR MODAL
+   Left: markdown textarea   Right: live preview
+───────────────────────────────────────────── */
+const SYNTAX_HELP = [
+  { syntax: '# Title',        result: 'Large heading (h4)' },
+  { syntax: '## Section',     result: 'Sub-heading (h3)'  },
+  { syntax: '### Sub',        result: 'Smaller heading (h2)' },
+  { syntax: '- item',         result: 'Bullet list item'  },
+  { syntax: '**bold**',       result: 'Bold text'         },
+  { syntax: '*italic*',       result: 'Italic text'       },
+  { syntax: '> quote',        result: 'Block quote'       },
+  { syntax: '![alt](url)',    result: 'Image'             },
+  { syntax: '[text](url)',    result: 'Link'              },
+];
+
+function BlogEditorModal({ show, onHide, title, initialData, onSubmit, loading: saving }) {
+  const [form,        setForm]        = useState({});
+  const [fileData,    setFileData]    = useState(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [showHelp,    setShowHelp]    = useState(false);
+
+  useEffect(() => {
+    if (show) { setForm(initialData || {}); setFileData(null); setPreviewMode(false); }
+  }, [show, initialData]);
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const previewHTML = useCallback(
+    () => convertPlainTextToHTML(form.content || ''),
+    [form.content]
+  );
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(form, fileData);
+  };
+
+  const insertSnippet = (snippet) => {
+    const ta = document.getElementById('blog-content-editor');
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end   = ta.selectionEnd;
+    const val   = form.content || '';
+    const next  = val.slice(0, start) + snippet + val.slice(end);
+    set('content', next);
+    setTimeout(() => {
+      ta.focus();
+      ta.setSelectionRange(start + snippet.length, start + snippet.length);
+    }, 10);
+  };
+
+  /* ── styles ── */
+  const S = {
+    overlay: {
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+      zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '12px',
+    },
+    dialog: {
+      background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '1100px',
+      maxHeight: '95vh', display: 'flex', flexDirection: 'column',
+      boxShadow: '0 24px 60px rgba(0,0,0,0.22)',
+      overflow: 'hidden',
+    },
+    header: {
+      padding: '16px 24px', borderBottom: '1px solid #e5e7eb',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      flexShrink: 0,
+    },
+    body: { flex: 1, overflowY: 'auto', padding: '20px 24px' },
+    footer: {
+      padding: '14px 24px', borderTop: '1px solid #e5e7eb',
+      display: 'flex', justifyContent: 'flex-end', gap: '10px', flexShrink: 0,
+    },
+    metaGrid: {
+      display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '18px',
+    },
+    label: {
+      display: 'block', fontSize: '0.72rem', fontWeight: 700,
+      textTransform: 'uppercase', letterSpacing: '0.06em',
+      color: '#6b7280', marginBottom: '5px',
+    },
+    input: {
+      width: '100%', border: '1px solid #d1d5db', borderRadius: '8px',
+      padding: '9px 13px', fontSize: '0.9rem', outline: 'none',
+      fontFamily: 'inherit', background: '#fff',
+      transition: 'border-color .18s',
+    },
+    select: {
+      width: '100%', border: '1px solid #d1d5db', borderRadius: '8px',
+      padding: '9px 13px', fontSize: '0.9rem', outline: 'none',
+      fontFamily: 'inherit', background: '#fff', appearance: 'none',
+    },
+    editorWrap: {
+      border: '1px solid #d1d5db', borderRadius: '12px', overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
+    },
+    toolbar: {
+      background: '#f9fafb', borderBottom: '1px solid #e5e7eb',
+      padding: '8px 12px', display: 'flex', gap: '6px',
+      alignItems: 'center', flexWrap: 'wrap',
+    },
+    toolBtn: {
+      padding: '4px 10px', borderRadius: '6px', border: '1px solid #d1d5db',
+      background: '#fff', fontSize: '0.72rem', fontWeight: 700,
+      cursor: 'pointer', fontFamily: 'monospace', color: '#374151',
+      transition: 'background .15s',
+    },
+    editorBody: { display: 'flex', minHeight: '320px' },
+    textarea: {
+      flex: 1, border: 'none', outline: 'none', resize: 'none',
+      padding: '16px', fontFamily: 'monospace', fontSize: '0.85rem',
+      lineHeight: '1.7', color: '#111827', background: '#fff',
+      minHeight: '320px',
+    },
+    preview: {
+      flex: 1, padding: '16px 20px', overflowY: 'auto',
+      borderLeft: '1px solid #e5e7eb', minHeight: '320px',
+      fontSize: '0.9rem', lineHeight: '1.75',
+    },
+    tabBar: {
+      display: 'flex', gap: 0, borderBottom: '1px solid #e5e7eb',
+    },
+    tab: (active) => ({
+      padding: '8px 18px', fontSize: '0.78rem', fontWeight: 700,
+      border: 'none', background: active ? '#fff' : '#f3f4f6',
+      borderBottom: active ? '2px solid var(--d-primary, #16302B)' : '2px solid transparent',
+      color: active ? 'var(--d-primary, #16302B)' : '#6b7280',
+      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+    }),
+    helpBox: {
+      marginTop: '10px', background: '#f9fafb', border: '1px solid #e5e7eb',
+      borderRadius: '10px', padding: '12px 16px',
+    },
+    helpGrid: {
+      display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+      gap: '6px', marginTop: '8px',
+    },
+    helpItem: {
+      background: '#fff', border: '1px solid #e5e7eb', borderRadius: '6px',
+      padding: '6px 10px', fontSize: '0.75rem', display: 'flex', gap: '8px',
+    },
+    btnGold: {
+      background: 'var(--d-gold, #C9A84C)', color: '#0e1f1c',
+      border: 'none', borderRadius: '8px', padding: '9px 20px',
+      fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+      display: 'flex', alignItems: 'center', gap: '6px',
+    },
+    btnOutline: {
+      background: 'transparent', color: '#374151',
+      border: '1px solid #d1d5db', borderRadius: '8px', padding: '9px 20px',
+      fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer',
+      display: 'flex', alignItems: 'center', gap: '6px',
+    },
+  };
+
+  if (!show) return null;
+
+  return (
+    <div style={S.overlay} onClick={(e) => e.target === e.currentTarget && onHide()}>
+      <div style={S.dialog}>
+
+        {/* ── HEADER ── */}
+        <div style={S.header}>
+          <span style={{ fontWeight: 700, fontSize: '1rem', color: '#111827' }}>{title}</span>
+          <button style={{ ...S.btnOutline, padding: '6px 10px' }} onClick={onHide}><MdClose size={18} /></button>
+        </div>
+
+        {/* ── BODY ── */}
+        <div style={S.body}>
+          <form id="blog-editor-form" onSubmit={handleSubmit}>
+
+            {/* ── META FIELDS ── */}
+            <div style={S.metaGrid}>
+              {/* Title — full width */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={S.label}>Article Title *</label>
+                <input style={S.input} value={form.title || ''} required
+                  placeholder="e.g. The Art of Single-Origin Coffee"
+                  onChange={e => set('title', e.target.value)} />
+              </div>
+
+              <div>
+                <label style={S.label}>Category *</label>
+                <select style={S.select} value={form.category || 'Coffee'} required
+                  onChange={e => set('category', e.target.value)}>
+                  {['Coffee','Food','Cocktails','Lifestyle'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={S.label}>Author *</label>
+                <input style={S.input} value={form.author || ''} required
+                  placeholder="Author name"
+                  onChange={e => set('author', e.target.value)} />
+              </div>
+
+              <div>
+                <label style={S.label}>Author Image URL</label>
+                <input style={S.input} value={form.authorImage || ''}
+                  placeholder="https://example.com/author.jpg"
+                  onChange={e => set('authorImage', e.target.value)} />
+              </div>
+
+              <div>
+                <label style={S.label}>Read Time (minutes) *</label>
+                <input style={S.input} type="number" min={1} max={120}
+                  value={form.readTime || 5} required
+                  onChange={e => set('readTime', Number(e.target.value))} />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={S.label}>Featured Image</label>
+                <input type="file" accept="image/*" style={{ ...S.input, padding: '6px 10px' }}
+                  onChange={e => setFileData({ name: 'image', file: e.target.files[0] })} />
+                {form.image && (
+                  <img src={form.image} alt="preview"
+                    style={{ marginTop: 8, height: 72, borderRadius: 8, objectFit: 'cover' }} />
+                )}
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={S.label}>Excerpt * <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(shown on blog card, 20–300 chars)</span></label>
+                <textarea style={{ ...S.input, minHeight: 72, resize: 'vertical', lineHeight: '1.5' }}
+                  value={form.excerpt || ''} required minLength={20} maxLength={300}
+                  placeholder="Brief summary of the article…"
+                  onChange={e => set('excerpt', e.target.value)} />
+              </div>
+            </div>
+
+            {/* ── CONTENT EDITOR ── */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <label style={{ ...S.label, marginBottom: 0 }}>Content *</label>
+                <button type="button"
+                  style={{ ...S.btnOutline, padding: '4px 10px', fontSize: '0.72rem' }}
+                  onClick={() => setShowHelp(h => !h)}>
+                  {showHelp ? 'Hide' : 'Show'} syntax guide
+                </button>
+              </div>
+
+              {showHelp && (
+                <div style={S.helpBox}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Markdown Syntax</div>
+                  <div style={S.helpGrid}>
+                    {SYNTAX_HELP.map(h => (
+                      <div key={h.syntax} style={S.helpItem}>
+                        <code style={{ color: 'var(--d-gold, #C9A84C)', whiteSpace: 'nowrap' }}>{h.syntax}</code>
+                        <span style={{ color: '#6b7280' }}>→ {h.result}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: 8 }}>
+                    Use a blank line to separate paragraphs. Each <code>- item</code> must be on its own line.
+                  </div>
+                </div>
+              )}
+
+              <div style={{ ...S.editorWrap, marginTop: 8 }}>
+                {/* Tab bar */}
+                <div style={S.tabBar}>
+                  <button type="button" style={S.tab(!previewMode)}
+                    onClick={() => setPreviewMode(false)}>
+                    <MdCode size={14} /> Write
+                  </button>
+                  <button type="button" style={S.tab(previewMode)}
+                    onClick={() => setPreviewMode(true)}>
+                    <MdVisibility size={14} /> Preview
+                  </button>
+                  {/* Quick-insert toolbar */}
+                  {!previewMode && (
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, padding: '4px 8px', flexWrap: 'wrap' }}>
+                      {[
+                        ['H1', '# '],
+                        ['H2', '## '],
+                        ['H3', '### '],
+                        ['• List', '- '],
+                        ['**B**', '**bold**'],
+                        ['*I*', '*italic*'],
+                        ['> Quote', '> '],
+                      ].map(([label, snippet]) => (
+                        <button key={label} type="button" style={S.toolBtn}
+                          onClick={() => insertSnippet(snippet)}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={S.editorBody}>
+                  {!previewMode ? (
+                    <textarea
+                      id="blog-content-editor"
+                      style={S.textarea}
+                      value={form.content || ''}
+                      required
+                      placeholder={`# Article Title\n\nIntroduction paragraph here.\n\n## Section Heading\n\n- List item one\n- List item two\n- List item three\n\nClosing paragraph with **bold** and *italic* text.`}
+                      onChange={e => set('content', e.target.value)}
+                    />
+                  ) : (
+                    <div style={S.preview}>
+                      {form.content?.trim() ? (
+                        <div
+                          className="x_blogdetail_article"
+                          style={{ boxShadow: 'none', border: 'none', padding: 0 }}
+                          dangerouslySetInnerHTML={{ __html: previewHTML() }}
+                        />
+                      ) : (
+                        <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>
+                          Nothing to preview yet — write something in the Write tab.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+        {/* ── FOOTER ── */}
+        <div style={S.footer}>
+          <button type="button" style={S.btnOutline} onClick={onHide}>
+            <MdClose size={16} /> Cancel
+          </button>
+          <button type="submit" form="blog-editor-form" style={S.btnGold} disabled={saving}>
+            <MdSave size={16} /> {saving ? 'Saving…' : 'Save Article'}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   CONSTANTS
+───────────────────────────────────────────── */
 const CATEGORIES = [
-  { name: 'All', icon: <MdFilterList /> },
-  { name: 'Coffee', icon: <MdLocalCafe /> },
-  { name: 'Food', icon: <MdRestaurant /> },
+  { name: 'All',       icon: <MdFilterList /> },
+  { name: 'Coffee',    icon: <MdLocalCafe /> },
+  { name: 'Food',      icon: <MdRestaurant /> },
   { name: 'Cocktails', icon: <MdLocalBar /> },
   { name: 'Lifestyle', icon: <MdFavorite /> },
 ];
 
-
 const FORM_SKIP_KEYS = ['_id', '__v', 'createdAt', 'updatedAt'];
 
 
-const BLOG_FORM_FIELDS = [
-  { name: 'title', label: 'Article Title *', type: 'text', required: true, col: 12, placeholder: 'e.g. The Art of Single-Origin Coffee', minLength: 5, maxLength: 200 },
-  { name: 'category', label: 'Category *', type: 'select', required: true, col: 6, options: CATEGORIES.filter(c => c.name !== 'All').map(c => ({ label: c.name, value: c.name })) },
-  { name: 'author', label: 'Author *', type: 'text', required: true, col: 6, placeholder: 'Author name', minLength: 2, maxLength: 50 },
-  { name: 'authorImage', label: 'Author Image URL', type: 'text', col: 6, placeholder: 'https://example.com/author.jpg' },
-  { name: 'readTime', label: 'Read Time (minutes) *', type: 'number', required: true, col: 6, placeholder: '5', min: 1, max: 120 },
-  { name: 'image', label: 'Featured Image', type: 'file', col: 12 },
-  { name: 'excerpt', label: 'Excerpt *', type: 'textarea', required: true, col: 12, placeholder: 'Brief excerpt of the article...', minLength: 20, maxLength: 300 },
-  {
-    name: 'content',
-    label: 'Content * (Write normally, will auto-format to HTML)',
-    type: 'textarea-html',
-    required: true,
-    col: 12,
-    placeholder: 'Write your article here. Lines will become paragraphs, **text** becomes bold, etc.',
-    rows: 10,
-    minLength: 50
-  },
-];
+
 
 
 export default function BlogManagement() {
-  const [items, setItems] = useState([]);
-  const [active, setActive] = useState('All');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [items, setItems]       = useState([]);
+  const [active, setActive]     = useState('All');
+  const [searchTerm]            = useState('');
+  const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
@@ -57,8 +469,6 @@ export default function BlogManagement() {
   });
   const { user } = useAuth();
   const userRole = user?.role || 'chef';
-
-
   const canAddEditDelete = userRole === 'manager' || userRole === 'superadmin';
 
 
@@ -122,230 +532,55 @@ export default function BlogManagement() {
     setShowDelete(true);
   };
 
-const decodeHtmlEntities = (str) => {
-  if (!str) return '';
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = str;
-  return textarea.value;
-};
-
-const convertPlainTextToHTML = (text) => {
-  if (!text) return '';
-
-  let html = text.trim();
-
-  if (html.includes('&lt;') || html.includes('&gt;') || html.includes('&amp;')) {
-    html = decodeHtmlEntities(html);
-  }
-
-  html = html.replace(/```html\s*/gi, '').replace(/```\s*/g, '').trim();
-
-  if (/<(h[1-6]|p|div|ul|ol|table|blockquote|img|pre|code)\b/i.test(html)) {
-    return html;
-  }
-
-  if (!html.trim().startsWith('<')) {
-    html = html
-      .split(/\n\s*\n/)
-      .map(paragraph => {
-        if (!paragraph.trim()) return '';
-        return `<p>${paragraph.trim()}</p>`;
-      })
-      .join('\n');
-  }
-  
-  html = html.replace(/^### (.+)$/g, '<h2>$1</h2>');
-  html = html.replace(/^## (.+)$/g, '<h3>$1</h3>');
-  html = html.replace(/^# (.+)$/g, '<h4>$1</h4>');
-  
-  if (!html.includes('<strong>')) {
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  }
-  
-  if (!html.includes('<em>')) {
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  }
-  
-  html = html.replace(/^- (.+)$/g, '<li>$1</li>');
-  html = html.replace(/(<li>.+<\/li>\n?)+/g, '<ul>$1</ul>');
-  
-  html = html.replace(/^> (.+)$/g, '<blockquote>$1</blockquote>');
-  
-  html = html.replace(/!\[([^\]]+)\]\(([^\)]+)\)/g, '<img src="$2" alt="$1" style="width:100%; max-width:600px; border-radius:10px; margin:20px 0;" />');
-  
-  html = html.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2">$1</a>');
-  
-  return html;
-};
-
-
-  const convertHTMLToPlainText = (html) => {
-    if (!html) return '';
-    
-    let text = html
-      .replace(/<\/?h[1-6][^>]*>/g, '\n')
-      .replace(/<\/?p[^>]*>/g, '\n\n')
-      .replace(/<\/?ul[^>]*>/g, '\n')
-      .replace(/<\/?ol[^>]*>/g, '\n')
-      .replace(/<\/?li[^>]*>/g, '\n- ')
-      .replace(/<\/?blockquote[^>]*>/g, '\n> ')
-      .replace(/<\/?pre[^>]*>/g, '\n')
-      .replace(/<\/?code[^>]*>/g, '')
-      .replace(/<\/?strong[^>]*>/g, '')
-      .replace(/<\/?em[^>]*>/g, '')
-      .replace(/<\/?a[^>]*>/g, '')
-      .replace(/<\/?img[^>]*>/g, '')
-      .replace(/<\/?tr[^>]*>/g, '\n')
-      .replace(/<\/?th[^>]*>/g, '|')
-      .replace(/<\/?td[^>]*>/g, '|')
-      .replace(/<\/?table[^>]*>/g, '\n')
-      .replace(/<\/?[^>]+(>|$)/g, '')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
-    
-    return text;
-  };
-
-
   const handleSave = async (data, fileData) => {
     try {
+      // Convert markdown content → HTML before saving
       if (data.content) {
         data.content = convertPlainTextToHTML(data.content);
       }
 
-      // Title validation
-      if (!data.title || !data.title.trim()) {
-        alert('Please enter a title');
-        return;
+      // ── Validations ──
+      if (!data.title?.trim() || data.title.length < 5 || data.title.length > 200) {
+        alert('Title must be between 5 and 200 characters.'); return;
       }
-
-      if (data.title.length < 5) {
-        alert('Title must be at least 5 characters long');
-        return;
-      }
-
-      if (data.title.length > 200) {
-        alert('Title must not exceed 200 characters');
-        return;
-      }
-
       if (!/^[a-zA-Z0-9\s\-.,'&!?():]+$/.test(data.title)) {
-        alert('Title can only contain letters, numbers, spaces, and basic punctuation');
-        return;
+        alert('Title contains invalid characters.'); return;
       }
-
-      // Category validation
       if (!data.category) {
-        alert('Please select a category');
-        return;
+        alert('Please select a category.'); return;
       }
-
-      // Author validation
-      if (!data.author || !data.author.trim()) {
-        alert('Please enter an author name');
-        return;
+      if (!data.author?.trim() || data.author.length < 2 || data.author.length > 50) {
+        alert('Author name must be between 2 and 50 characters.'); return;
       }
-
-      if (data.author.length < 2) {
-        alert('Author name must be at least 2 characters long');
-        return;
-      }
-
-      if (data.author.length > 50) {
-        alert('Author name must not exceed 50 characters');
-        return;
-      }
-
       if (!/^[a-zA-Z\s\-']+$/.test(data.author)) {
-        alert('Author name can only contain letters, spaces, hyphens, and apostrophes');
-        return;
+        alert('Author name can only contain letters, spaces, hyphens, and apostrophes.'); return;
       }
-
-      // Author Image URL validation (if provided)
-      if (data.authorImage && data.authorImage.trim()) {
-        const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      if (data.authorImage?.trim()) {
+        const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
         if (!urlRegex.test(data.authorImage)) {
-          alert('Please enter a valid URL for author image');
-          return;
+          alert('Please enter a valid URL for author image.'); return;
         }
       }
-
-      // Read Time validation
-      if (!data.readTime || data.readTime <= 0) {
-        alert('Read time must be greater than 0');
-        return;
+      if (!data.readTime || data.readTime <= 0 || data.readTime > 120) {
+        alert('Read time must be between 1 and 120 minutes.'); return;
       }
-
-      if (data.readTime > 120) {
-        alert('Read time must not exceed 120 minutes');
-        return;
+      if (!data.excerpt?.trim() || data.excerpt.length < 20 || data.excerpt.length > 300) {
+        alert('Excerpt must be between 20 and 300 characters.'); return;
       }
-
-      if (!/^\d+$/.test(data.readTime.toString())) {
-        alert('Read time must be a number');
-        return;
+      if (!data.content?.trim() || data.content.length < 50) {
+        alert('Content must be at least 50 characters.'); return;
       }
-
-      // Excerpt validation
-      if (!data.excerpt || !data.excerpt.trim()) {
-        alert('Please enter an excerpt');
-        return;
-      }
-
-      if (data.excerpt.length < 20) {
-        alert('Excerpt must be at least 20 characters long');
-        return;
-      }
-
-      if (data.excerpt.length > 300) {
-        alert('Excerpt must not exceed 300 characters');
-        return;
-      }
-
-      // Content validation
-      if (!data.content || !data.content.trim()) {
-        alert('Please enter content');
-        return;
-      }
-
-      if (data.content.length < 50) {
-        alert('Content must be at least 50 characters long');
-        return;
-      }
-
 
       const formDataToSend = new FormData();
-
-
       Object.keys(data).forEach(key => {
         if (FORM_SKIP_KEYS.includes(key)) return;
-
-
         const value = data[key];
-
-
-        if (
-          value === null ||
-          value === undefined ||
-          typeof value === 'object'
-        ) {
-          return;
-        }
-
-
+        if (value === null || value === undefined || typeof value === 'object') return;
         formDataToSend.append(key, value);
       });
-
-
       if (fileData?.file) {
         formDataToSend.append(fileData.name, fileData.file);
       }
-
 
       if (currentItem) {
         await blogAPI.update(currentItem._id, formDataToSend);
@@ -353,12 +588,11 @@ const convertPlainTextToHTML = (text) => {
         await blogAPI.create(formDataToSend);
       }
 
-
       await loadData();
       setShowForm(false);
     } catch (error) {
       console.error('Error saving blog post:', error);
-      alert('Failed to save blog post');
+      alert('Failed to save blog post.');
     }
   };
 
@@ -605,12 +839,11 @@ const convertPlainTextToHTML = (text) => {
         </div>
       )}
 
-      <FormModal
+      <BlogEditorModal
         show={showForm}
         onHide={() => setShowForm(false)}
-        title={currentItem ? "Edit Blog Article" : "Add New Blog Article"}
+        title={currentItem ? 'Edit Blog Article' : 'Add New Blog Article'}
         initialData={formData}
-        fields={BLOG_FORM_FIELDS}
         onSubmit={handleSave}
       />
 

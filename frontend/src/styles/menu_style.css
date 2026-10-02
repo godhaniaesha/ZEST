@@ -839,7 +839,7 @@
     align-items: flex-start !important;
   }
   .x_about_ourstory_image_tag {
-    right: 20px !important;
+    display: none !important;
   }
   .x_about_ourstory_section_content h2 {
     font-size: 1.5rem !important;

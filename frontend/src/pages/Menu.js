@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Star } from 'lucide-react';
 import { FaArrowLeftLong, FaArrowRightLong } from 'react-icons/fa6';
-import { menuAPI } from '../api';
+import { menuAPI, categoriesAPI } from '../api';
 import { normalizeMenuItem } from '../utils/menuUtils';
 import '../styles/menu_style.css';
 
 const Menu = () => {
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,31 +18,33 @@ const Menu = () => {
   const itemsPerPage = 9;
 
   useEffect(() => {
-    const fetchMenu = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await menuAPI.getAll();
-        const normalizedData = response.data.map(item => normalizeMenuItem(item));
+        const [menuResponse, categoriesResponse] = await Promise.all([
+          menuAPI.getAll(),
+          categoriesAPI.getAll(),
+        ]);
+        const normalizedData = menuResponse.data.map(item => normalizeMenuItem(item));
         setMenuItems(normalizedData);
+
+        // Build categories list: "All Items" first, then each category from DB
+        const dynamicCategories = [
+          { id: 'all', label: 'All Items' },
+          ...categoriesResponse.data.map(cat => ({
+            id: cat.name.toLowerCase().trim(),
+            label: cat.name,
+          })),
+        ];
+        setCategories(dynamicCategories);
       } catch (error) {
-        console.error('Error fetching menu:', error);
+        console.error('Error fetching menu data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchMenu();
+    fetchData();
   }, []);
-
-  const categories = [
-    { id: 'all', label: 'All Items' },
-    { id: 'appetizers', label: 'Appetizers' },
-    { id: 'salads', label: 'Salads' },
-    { id: 'desserts', label: 'Desserts' },
-    { id: 'mains', label: 'Main Course' },
-    { id: 'beverages', label: 'Beverages' },
-    { id: 'cocktails', label: 'Cocktails' },
-    { id: 'breakfast', label: 'Breakfast' },
-  ];
 
   const categoryLabelMap = categories.reduce((labels, category) => {
     labels[category.id] = category.label;
@@ -51,14 +54,14 @@ const Menu = () => {
   const featuredItem = menuItems.length > 0 ? (menuItems.find((item) => item.id === 8) || menuItems[0]) : null;
 
   const filteredItems = menuItems
-    .filter((item) => activeCategory === 'all' || item.category === activeCategory)
+    .filter((item) => activeCategory === 'all' || (item.category || '').toLowerCase().trim() === activeCategory)
     .filter((item) => {
       const query = searchQuery.trim().toLowerCase();
       if (!query) return true;
       return (
         item.name.toLowerCase().includes(query) ||
         item.description.toLowerCase().includes(query) ||
-        (categoryLabelMap[item.category] || item.category).toLowerCase().includes(query)
+        (categoryLabelMap[(item.category || '').toLowerCase().trim()] || item.category).toLowerCase().includes(query)
       );
     })
     .sort((a, b) => {
@@ -246,7 +249,7 @@ const Menu = () => {
                   <div className="x_menu_card_img_wrap">
                     <img src={item.image} alt={item.name} loading="lazy" />
                     <div className="x_menu_card_badge">
-                      {categoryLabelMap[item.category] || item.category}
+                      {categoryLabelMap[(item.category || '').toLowerCase().trim()] || item.category}
                     </div>
                   </div>
 

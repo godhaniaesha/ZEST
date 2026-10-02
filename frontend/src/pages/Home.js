@@ -2461,6 +2461,7 @@ export default function Home() {
     setResForm({ name: "", date: "", time: "", guests: "", occasion: "" });
   };
   const handlePostClick = (postId) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     navigate(`/blog/${postId}`);
   };
   const HERO_SLIDES = [

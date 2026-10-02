@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FiChevronRight,
   FiClock,
@@ -287,11 +288,14 @@ const h_res_css = `
   }
   .h_capsule_btn:hover { background: var(--z-emerald); color: var(--z-gold); }
   .h_capsule_val {
-    font-size: 1.4rem; font-weight: 700;
+    font-size: 1.4rem; font-weight: 600;
     font-family: 'Cormorant Garamond', serif;
     text-align: center; flex: 1;
     color: var(--z-dark);
   }
+    .h_capsule_number{ 
+      font-size: 1.8rem;
+    }
 
   /* ── DATE INPUT ── */
   .h_input_box {
@@ -655,7 +659,7 @@ const h_res_css = `
     }
     .h_guest_capsule { max-width: none; width: 100%; }
     .h_capsule_btn { width: 42px; height: 42px; font-size: 1.2rem; }
-    .h_capsule_val { font-size: 0.95rem; }
+    .h_capsule_val { font-size: 1.5rem; }
 
     /* Table grid */
     .h_table_grid { grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
@@ -702,6 +706,12 @@ const h_res_css = `
     .h_res_step_node { min-width: 118px; }
 
     .h_summary_glass h3 { font-size: 1.55rem; }
+
+    .h_capsule_val { font-size: 1.4rem; }
+
+      .h_capsule_number{ 
+      font-size: 1.8rem;
+    }
   }
 
   /* ══════════════════════════════════════
@@ -733,7 +743,8 @@ const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 export default function ZestReservation() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -761,8 +772,10 @@ export default function ZestReservation() {
   const [clockSize, setClockSize] = useState(240);
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState("");
+  // const [cardMountKey, setCardMountKey] = useState(0);
   const clockRef = useRef(null);
   const cardMountRef = useRef(null);
+  const stripeRef = useRef(null);
   const cardElementRef = useRef(null);
   const [cardReady, setCardReady] = useState(false);
   const [paymentIntentId, setPaymentIntentId] = useState("");
@@ -808,8 +821,8 @@ export default function ZestReservation() {
         guests: s,
         table:
           currentTable &&
-          currentTable.capacity >= s &&
-          currentTable.status !== "Occupied"
+            currentTable.capacity >= s &&
+            currentTable.status !== "Occupied"
             ? p.table
             : null,
       };
@@ -884,39 +897,72 @@ export default function ZestReservation() {
     }
 
     let active = true;
-    let frameId = 0;
+    let currentCard = null;
 
     const setupCard = async () => {
       if (!cardMountRef.current) {
-        frameId = requestAnimationFrame(() => {
-          if (active) setupCard();
-        });
         return;
       }
 
       try {
-        cardElementRef.current?.unmount();
-        cardElementRef.current = null;
         setCardComplete(false);
         setCardError("");
+        setCardReady(false);
 
-        const { cardElement } = await mountCardElement(
+        // Cleanup previous element
+        if (cardElementRef.current) {
+          try {
+            cardElementRef.current.unmount();
+            cardElementRef.current.destroy();
+          } catch (_) { }
+
+          cardElementRef.current = null;
+        }
+
+        stripeRef.current = null;
+
+        const result = await mountCardElement(
           cardMountRef.current,
           (event) => {
+            if (!active) return;
+
             setCardComplete(event.complete);
             setCardError(event.error?.message || "");
-          },
+          }
         );
 
-        if (active) {
-          cardElementRef.current = cardElement;
-          setCardReady(true);
-        } else {
-          cardElement.unmount();
+        const {
+          stripe,
+          cardElement,
+        } = result;
+
+        if (!active) {
+          try {
+            cardElement.unmount();
+            cardElement.destroy();
+          } catch (_) { }
+
+          return;
         }
+
+        // VERY IMPORTANT
+        // Save the Stripe instance that created THIS card element.
+        stripeRef.current = stripe;
+        cardElementRef.current = cardElement;
+        currentCard = cardElement;
+
+        setCardReady(true);
+
       } catch (err) {
         if (active) {
-          setCardError(err.message || "Could not load card payment form.");
+          console.error("Stripe card setup error:", err);
+
+          setCardError(
+            err.message ||
+            "Could not load card payment form."
+          );
+
+          setCardReady(false);
         }
       }
     };
@@ -925,10 +971,21 @@ export default function ZestReservation() {
 
     return () => {
       active = false;
-      cancelAnimationFrame(frameId);
-      cardElementRef.current?.unmount();
-      cardElementRef.current = null;
+
+      if (currentCard) {
+        try {
+          currentCard.unmount();
+          currentCard.destroy();
+        } catch (_) { }
+      }
+
+      if (cardElementRef.current === currentCard) {
+        cardElementRef.current = null;
+      }
+
+      stripeRef.current = null;
     };
+
   }, [step, form.paymentMethod]);
 
   useEffect(() => {
@@ -959,8 +1016,18 @@ export default function ZestReservation() {
     if (step === 4) {
       const paymentResult = await payReservationAdvance({
         paymentMethod: form.paymentMethod,
+
+        // EXACT Stripe instance that created the card element
+        stripe:
+          form.paymentMethod === "Card"
+            ? stripeRef.current
+            : null,
+
         cardElement:
-          form.paymentMethod === "Card" ? cardElementRef.current : null,
+          form.paymentMethod === "Card"
+            ? cardElementRef.current
+            : null,
+
         upiVpa: form.upiVpa.trim(),
       });
 
@@ -1022,8 +1089,8 @@ export default function ZestReservation() {
 
         setError(
           err.response?.data?.message ||
-            err.message ||
-            "Could not save reservation. Please try again.",
+          err.message ||
+          "Could not save reservation. Please try again.",
         );
       }
     } else setStep((p) => p + 1);
@@ -1038,6 +1105,73 @@ export default function ZestReservation() {
     activeView === "hour"
       ? Math.max(46, clockRadius - 22)
       : Math.max(60, clockRadius - 6);
+
+  // ── AUTH GATE: redirect to login if not authenticated ──
+  if (authLoading) {
+    return (
+      <>
+        <style>{h_res_css}</style>
+        <div className="h_res_wrapper">
+          <div style={{ textAlign: "center", padding: "4rem", opacity: 0.5 }}>
+            Loading…
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <style>{h_res_css}</style>
+        <div className="h_res_wrapper">
+          <div className="h_res_glows">
+            <div className="h_res_glow_1" />
+            <div className="h_res_glow_2" />
+          </div>
+          <div className="h_res_card" style={{ gridTemplateColumns: "1fr", minHeight: "auto" }}>
+            <div className="h_res_main" style={{ alignItems: "center", justifyContent: "center", padding: "4rem 2rem" }}>
+              <div className="h_confirm_wrap">
+                <div
+                  className="h_confirm_icon"
+                  style={{ background: "rgba(201,168,76,0.12)", color: "var(--z-gold)", fontSize: "2.2rem" }}
+                >
+                  <FiUser />
+                </div>
+                <h2
+                  style={{
+                    fontFamily: "Cormorant Garamond, serif",
+                    fontSize: "2.4rem",
+                    color: "var(--z-emerald)",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  Sign In Required
+                </h2>
+                <p
+                  style={{
+                    opacity: 0.6,
+                    maxWidth: "360px",
+                    lineHeight: 1.7,
+                    fontSize: "0.95rem",
+                    marginBottom: "2.5rem",
+                  }}
+                >
+                  Please log in or create an account to make a reservation at Zest.
+                </p>
+                <button
+                  className="h_btn_next"
+                  onClick={() => navigate("/auth", { state: { from: "/reservations" } })}
+                >
+                  Log In / Sign Up <FiChevronRight />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -1195,7 +1329,7 @@ export default function ZestReservation() {
                             −
                           </button>
                           <div className="h_capsule_val">
-                            {form.guests} Guests
+                            <span className="h_capsule_number">{form.guests}</span> Guests
                           </div>
                           <button
                             className="h_capsule_btn"
@@ -1474,7 +1608,10 @@ export default function ZestReservation() {
                       padding: "0.9rem 1rem",
                       fontSize: "0.7rem",
                     }}
-                    onClick={() => update("paymentMethod", "Card")}
+                    onClick={() => {
+                      update("paymentMethod", "Card");
+                      // setCardMountKey((k) => k + 1);
+                    }}
                   >
                     Card
                   </button>

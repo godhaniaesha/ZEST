@@ -217,7 +217,7 @@ export default function Categories() {
               </div>
               <Row className="g-4">
                 {menuCategories.map((cat) => (
-                  <Col key={cat._id} xs={12} sm={6} md={4} lg={3}>
+                  <Col key={cat._id} xs={12} sm={6} md={6} xl={6} lg={6} xxl={3}>
                     <div className="d-category-card h-100">
                       <div className="d-flex align-items-center gap-3">
                         <div className="d-category-icon" style={{ background: `${getCategoryColor(cat.type)}15`, color: getCategoryColor(cat.type) }}>

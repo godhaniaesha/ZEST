@@ -4184,8 +4184,26 @@ body {
 .x_blogdetail_article ol {
   margin-bottom: 24px;
   padding-left: 30px;
+  list-style: none;
 }
-.x_blogdetail_article li {
+.x_blogdetail_article ul li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--d-text-muted);
+}
+.x_blogdetail_article ul li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--d-gold);
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+.x_blogdetail_article ol li {
   margin-bottom: 12px;
   font-size: 1.1rem;
   line-height: 1.7;

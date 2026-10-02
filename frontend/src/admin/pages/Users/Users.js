@@ -253,6 +253,7 @@ export default function Users() {
         initialData={currentItem || { name: '', role: 'waiter', status: 'Active', shift: 'Morning', leavesTotal: 12, leavesTaken: 0 }}
         onSave={handleSave}
         fields={formFields}
+        icon={currentItem ? '✎' : '+'}
       />
 
       <DeleteModal

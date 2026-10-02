@@ -1,121 +1,126 @@
 import { paymentAPI } from "../api";
 import { loadStripe } from "@stripe/stripe-js";
 
-let stripeInstance = null;
-let publishableKeyCache = null;
-let elementsInstance = null;
-
-const loadStripeScript = () =>
-  new Promise((resolve, reject) => {
-    if (window.Stripe) {
-      resolve(window.Stripe);
-      return;
-    }
-
-    const existing = document.querySelector(
-      'script[src="https://js.stripe.com/v3/"]',
-    );
-    if (existing) {
-      existing.addEventListener("load", () => resolve(window.Stripe));
-      existing.addEventListener("error", () =>
-        reject(new Error("Failed to load Stripe.js")),
-      );
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://js.stripe.com/v3/";
-    script.async = true;
-    script.onload = () => resolve(window.Stripe);
-    script.onerror = () => reject(new Error("Failed to load Stripe.js"));
-    document.head.appendChild(script);
-  });
-
-export const getStripePublishableKey = async () => {
-  if (publishableKeyCache) return publishableKeyCache;
-
-  const { data } = await paymentAPI.getConfig();
-  console.log("Stripe Config Response:", data);
-  console.log("Publishable Key:", data.publishableKey);
-  if (!data?.publishableKey) {
-    throw new Error(
-      data?.message ||
-      "Stripe publishable key is missing. Add STRIPE_PUBLISHABLE_KEY to backend .env",
-    );
-  }
-
-  publishableKeyCache = data.publishableKey;
-  return publishableKeyCache;
-};
+// Keep ONE promise, not just ONE resolved instance.
+// This prevents multiple loadStripe() calls when React/effects
+// execute at nearly the same time.
+let stripePromise = null;
 
 const getStripe = async () => {
-  if (!stripeInstance) {
+  if (stripePromise) {
+    return stripePromise;
+  }
+
+  stripePromise = (async () => {
     const { data } = await paymentAPI.getConfig();
 
-    if (!data.publishableKey) {
+    if (!data?.publishableKey) {
       throw new Error("Stripe publishable key not configured on server.");
     }
 
-    stripeInstance = await loadStripe(data.publishableKey);
-  }
+    const stripe = await loadStripe(data.publishableKey);
 
-  return stripeInstance;
+    if (!stripe) {
+      throw new Error("Stripe failed to initialize.");
+    }
+
+    return stripe;
+  })();
+
+  return stripePromise;
 };
 
+
+/**
+ * Create and mount a Card Element.
+ *
+ * IMPORTANT:
+ * The returned `stripe` MUST be used with the returned
+ * `cardElement`.
+ */
 export const mountCardElement = async (domNode, onChange) => {
-  const stripe = await getStripe();
-  if (!elementsInstance) {
-    elementsInstance = stripe.elements();
+  if (!domNode) {
+    throw new Error("Stripe card mount element not found.");
   }
 
-  const cardElement = elementsInstance.create("card", {
+  const stripe = await getStripe();
+
+  const elements = stripe.elements();
+
+  const cardElement = elements.create("card", {
+    hidePostalCode: true,
     style: {
       base: {
         fontSize: "16px",
         fontFamily: '"Plus Jakarta Sans", sans-serif',
         color: "#0B1915",
-        "::placeholder": { color: "rgba(11,25,21,0.35)" },
+        "::placeholder": {
+          color: "rgba(11,25,21,0.35)",
+        },
       },
-      invalid: { color: "#C0392B" },
+      invalid: {
+        color: "#C0392B",
+      },
     },
   });
 
   cardElement.mount(domNode);
-  cardElement.on("change", onChange);
 
-  return { stripe, cardElement };
+  if (onChange) {
+    cardElement.on("change", onChange);
+  }
+
+  return {
+    stripe,
+    elements,
+    cardElement,
+  };
 };
 
+
+/**
+ * Reservation advance payment
+ */
 export const payReservationAdvance = async ({
   paymentMethod,
+  stripe,
   cardElement,
   upiVpa,
 }) => {
-  // For UPI, handle differently - skip Stripe and complete directly
+  // -----------------------------
+  // UPI
+  // -----------------------------
   if (paymentMethod === "UPI") {
     if (!upiVpa) {
       throw new Error("Please enter a valid UPI ID.");
     }
-    // Create payment record directly for UPI
+
     const { data } = await paymentAPI.completeAdvanceDirect({
       paymentMethod: "UPI",
       upiVpa,
     });
+
     return {
       paymentIntentId: data.paymentIntentId,
       redirected: false,
     };
   }
 
-  const stripe = await getStripe();
+
+  // -----------------------------
+  // CARD
+  // -----------------------------
+  if (!stripe) {
+    throw new Error("Stripe is not initialized.");
+  }
+
+  if (!cardElement) {
+    throw new Error("Card element not mounted.");
+  }
 
   const { data } = await paymentAPI.createAdvanceIntent({
     paymentMethod,
   });
-
-  console.log("FULL RESPONSE:", data);
-  console.log("CLIENT SECRET:", data.clientSecret);
-  console.log("PAYMENT INTENT ID:", data.paymentIntentId);
 
   const { clientSecret } = data;
 
@@ -125,21 +130,13 @@ export const payReservationAdvance = async ({
     );
   }
 
-  // Handle Card payment
-  if (!cardElement) {
-    throw new Error("Card element not mounted.");
-  }
-
-  const result = await stripe.confirmCardPayment(
-    clientSecret,
-    {
-      payment_method: {
-        card: cardElement,
-      },
-    }
-  );
-
-  console.log("Stripe Result:", result);
+  // IMPORTANT:
+  // Use the EXACT stripe instance that created cardElement.
+  const result = await stripe.confirmCardPayment(clientSecret, {
+    payment_method: {
+      card: cardElement,
+    },
+  });
 
   if (result.error) {
     throw new Error(result.error.message);
@@ -151,55 +148,80 @@ export const payReservationAdvance = async ({
   };
 };
 
+
+/**
+ * Confirm Stripe payment for bill settlement.
+ */
 const confirmStripePayment = async ({
   paymentMethod,
+  stripe,
   clientSecret,
   cardElement,
   upiVpa,
 }) => {
-  const stripe = await getStripe();
-
   if (paymentMethod === "Card") {
+    if (!stripe) {
+      throw new Error("Stripe is not initialized.");
+    }
+
     if (!cardElement) {
       throw new Error("Please enter your card details.");
     }
 
     const result = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: { card: cardElement },
+      payment_method: {
+        card: cardElement,
+      },
     });
 
     if (result.error) {
-      throw new Error(result.error.message || "Card payment failed.");
+      throw new Error(
+        result.error.message || "Card payment failed."
+      );
     }
 
     const paymentIntent = result.paymentIntent;
 
-    if (paymentIntent && paymentIntent.status === "requires_action") {
-      const redirectUrl = paymentIntent.next_action?.redirect_to_url?.url;
-      return { requiresAction: true, redirectUrl, paymentIntentId: paymentIntent.id };
+    if (paymentIntent?.status === "requires_action") {
+      const redirectUrl =
+        paymentIntent.next_action?.redirect_to_url?.url;
+
+      return {
+        requiresAction: true,
+        redirectUrl,
+        paymentIntentId: paymentIntent.id,
+      };
     }
 
-    return { paymentIntentId: paymentIntent.id, requiresAction: false };
+    return {
+      paymentIntentId: paymentIntent.id,
+      requiresAction: false,
+    };
   }
 
-  // For POS UPI payments, we'll handle it differently
-  // Since this is an admin POS system, UPI payments are typically completed
-  // by the customer directly to the merchant's UPI ID
-  // We'll mark it as completed without Stripe confirmation
+
   if (paymentMethod === "UPI") {
     if (!upiVpa) {
       throw new Error("Please enter a valid UPI ID.");
     }
-    // Return success without Stripe confirmation for POS UPI
-    // The backend will handle marking the payment as completed
-    return { paymentIntentId: null, requiresAction: false, upiCompleted: true };
+
+    return {
+      paymentIntentId: null,
+      requiresAction: false,
+      upiCompleted: true,
+    };
   }
 
   throw new Error("Invalid payment method.");
 };
 
+
+/**
+ * Pay Bill
+ */
 export const payBill = async ({
   paymentMethod,
+  stripe,
   cardElement,
   upiVpa,
   reservationId,
@@ -207,11 +229,15 @@ export const payBill = async ({
   tax,
   orderIds,
 }) => {
-  // For UPI, skip Stripe payment intent creation and complete directly
+
+  // -----------------------------
+  // UPI
+  // -----------------------------
   if (paymentMethod === "UPI") {
     if (!upiVpa) {
       throw new Error("Please enter a valid UPI ID.");
     }
+
     const completeRes = await paymentAPI.completeBill({
       reservationId,
       orderIds,
@@ -219,9 +245,14 @@ export const payBill = async ({
       subtotal,
       tax,
     });
+
     return completeRes.data;
   }
 
+
+  // -----------------------------
+  // CREATE PAYMENT INTENT
+  // -----------------------------
   const intentRes = await paymentAPI.createBillIntent({
     reservationId,
     subtotal,
@@ -236,27 +267,45 @@ export const payBill = async ({
       subtotal,
       tax,
     });
+
     return completeRes.data;
   }
 
-  const { clientSecret, paymentIntentId } = intentRes.data;
+  const {
+    clientSecret,
+    paymentIntentId,
+  } = intentRes.data;
 
+
+  // -----------------------------
+  // CONFIRM PAYMENT
+  // -----------------------------
   const result = await confirmStripePayment({
     paymentMethod,
+    stripe,
     clientSecret,
     cardElement,
     upiVpa,
   });
 
+
   if (result.requiresAction && result.redirectUrl) {
     window.location.href = result.redirectUrl;
-    return { redirected: true };
+
+    return {
+      redirected: true,
+    };
   }
 
+
+  // -----------------------------
+  // COMPLETE BILL
+  // -----------------------------
   const completeRes = await paymentAPI.completeBill({
     reservationId,
     orderIds,
-    paymentIntentId: result.paymentIntentId || paymentIntentId,
+    paymentIntentId:
+      result.paymentIntentId || paymentIntentId,
     subtotal,
     tax,
   });

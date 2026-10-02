@@ -12,6 +12,82 @@ const BlogDetail = () => {
   const [allPosts, setAllPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Converts plain text OR already-HTML content into clean HTML for rendering.
+  // Handles both properly-stored HTML (from new posts) and legacy plain text blobs.
+  const renderContent = (raw) => {
+    if (!raw) return '';
+
+    const text = raw.trim();
+
+    // Already proper HTML — return as-is
+    if (/<(h[1-6]|p|ul|ol|li|div|blockquote|img|table)\b/i.test(text)) {
+      return text;
+    }
+
+    // Plain text: split on common markdown-like patterns and convert line by line.
+    // Also handles the "all on one line" case by first inserting newlines before
+    // markdown tokens that shouldn't appear inline.
+    let normalised = text
+      // Insert newline before headings if squashed: "some text## Heading" → "some text\n## Heading"
+      .replace(/([^\n])(#{1,3}\s)/g, '$1\n$2')
+      // Insert newline before list items squashed onto one line: "text- Item" → "text\n- Item"
+      .replace(/([^\n])\s+-\s+/g, '$1\n- ');
+
+    const lines = normalised.split('\n');
+    const output = [];
+    let listBuffer = [];
+
+    const flushList = () => {
+      if (listBuffer.length > 0) {
+        output.push(
+          `<ul>${listBuffer.map(i => `<li>${i}</li>`).join('')}</ul>`
+        );
+        listBuffer = [];
+      }
+    };
+
+    const inlineFormat = (str) =>
+      str
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+    for (const raw of lines) {
+      const line = raw.trim();
+
+      if (!line) {
+        flushList();
+        continue;
+      }
+
+      if (/^###\s+(.+)/.test(line)) {
+        flushList();
+        output.push(`<h2>${inlineFormat(line.replace(/^###\s+/, ''))}</h2>`);
+      } else if (/^##\s+(.+)/.test(line)) {
+        flushList();
+        output.push(`<h3>${inlineFormat(line.replace(/^##\s+/, ''))}</h3>`);
+      } else if (/^#\s+(.+)/.test(line)) {
+        flushList();
+        output.push(`<h4>${inlineFormat(line.replace(/^#\s+/, ''))}</h4>`);
+      } else if (/^>\s+(.+)/.test(line)) {
+        flushList();
+        output.push(`<blockquote>${inlineFormat(line.replace(/^>\s+/, ''))}</blockquote>`);
+      } else if (/^-\s+(.+)/.test(line)) {
+        listBuffer.push(inlineFormat(line.replace(/^-\s+/, '')));
+      } else if (/^!\[([^\]]*)\]\(([^)]+)\)$/.test(line)) {
+        flushList();
+        const m = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+        output.push(`<img src="${m[2]}" alt="${m[1]}" style="width:100%;max-width:600px;border-radius:10px;margin:20px 0;" />`);
+      } else {
+        flushList();
+        output.push(`<p>${inlineFormat(line)}</p>`);
+      }
+    }
+
+    flushList();
+    return output.join('\n');
+  };
+
   useEffect(() => {
     fetchPostAndAll();
   }, [id]);
@@ -106,12 +182,30 @@ const BlogDetail = () => {
                 </div>
 
                 <div className="x_blogdetail_share">
-                  <button className="x_share_btn" title="Share">
+                  <button
+                    className="x_share_btn"
+                    title="Share"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: post.title,
+                          text: post.excerpt || post.title,
+                          url: window.location.href,
+                        }).catch(() => {});
+                      } else {
+                        navigator.clipboard.writeText(window.location.href).then(() => {
+                          alert("Link copied to clipboard!");
+                        }).catch(() => {
+                          prompt("Copy this link:", window.location.href);
+                        });
+                      }
+                    }}
+                  >
                     <Share2 size={18} />
                   </button>
-                  <button className="x_comment_btn" title="Comments">
+                  {/* <button className="x_comment_btn" title="Comments">
                     <MessageCircle size={18} />
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
@@ -136,7 +230,7 @@ const BlogDetail = () => {
       {/* Article Content */}
       <article className="x_blogdetail_content container">
         <div className="x_blogdetail_article">
-          <div dangerouslySetInnerHTML={{ __html: post.content }} />
+          <div dangerouslySetInnerHTML={{ __html: renderContent(post.content) }} />
         </div>
       </article>
 

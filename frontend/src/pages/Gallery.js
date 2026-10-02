@@ -196,9 +196,6 @@ const Gallery = () => {
           <span>
             {filtered.length} {filtered.length === 1 ? 'photo' : 'photos'} shown
           </span>
-          <strong>
-            {filterCategories.find((c) => c.id === activeFilter)?.label}
-          </strong>
         </div>
 
         {/* ══ GRID ══ */}
@@ -298,7 +295,7 @@ const Gallery = () => {
               {lightboxIndex + 1} / {filtered.length}
             </div>
 
-            <div className="x_gallery_lightbox_hint" aria-hidden="true">
+            {/* <div className="x_gallery_lightbox_hint" aria-hidden="true">
               <span>
                 <span className="x_gallery_key">←</span>
                 <span className="x_gallery_key">→</span>
@@ -308,7 +305,7 @@ const Gallery = () => {
                 <span className="x_gallery_key">Esc</span>
                 Close
               </span>
-            </div>
+            </div> */}
           </div>
         )}
 

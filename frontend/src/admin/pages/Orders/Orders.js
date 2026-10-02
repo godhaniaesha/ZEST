@@ -163,7 +163,6 @@ export default function Orders() {
                 <th>Item Status</th>
                 <th>Amount</th>
                 <th>Payment Status</th>
-                <th>Timming</th>
 
                 {canDelete && (
                   <th style={{ width: "100px" }}>Actions</th>

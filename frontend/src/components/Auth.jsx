@@ -41,6 +41,14 @@ export default function Auth() {
 
   const { login, register, user } = useAuth();
   const navigate = useNavigate();
+  const [locationState] = useState(() => {
+    try {
+      return window.history.state?.usr || null;
+    } catch {
+      return null;
+    }
+  });
+  const redirectTo = locationState?.from || "/";
 
   const toast = (msg) => {
     const id = Date.now();
@@ -80,7 +88,7 @@ export default function Auth() {
       if (userRole && userRole !== 'customer') {
         navigate('/admin/dashboard');
       } else {
-        navigate('/');
+        navigate(redirectTo);
       }
     } else {
       setAlert({ type: "error", msg: result.message });
@@ -102,7 +110,7 @@ export default function Auth() {
     setLoading(false);
     if (result.success) {
       setAlert({ type: "success", msg: "Membership initiated!" });
-      navigate('/');
+      navigate(redirectTo);
     } else {
       setAlert({ type: "error", msg: result.message });
     }
