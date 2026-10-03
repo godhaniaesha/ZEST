@@ -228,6 +228,7 @@ export const payBill = async ({
   subtotal,
   tax,
   orderIds,
+  tableLabel,
 }) => {
 
   // -----------------------------
@@ -244,6 +245,7 @@ export const payBill = async ({
       paymentMethod: "UPI",
       subtotal,
       tax,
+      tableLabel,
     });
 
     return completeRes.data;
@@ -266,6 +268,7 @@ export const payBill = async ({
       orderIds,
       subtotal,
       tax,
+      tableLabel,
     });
 
     return completeRes.data;
@@ -280,9 +283,12 @@ export const payBill = async ({
   // -----------------------------
   // CONFIRM PAYMENT
   // -----------------------------
+  const stripeForConfirm =
+    stripe || (paymentMethod === "Card" ? await getStripe() : null);
+
   const result = await confirmStripePayment({
     paymentMethod,
-    stripe,
+    stripe: stripeForConfirm,
     clientSecret,
     cardElement,
     upiVpa,
@@ -308,6 +314,7 @@ export const payBill = async ({
       result.paymentIntentId || paymentIntentId,
     subtotal,
     tax,
+    tableLabel,
   });
 
   return completeRes.data;

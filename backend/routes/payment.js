@@ -3,6 +3,7 @@ const Stripe = require("stripe");
 const Payment = require("../models/Payment");
 const Reservation = require("../models/Reservation");
 const Order = require("../models/Order");
+const Table = require("../models/Table");
 const { auth } = require("../middleware/auth");
 
 const router = express.Router();
@@ -38,6 +39,100 @@ const createPaymentIntent = async (amount, paymentMethod) => {
   };
 
   return stripe.paymentIntents.create(paymentIntentConfig);
+};
+
+const tableDisplayId = (tableDoc) => {
+  if (!tableDoc) return null;
+  if (tableDoc.displayId) return tableDoc.displayId;
+  const prefix = tableDoc.type === "Bar" ? "B" : "C";
+  return `${prefix}-${String(tableDoc.number).padStart(2, "0")}`;
+};
+
+const tableMatchVariants = (label) => {
+  if (!label) return [];
+  const raw = String(label).trim();
+  const normalized = raw.replace(/^Table\s*/i, "").trim();
+  const variants = new Set([raw, normalized, `Table ${normalized}`]);
+  const match = normalized.match(/^([BC])-(\d+)$/i);
+  if (match) {
+    variants.add(
+      `${match[1].toUpperCase()}-${String(match[2]).padStart(2, "0")}`,
+    );
+  }
+  return [...variants];
+};
+
+const resolveBillOrderIds = async ({ reservationId, orderIds, tableLabel }) => {
+  const ids = new Set(
+    (Array.isArray(orderIds) ? orderIds : [])
+      .filter(Boolean)
+      .map((id) => String(id)),
+  );
+
+  const reservation = await Reservation.findById(reservationId).populate("table");
+  if (!reservation) {
+    return [...ids];
+  }
+
+  const unpaidFilter = { status: { $nin: ["Paid", "Cancelled"] } };
+
+  const byReservation = await Order.find({
+    reservationId: reservation._id,
+    ...unpaidFilter,
+  });
+  byReservation.forEach((o) => ids.add(String(o._id)));
+
+  const label = tableLabel || tableDisplayId(reservation.table);
+  if (label) {
+    const variants = tableMatchVariants(label);
+    const byTable = await Order.find({
+      table: { $in: variants },
+      ...unpaidFilter,
+    });
+    byTable.forEach((o) => ids.add(String(o._id)));
+  }
+
+  return [...ids];
+};
+
+const finalizeBillSettlement = async ({
+  reservationId,
+  orderIds,
+  tableLabel,
+}) => {
+  const reservation = await Reservation.findById(reservationId).populate("table");
+  if (!reservation) {
+    throw new Error("Reservation not found.");
+  }
+
+  const allOrderIds = await resolveBillOrderIds({
+    reservationId,
+    orderIds,
+    tableLabel,
+  });
+
+  if (allOrderIds.length) {
+    await Order.updateMany(
+      { _id: { $in: allOrderIds } },
+      { $set: { status: "Paid", reservationId: reservation._id } },
+    );
+  }
+
+  await Reservation.findByIdAndUpdate(reservationId, {
+    fullPaymentDone: true,
+    status: "Completed",
+  });
+
+  const tableRef = reservation.table?._id || reservation.table;
+  if (tableRef) {
+    await Table.findByIdAndUpdate(tableRef, { status: "Free" });
+  }
+
+  return {
+    updatedOrderCount: allOrderIds.length,
+    primaryOrderId: allOrderIds[0] || null,
+    tableRef,
+  };
 };
 
 const verifyPaymentIntent = async (paymentIntentId, expectedAmount) => {
@@ -214,7 +309,15 @@ router.post("/bill-intent", auth, async (req, res) => {
 
 router.post("/bill/complete", auth, async (req, res) => {
   try {
-    const { reservationId, orderIds, paymentIntentId, subtotal, tax, paymentMethod } = req.body;
+    const {
+      reservationId,
+      orderIds,
+      paymentIntentId,
+      subtotal,
+      tax,
+      paymentMethod,
+      tableLabel,
+    } = req.body;
 
     if (!reservationId) {
       return res.status(400).json({ message: "Reservation is required." });
@@ -229,20 +332,10 @@ router.post("/bill/complete", auth, async (req, res) => {
     const advanceDeducted = reservation.advancePaid || 0;
     const finalAmount = Math.max(0, grossTotal - advanceDeducted);
 
+    const settlementPayload = { reservationId, orderIds, tableLabel };
+
     if (finalAmount <= 0) {
-      if (Array.isArray(orderIds) && orderIds.length) {
-        await Order.updateMany({ _id: { $in: orderIds } }, { status: "Paid" });
-      }
-
-      await Reservation.findByIdAndUpdate(reservationId, {
-        fullPaymentDone: true,
-        status: "Completed",
-      });
-
-      if (reservation.table) {
-        const Table = require("../models/Table");
-        await Table.findByIdAndUpdate(reservation.table, { status: "Free" });
-      }
+      const settlement = await finalizeBillSettlement(settlementPayload);
 
       return res.json({
         success: true,
@@ -250,16 +343,17 @@ router.post("/bill/complete", auth, async (req, res) => {
         advanceDeducted,
         grossTotal,
         finalAmount: 0,
+        ordersUpdated: settlement.updatedOrderCount,
         message: "Bill settled. Advance payment covered the full amount.",
       });
     }
 
     // Handle UPI payments without Stripe verification
     if (paymentMethod === "UPI") {
-      const primaryOrderId = Array.isArray(orderIds) ? orderIds[0] : null;
+      const settlement = await finalizeBillSettlement(settlementPayload);
 
       await Payment.create({
-        orderId: primaryOrderId,
+        orderId: settlement.primaryOrderId,
         reservationId,
         amount: finalAmount,
         advanceDeducted,
@@ -268,26 +362,13 @@ router.post("/bill/complete", auth, async (req, res) => {
         status: "Succeeded",
       });
 
-      if (Array.isArray(orderIds) && orderIds.length) {
-        await Order.updateMany({ _id: { $in: orderIds } }, { status: "Paid" });
-      }
-
-      await Reservation.findByIdAndUpdate(reservationId, {
-        fullPaymentDone: true,
-        status: "Completed",
-      });
-
-      if (reservation.table) {
-        const Table = require("../models/Table");
-        await Table.findByIdAndUpdate(reservation.table, { status: "Free" });
-      }
-
       return res.json({
         success: true,
         amountPaid: finalAmount,
         advanceDeducted,
         grossTotal,
         finalAmount,
+        ordersUpdated: settlement.updatedOrderCount,
         message: "UPI payment completed successfully.",
       });
     }
@@ -298,33 +379,19 @@ router.post("/bill/complete", auth, async (req, res) => {
 
     await verifyPaymentIntent(paymentIntentId, finalAmount);
 
-    const primaryOrderId = Array.isArray(orderIds) ? orderIds[0] : null;
+    const settlement = await finalizeBillSettlement(settlementPayload);
 
     await Payment.findOneAndUpdate(
       { stripePaymentIntentId: paymentIntentId },
       {
-        orderId: primaryOrderId,
+        orderId: settlement.primaryOrderId,
         reservationId,
         amount: finalAmount,
         advanceDeducted,
         status: "Succeeded",
       },
-      { new: true }
+      { new: true },
     );
-
-    if (Array.isArray(orderIds) && orderIds.length) {
-      await Order.updateMany({ _id: { $in: orderIds } }, { status: "Paid" });
-    }
-
-    await Reservation.findByIdAndUpdate(reservationId, {
-      fullPaymentDone: true,
-      status: "Completed",
-    });
-
-    if (reservation.table) {
-      const Table = require("../models/Table");
-      await Table.findByIdAndUpdate(reservation.table, { status: "Free" });
-    }
 
     res.json({
       success: true,
@@ -333,6 +400,7 @@ router.post("/bill/complete", auth, async (req, res) => {
       grossTotal,
       finalAmount,
       paymentIntentId,
+      ordersUpdated: settlement.updatedOrderCount,
     });
   } catch (err) {
     res.status(400).json({ message: err.message });

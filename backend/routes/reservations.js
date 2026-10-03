@@ -185,8 +185,8 @@ router.post('/admin', auth, authorizeRoles('manager', 'superadmin', 'waiter'), a
 
     const newReservation = await reservation.save();
 
-    // Update table status if reservation is confirmed
-    if (req.body.status === 'Confirmed') {
+    const initialStatus = req.body.status || 'Pending';
+    if (initialStatus !== 'Cancelled') {
       await Table.findByIdAndUpdate(tableId, { status: 'Reserved' });
     }
 
@@ -240,10 +240,7 @@ router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waite
 
       const reservation = await Reservation.findByIdAndUpdate(
         req.params.id,
-        {
-          status,
-          ...(status === 'Completed' ? { fullPaymentDone: true } : {}),
-        },
+        { status },
         { new: true }
       ).populate('table');
 
@@ -251,16 +248,17 @@ router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waite
         return res.status(404).json({ message: 'Reservation not found' });
       }
 
-      if (status === 'Confirmed' && reservation.table) {
-        await Table.findByIdAndUpdate(reservation.table, { status: 'Reserved' });
+      const tableRef = reservation.table?._id || reservation.table;
+
+      if (
+        (status === 'Confirmed' || status === 'Pending') &&
+        tableRef
+      ) {
+        await Table.findByIdAndUpdate(tableRef, { status: 'Reserved' });
       }
 
-      if (status === 'Reserved' && reservation.table) {
-        await Table.findByIdAndUpdate(reservation.table, { status: 'Reserved' });
-      }
-
-      if ((status === 'Cancelled' || status === 'Completed') && reservation.table) {
-        await Table.findByIdAndUpdate(reservation.table, { status: 'Free' });
+      if (status === 'Cancelled' && tableRef) {
+        await Table.findByIdAndUpdate(tableRef, { status: 'Free' });
       }
 
       res.json(reservation);

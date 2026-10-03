@@ -68,14 +68,7 @@ router.post('/', auth, async (req, res) => {
       nextId = parseInt(lastOrder.id, 10) + 1;
     }
 
-    // Check if reservation has advance payment paid
-    let initialStatus = req.body.status || 'Pending';
-    if (req.body.reservationId) {
-      const reservation = await Reservation.findById(req.body.reservationId);
-      if (reservation && reservation.advancePaymentStatus === 'Paid') {
-        initialStatus = 'Paid';
-      }
-    }
+    const initialStatus = req.body.status || 'Pending';
 
     const order = new Order({
       id: String(nextId),
@@ -91,6 +84,17 @@ router.post('/', auth, async (req, res) => {
     });
 
     const newOrder = await order.save();
+
+    if (req.body.reservationId) {
+      await Reservation.findByIdAndUpdate(req.body.reservationId, {
+        status: 'Confirmed',
+      });
+      const reservation = await Reservation.findById(req.body.reservationId).populate('table');
+      const tableRef = reservation?.table?._id || reservation?.table;
+      if (tableRef) {
+        await Table.findByIdAndUpdate(tableRef, { status: 'Occupied' });
+      }
+    }
 
     res.status(201).json(newOrder);
   } catch (err) {
@@ -185,19 +189,10 @@ router.patch('/:orderId/items/:itemId/status', auth, async (req, res) => {
       });
     }
 
-    // Check if all items are now 'Served', if so mark order as 'Completed'
     const allItemsServed = order.items.every(item => item.status === 'Served');
     if (allItemsServed) {
       await Order.findByIdAndUpdate(req.params.orderId, { status: 'Completed' });
       order.status = 'Completed';
-
-      // Free the table associated with the reservation
-      if (order.reservationId) {
-        const reservation = await Reservation.findById(order.reservationId).populate('table');
-        if (reservation && reservation.table) {
-          await Table.findByIdAndUpdate(reservation.table._id, { status: 'Free' });
-        }
-      }
     }
 
     res.json(order);

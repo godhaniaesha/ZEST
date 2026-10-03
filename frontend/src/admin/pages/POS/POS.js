@@ -12,15 +12,105 @@ import {
   MdTrendingUp,
   MdReceipt,
   MdAttachMoney,
+  MdPrint,
 } from "react-icons/md";
 import { menuAPI, ordersAPI, reservationsAPI } from "../../../api";
 import { payBill, mountCardElement } from "../../../utils/stripePay";
 
 const ADVANCE_AMOUNT = 200;
+const GST_RATE = 0.05;
+
+const getTableLabel = (reservation) => {
+  if (!reservation) return "";
+  const t = reservation.table;
+  if (!t) return "Table ?";
+  if (t.displayId) return t.displayId;
+  if (t.number) {
+    return `${t.type === "Bar" ? "B" : "C"}-${String(t.number).padStart(2, "0")}`;
+  }
+  return "Table ?";
+};
+
+const orderMatchesTable = (order, tableLabel) => {
+  if (!order?.table || !tableLabel || tableLabel === "Table ?") return false;
+  const normalized = String(order.table).replace(/^Table\s*/i, "");
+  return (
+    normalized === tableLabel ||
+    order.table === tableLabel ||
+    order.table === `Table ${tableLabel}`
+  );
+};
+
+const ordersForReservation = (reservation, allOrders) => {
+  if (!reservation) return [];
+  const byReservation = allOrders.filter(
+    (o) => o.reservationId && String(o.reservationId) === String(reservation._id),
+  );
+  if (byReservation.length > 0) return byReservation;
+
+  const tableLabel = getTableLabel(reservation);
+  return allOrders.filter((o) => orderMatchesTable(o, tableLabel));
+};
+
+const isUnpaidOrder = (order) =>
+  order?.status !== "Paid" && order?.status !== "Cancelled";
+
+const buildBillFromOrders = (orders, advancePaid = 0) => {
+  const combinedItems = [];
+  (orders || []).forEach((order) => {
+    if (!isUnpaidOrder(order) || !Array.isArray(order.items)) return;
+    order.items.forEach((item) => {
+      const existing = combinedItems.find((i) => i.name === item.name);
+      if (existing) {
+        existing.qty += item.qty;
+      } else {
+        combinedItems.push({ ...item, id: item.name });
+      }
+    });
+  });
+
+  const subtotal = combinedItems.reduce(
+    (acc, item) => acc + item.price * item.qty,
+    0,
+  );
+  const tax = subtotal * GST_RATE;
+  const grossTotal = subtotal + tax;
+  const advanceDeducted = Number(advancePaid) || 0;
+  const total = Math.max(0, grossTotal - advanceDeducted);
+
+  return {
+    items: combinedItems,
+    subtotal,
+    tax,
+    grossTotal,
+    advanceDeducted,
+    total,
+  };
+};
+
+const reservationHasPendingPayment = (reservation, allOrders) => {
+  if (!reservation) return false;
+  if (reservation.status !== "Confirmed" && reservation.status !== "Completed") {
+    return false;
+  }
+
+  const orders = ordersForReservation(reservation, allOrders);
+  const unpaidOrders = orders.filter(isUnpaidOrder);
+
+  if (unpaidOrders.length === 0) {
+    return false;
+  }
+
+  const bill = buildBillFromOrders(orders, reservation.advancePaid);
+  if (bill.items.length > 0) return true;
+
+  return unpaidOrders.some((o) => (o.items || []).length > 0);
+};
 
 export default function POS() {
   const [menuItems, setMenuItems] = useState([]);
   const [reservations, setReservations] = useState([]);
+  const [allOrders, setAllOrders] = useState([]);
   const [selectedReservation, setSelectedReservation] = useState("");
   const [selectedReservationData, setSelectedReservationData] = useState(null);
   const [reservationOrders, setReservationOrders] = useState([]);
@@ -34,6 +124,7 @@ export default function POS() {
   const [searchQuery, setSearchQuery] = useState("");
   const cardMountRef = useRef(null);
   const cardElementRef = useRef(null);
+  const stripeRef = useRef(null);
 
   // ── Today's Sales ──
   const [showSalesModal, setShowSalesModal] = useState(false);
@@ -126,37 +217,72 @@ export default function POS() {
   };
 
   const [reservationsLoading, setReservationsLoading] = useState(true);
+  const [paymentSuccess, setPaymentSuccess] = useState(null);
+
+  const lastSignatureRef = useRef("");
+
+  const loadPosData = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setReservationsLoading(true);
+      const [menuRes, resRes, ordersRes] = await Promise.all([
+        menuAPI.getAll(),
+        reservationsAPI.getAll(),
+        ordersAPI.getAll(),
+      ]);
+
+      setMenuItems(Array.isArray(menuRes.data) ? menuRes.data : []);
+
+      const allReservations = Array.isArray(resRes.data) ? resRes.data : [];
+      const ordersList = Array.isArray(ordersRes.data) ? ordersRes.data : [];
+
+      const eligible = allReservations.filter((r) =>
+        reservationHasPendingPayment(r, ordersList),
+      );
+
+      // Auto-refresh sathe cart reset na thay e mate: data change thayo hoy to j state update karvu
+      const signature = JSON.stringify([
+        eligible.map((r) => [r._id, r.status, r.advancePaid]),
+        ordersList.map((o) => [o._id, o.status, (o.items || []).length]),
+      ]);
+      if (signature !== lastSignatureRef.current) {
+        lastSignatureRef.current = signature;
+        setAllOrders(ordersList);
+        setReservations(eligible);
+      }
+      return { ordersList, eligible };
+    } catch (error) {
+      console.error("Error loading data:", error);
+      return null;
+    } finally {
+      if (!silent) setReservationsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setReservationsLoading(true);
-        const [menuRes, resRes] = await Promise.all([
-          menuAPI.getAll(),
-          reservationsAPI.getAll(),
-        ]);
+    loadPosData();
+  }, [loadPosData]);
 
-        setMenuItems(Array.isArray(menuRes.data) ? menuRes.data : []);
-
-        const allReservations = Array.isArray(resRes.data) ? resRes.data : [];
-
-        // Show all Confirmed reservations that haven't been fully paid yet.
-        // No longer require all items to be Served — cashier needs to bill
-        // the table as soon as it's confirmed, regardless of kitchen status.
-        const eligible = allReservations.filter(
-          (r) => r.status === "Confirmed" && !r.fullPaymentDone
-        );
-
-        setReservations(eligible);
-      } catch (error) {
-        console.error("Error loading data:", error);
-      } finally {
-        setReservationsLoading(false);
+  // ── Dynamic: pending payment tables automatic refresh (every 10s) ──
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!paying) {
+        loadPosData(true);
+        loadTodaySales();
       }
-    };
- 
-    loadData();
-  }, []);
+    }, 10000);
+    return () => clearInterval(id);
+  }, [loadPosData, loadTodaySales, paying]);
+
+  // Selected table nu payment bija thi thai gayu hoy to selection clear karo
+  useEffect(() => {
+    if (
+      selectedReservation &&
+      !reservationsLoading &&
+      !reservations.some((r) => r._id === selectedReservation)
+    ) {
+      setSelectedReservation("");
+    }
+  }, [reservations, selectedReservation, reservationsLoading]);
 
   useEffect(() => {
     const loadOrdersForReservation = async () => {
@@ -169,41 +295,38 @@ export default function POS() {
 
       try {
         const res = await ordersAPI.getByReservationId(selectedReservation);
-        const orders = Array.isArray(res.data) ? res.data : [];
-        setReservationOrders(orders);
+        let orders = Array.isArray(res.data) ? res.data : [];
 
         const reservation = reservations.find(
           (r) => r._id === selectedReservation,
         );
         setSelectedReservationData(reservation || null);
 
-        const combinedItems = [];
-        orders.forEach((order) => {
-          if (Array.isArray(order.items)) {
-            order.items.forEach((item) => {
-              const existing = combinedItems.find((i) => i.name === item.name);
-              if (existing) {
-                existing.qty += item.qty;
-              } else {
-                combinedItems.push({ ...item, id: item.name });
-              }
-            });
-          }
-        });
-        setCart(combinedItems);
+        if (orders.length === 0 && reservation) {
+          orders = ordersForReservation(reservation, allOrders);
+        }
+
+        setReservationOrders(orders);
+        const bill = buildBillFromOrders(
+          orders,
+          reservation?.advancePaid || 0,
+        );
+        setCart(bill.items);
       } catch (error) {
         console.error("Error loading orders:", error);
       }
     };
 
     loadOrdersForReservation();
-  }, [selectedReservation, reservations]);
+  }, [selectedReservation, reservations, allOrders]);
 
+  // Totals cart parthi calculate thay chhe, etle qty / item delete karo to total live change thase
+  const round2 = (n) => Math.round(n * 100) / 100;
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const tax = subtotal * 0.05;
+  const tax = round2(subtotal * GST_RATE);
   const grossTotal = subtotal + tax;
-  const advanceDeducted = selectedReservationData?.advancePaid || 0;
-  const total = Math.max(0, grossTotal - advanceDeducted);
+  const advanceDeducted = Number(selectedReservationData?.advancePaid) || 0;
+  const total = round2(Math.max(0, grossTotal - advanceDeducted));
 
   useEffect(() => {
     if (!selectedReservation || total <= 0 || paymentMethod !== "Card") {
@@ -224,10 +347,11 @@ export default function POS() {
       try {
         cardElementRef.current?.unmount();
         cardElementRef.current = null;
+        stripeRef.current = null;
         setCardComplete(false);
         setCardError("");
 
-        const { cardElement } = await mountCardElement(
+        const { stripe, cardElement } = await mountCardElement(
           cardMountRef.current,
           (event) => {
             setCardComplete(event.complete);
@@ -236,6 +360,7 @@ export default function POS() {
         );
 
         if (active) {
+          stripeRef.current = stripe;
           cardElementRef.current = cardElement;
         } else {
           cardElement.unmount();
@@ -254,17 +379,87 @@ export default function POS() {
       cancelAnimationFrame(frameId);
       cardElementRef.current?.unmount();
       cardElementRef.current = null;
+      stripeRef.current = null;
     };
-  }, [selectedReservation, total, paymentMethod]);
+  }, [selectedReservation, total > 0, paymentMethod]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const getTableLabel = (reservation) => {
-    if (!reservation) return "";
-    const t = reservation.table;
-    if (!t) return "Table ?";
-    // table is a populated object with virtuals included
-    if (t.displayId)  return t.displayId;                         // "C-01" / "B-02"
-    if (t.number)     return `${t.type === "Bar" ? "B" : "C"}-${String(t.number).padStart(2, "0")}`;
-    return "Table ?";
+  const handlePrintBill = () => {
+    if (!selectedReservation || cart.length === 0) return;
+    const printWindow = window.open("", "_blank", "width=420,height=640");
+    if (!printWindow) return;
+
+    const tableNo = getTableLabel(selectedReservationData);
+    const customer =
+      selectedReservationData?.customerName ||
+      selectedReservationData?.name ||
+      "Guest";
+    const printedAt = new Date().toLocaleString("en-IN");
+
+    const rows = cart
+      .map(
+        (item) => `
+        <tr>
+          <td>${item.name}</td>
+          <td style="text-align:center">${item.qty}</td>
+          <td style="text-align:right">₹${item.price.toLocaleString("en-IN")}</td>
+          <td style="text-align:right">₹${(item.price * item.qty).toLocaleString("en-IN")}</td>
+        </tr>`,
+      )
+      .join("");
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Bill — Table ${tableNo}</title>
+          <style>
+            body { font-family: Georgia, serif; color: #16302B; padding: 24px; max-width: 360px; margin: 0 auto; }
+            h1 { font-size: 1.4rem; margin: 0 0 4px; text-align: center; }
+            .meta { font-size: 0.85rem; color: #555; text-align: center; margin-bottom: 16px; }
+            table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+            th { border-bottom: 1px solid #ccc; padding: 6px 4px; text-align: left; font-size: 0.75rem; text-transform: uppercase; }
+            td { padding: 6px 4px; border-bottom: 1px solid #eee; }
+            .totals { margin-top: 12px; font-size: 0.9rem; }
+            .totals div { display: flex; justify-content: space-between; padding: 4px 0; }
+            .grand { font-size: 1.15rem; font-weight: bold; border-top: 2px solid #16302B; margin-top: 8px; padding-top: 8px; }
+            .gold { color: #C9A84C; }
+          </style>
+        </head>
+        <body>
+          <h1>Zest Café &amp; Bar</h1>
+          <div class="meta">
+            Table <strong>${tableNo}</strong> · ${customer}<br/>
+            ${printedAt}
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th style="text-align:center">Qty</th>
+                <th style="text-align:right">Rate</th>
+                <th style="text-align:right">Amt</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="totals">
+            <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
+            <div><span>GST (5%)</span><span>₹${tax.toLocaleString("en-IN")}</span></div>
+            ${
+              advanceDeducted > 0
+                ? `<div><span>Advance paid</span><span>− ₹${advanceDeducted.toLocaleString("en-IN")}</span></div>`
+                : ""
+            }
+            <div class="grand"><span>Amount due</span><span class="gold">₹${total.toLocaleString("en-IN")}</span></div>
+          </div>
+          <p style="text-align:center;font-size:0.75rem;color:#888;margin-top:20px">Thank you for dining with us</p>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   const handlePayment = async () => {
@@ -277,24 +472,39 @@ export default function POS() {
         return;
       }
 
+      const unpaidOrderIds = reservationOrders
+        .filter(isUnpaidOrder)
+        .map((order) => order._id);
+
       const result = await payBill({
         paymentMethod,
         upiVpa,
-        cardElement: cardElementRef.current,
+        stripe:
+          total > 0 && paymentMethod === "Card" ? stripeRef.current : null,
+        cardElement: total > 0 && paymentMethod === "Card" ? cardElementRef.current : null,
         reservationId: selectedReservation,
         subtotal: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
         tax,
-        orderIds: reservationOrders.map(order => order._id),
+        orderIds: unpaidOrderIds,
+        tableLabel: getTableLabel(selectedReservationData),
       });
 
-      if (!result?.redirected) {
-        await reservationsAPI.updateStatus(selectedReservation, "Completed");
+      if (result?.redirected) {
+        return;
       }
 
-      console.log("Payment Success:", result);
+      const tableLabel = getTableLabel(selectedReservationData);
+      setPaymentSuccess(
+        result?.message ||
+          `Payment recorded for Table ${tableLabel}. Orders updated: ${result?.ordersUpdated ?? unpaidOrderIds.length}.`,
+      );
 
-      // Redirect to dashboard after successful payment
-      window.location.href = "/admin/dashboard";
+      setSelectedReservation("");
+      setCart([]);
+      setReservationOrders([]);
+      setSelectedReservationData(null);
+
+      await Promise.all([loadPosData(), loadTodaySales()]);
     } catch (err) {
       setPaymentError(err.message || "Payment failed");
     } finally {
@@ -359,6 +569,85 @@ export default function POS() {
 
       <Row className="g-4">
         <Col xs={12} lg={8}>
+          {/* ── PENDING PAYMENT TABLES (dynamic) ── */}
+          <div className="d-card mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <div className="d-section-title mb-0">
+                Pending Payments
+                <span
+                  style={{
+                    marginLeft: "10px",
+                    padding: "2px 10px",
+                    borderRadius: "999px",
+                    fontSize: "0.72rem",
+                    fontWeight: 800,
+                    background: reservations.length > 0 ? "rgba(231,76,60,0.12)" : "rgba(46,204,113,0.12)",
+                    color: reservations.length > 0 ? "#e74c3c" : "#27ae60",
+                  }}
+                >
+                  {reservations.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="d-btn-outline"
+                style={{ fontSize: "0.72rem", padding: "4px 12px" }}
+                onClick={() => loadPosData(true)}
+              >
+                ↻ Refresh
+              </button>
+            </div>
+
+            {reservationsLoading ? (
+              <div className="text-muted small">Loading tables…</div>
+            ) : reservations.length === 0 ? (
+              <div className="text-muted small">
+                Badha tables nu payment thai gayu chhe ✓
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: "10px" }}>
+                {reservations.map((r) => {
+                  const due = buildBillFromOrders(
+                    ordersForReservation(r, allOrders),
+                    r.advancePaid,
+                  ).total;
+                  const active = r._id === selectedReservation;
+                  return (
+                    <button
+                      key={r._id}
+                      type="button"
+                      onClick={() => setSelectedReservation(r._id)}
+                      style={{
+                        textAlign: "left",
+                        background: active ? "rgba(201,168,76,0.12)" : "var(--d-bg,#f5f4f0)",
+                        border: active ? "1.5px solid var(--d-gold,#C9A84C)" : "1px solid var(--d-border,#e2e0da)",
+                        borderRadius: "12px",
+                        padding: "10px 12px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div className="d-flex justify-content-between align-items-center">
+                        <strong style={{ color: "var(--d-primary,#16302B)" }}>
+                          <MdTableRestaurant className="text-gold me-1" />
+                          {getTableLabel(r)}
+                        </strong>
+                        <span style={{ fontSize: "0.62rem", fontWeight: 700, color: r.status === "Completed" ? "#27ae60" : "#C9A84C" }}>
+                          {r.status === "Completed" ? "Served" : "Occupied"}
+                        </span>
+                      </div>
+                      <div className="text-muted small" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {r.customerName || r.name}
+                      </div>
+                      <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: "1.15rem", fontWeight: 700, color: "var(--d-gold,#C9A84C)" }}>
+                        Due ₹{due.toLocaleString("en-IN")}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="d-card mb-4">
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
               <div className="d-section-title mb-0">Quick Select Menu</div>
@@ -386,15 +675,25 @@ export default function POS() {
                     {reservationsLoading ? (
                       <option value="">Loading tables…</option>
                     ) : reservations.length === 0 ? (
-                      <option value="">No confirmed tables pending billing</option>
+                      <option value="">No tables pending payment</option>
                     ) : (
                       <>
                         <option value="">Select Table for Billing</option>
-                        {reservations.map((r) => (
-                          <option key={r._id} value={r._id}>
-                            {getTableLabel(r)} — {r.customerName || r.name} ({r.guests} guests)
-                          </option>
-                        ))}
+                        {reservations.map((r) => {
+                          const pendingBill = buildBillFromOrders(
+                            ordersForReservation(r, allOrders),
+                            r.advancePaid,
+                          );
+                          const statusTag =
+                            r.status === "Completed" ? " · Served" : "";
+                          return (
+                            <option key={r._id} value={r._id}>
+                              {getTableLabel(r)} — {r.customerName || r.name} (
+                              {r.guests} guests){statusTag} · Due ₹
+                              {pendingBill.total.toLocaleString("en-IN")}
+                            </option>
+                          );
+                        })}
                       </>
                     )}
                   </select>
@@ -404,10 +703,70 @@ export default function POS() {
           </div>
 
           <div className="d-card">
-            <div className="d-section-title">
-              {selectedReservation
-                ? "Active Order"
-                : "Select a table to view bill"}
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-0">
+              <div className="d-section-title mb-0">
+                {selectedReservation
+                  ? "Bill Summary"
+                  : "Select a table to view bill"}
+              </div>
+              {selectedReservationData && (
+                <div className="d-flex gap-2 flex-wrap align-items-center">
+                  {cart.length > 0 && (
+                    <button
+                      type="button"
+                      className="d-btn-outline"
+                      style={{ fontSize: "0.72rem", padding: "4px 12px" }}
+                      onClick={handlePrintBill}
+                    >
+                      <MdPrint className="me-1" /> Print Bill
+                    </button>
+                  )}
+                  <span
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "999px",
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                      background: selectedReservationData.status === "Completed"
+                        ? "rgba(46,204,113,0.12)"
+                        : "rgba(201,168,76,0.15)",
+                      color: selectedReservationData.status === "Completed"
+                        ? "#27ae60"
+                        : "#C9A84C",
+                    }}
+                  >
+                    {selectedReservationData.status === "Completed" ? "Items Served" : "Table Occupied"}
+                  </span>
+                  {selectedReservationData.fullPaymentDone && (
+                    <span
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "999px",
+                        fontSize: "0.7rem",
+                        fontWeight: 700,
+                        background: "rgba(22,48,43,0.08)",
+                        color: "#16302B",
+                      }}
+                    >
+                      ✓ Marked Paid
+                    </span>
+                  )}
+                  {reservationOrders.length > 0 && (
+                    <span
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "999px",
+                        fontSize: "0.7rem",
+                        fontWeight: 700,
+                        background: "rgba(107,114,128,0.1)",
+                        color: "#6b7280",
+                      }}
+                    >
+                      {reservationOrders.length} order{reservationOrders.length !== 1 ? "s" : ""} linked
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             {selectedReservation && (
               <div className="d-table-wrap mt-3">
@@ -429,7 +788,11 @@ export default function POS() {
                           className="text-center py-4"
                           style={{ color: "var(--d-text-muted)" }}
                         >
-                          No items in this bill
+                          {reservationOrders.length === 0
+                            ? "No orders linked to this reservation yet"
+                            : selectedReservationData?.fullPaymentDone
+                              ? "All items paid — nothing pending."
+                              : "No items pending in this bill (all linked orders are already settled)"}
                         </td>
                       </tr>
                     ) : (
@@ -491,6 +854,27 @@ export default function POS() {
             <div className="d-section-title mb-4">Checkout Summary</div>
             {selectedReservation ? (
               <div className="d-checkout-details">
+                {selectedReservationData && (
+                  <div
+                    className="mb-3 pb-2"
+                    style={{ borderBottom: "1px solid var(--d-border,#e2e0da)" }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: "Cormorant Garamond,serif",
+                        fontSize: "1.35rem",
+                        fontWeight: 700,
+                        color: "var(--d-primary,#16302B)",
+                      }}
+                    >
+                      Table {getTableLabel(selectedReservationData)}
+                    </div>
+                    <div className="text-muted small">
+                      {selectedReservationData.customerName ||
+                        selectedReservationData.name}
+                    </div>
+                  </div>
+                )}
                 <div className="d-flex justify-content-between mb-2">
                   <span className="text-muted">Subtotal</span>
                   <span>₹{subtotal.toLocaleString()}</span>

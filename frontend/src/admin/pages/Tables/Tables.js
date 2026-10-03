@@ -13,6 +13,20 @@ const TABLE_TYPES = ['All', 'Cafe', 'Bar'];
 const LOCATIONS = ['Indoor', 'Outdoor', 'Bar Counter'];
 const STATUSES = ['All', 'Free', 'Occupied', 'Reserved'];
 
+const ACTIVE_RESERVATION_STATUSES = ['Pending', 'Confirmed', 'Completed'];
+
+const getReservationTableId = (reservation) => {
+  if (!reservation?.table) return null;
+  return reservation.table._id || reservation.table;
+};
+
+const reservationIsActiveForTable = (reservation) => {
+  if (!reservation || reservation.status === 'Cancelled') return false;
+  if (!ACTIVE_RESERVATION_STATUSES.includes(reservation.status)) return false;
+  if (reservation.status === 'Completed' && reservation.fullPaymentDone) return false;
+  return true;
+};
+
 export default function Tables() {
   const [tables, setTables] = useState([]);
   const [reservations, setReservations] = useState([]);
@@ -36,8 +50,8 @@ export default function Tables() {
         tablesAPI.getAll(),
         reservationsAPI.getAll()
       ]);
-      setTables(tablesRes.data);
-      setReservations(reservationsRes.data);
+      setTables(Array.isArray(tablesRes.data) ? tablesRes.data : []);
+      setReservations(Array.isArray(reservationsRes.data) ? reservationsRes.data : []);
     } catch (error) {
       console.error('Error fetching tables or reservations:', error);
     } finally {
@@ -47,28 +61,29 @@ export default function Tables() {
 
   useEffect(() => {
     loadData();
+    const refreshId = setInterval(loadData, 20000);
+    return () => clearInterval(refreshId);
   }, []);
 
-  const getTableReservation = (tableNumber, tableType) => {
-    const tableLabel = `${tableType === 'Bar' ? 'B' : 'Table'} ${tableNumber}`;
-    // Find a confirmed reservation for today around the current time
-    return reservations.find(r => 
-      (r.table === tableLabel || r.tableNumber === tableNumber) && 
-      r.status === 'Confirmed'
+  const getActiveReservationForTable = (table) =>
+    reservations.find(
+      (r) =>
+        reservationIsActiveForTable(r) &&
+        String(getReservationTableId(r)) === String(table._id),
     );
-  };
 
   const getDynamicStatus = (table) => {
     if (table.status === 'Occupied') return 'Occupied';
-    const res = getTableReservation(table.number, table.type);
-    if (res) return 'Reserved';
-    return table.status;
+    if (getActiveReservationForTable(table) || table.status === 'Reserved') {
+      return 'Reserved';
+    }
+    return 'Free';
   };
 
   const handleTableClick = (table) => {
     const status = getDynamicStatus(table);
     if (status === 'Reserved') {
-      const res = getTableReservation(table.number, table.type);
+      const res = getActiveReservationForTable(table);
       if (res) {
         setCurrentReservation(res);
         setShowReservationInfo(true);
@@ -76,11 +91,19 @@ export default function Tables() {
     }
   };
 
-  const filtered = tables.filter(table => {
+  const filtered = tables.filter((table) => {
+    const dynamicStatus = getDynamicStatus(table);
     const matchesType = activeType === 'All' || table.type === activeType;
-    const matchesStatus = activeStatus === 'All' || table.status === activeStatus;
-    const matchesSearch = table.number.toString().includes(searchTerm.toLowerCase()) ||
-                         table.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      activeStatus === 'All' || dynamicStatus === activeStatus;
+    const search = searchTerm.toLowerCase();
+    const displayId =
+      table.displayId ||
+      `${table.type === 'Bar' ? 'B' : 'C'}-${String(table.number).padStart(2, '0')}`;
+    const matchesSearch =
+      table.number.toString().includes(search) ||
+      table.location.toLowerCase().includes(search) ||
+      displayId.toLowerCase().includes(search);
     return matchesType && matchesStatus && matchesSearch;
   });
 

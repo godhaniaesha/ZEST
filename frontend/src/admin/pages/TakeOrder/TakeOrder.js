@@ -52,7 +52,9 @@ export default function TakeOrder() {
         }
 
         // Build dropdown entries: one per Reserved table, enriched with reservation data if available
-        const reservedTables = allTables.filter(t => t.status !== 'Reserved');
+        const reservedTables = allTables.filter(
+          (t) => t.status === 'Reserved' || t.status === 'Occupied',
+        );
 
         const entries = reservedTables.map(table => {
           // Match reservation by table._id (reservation.table is populated object)
