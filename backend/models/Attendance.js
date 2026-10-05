@@ -11,8 +11,8 @@ const attendanceSchema = new mongoose.Schema({
   notes: { type: String }
 }, { timestamps: true });
 
-// Index for efficient queries
-attendanceSchema.index({ staffId: 1, date: 1 });
+// Unique compound index: one attendance record per staff per date (prevents duplicates)
+attendanceSchema.index({ staffId: 1, date: 1 }, { unique: true });
 attendanceSchema.index({ date: 1 });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

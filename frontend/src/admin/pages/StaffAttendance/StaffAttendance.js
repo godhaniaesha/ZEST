@@ -11,6 +11,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchStaffUsers } from '../../../store/slices/usersSlice';
 import { useAuth } from '../../../contexts/AuthContext';
 
+const toLocalDateStr = (d = new Date()) => {
+  const dt = d instanceof Date ? d : new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 export default function StaffAttendance() {
   const dispatch = useDispatch();
   const { user } = useAuth();
@@ -18,7 +26,7 @@ export default function StaffAttendance() {
   const staffRedux = useSelector((state) => state.users.staffList);
   const [attendance, setAttendance] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(toLocalDateStr());
   const [loading, setLoading] = useState(true);
   const [leaveStatus, setLeaveStatus] = useState({}); // Track leave status for each staff
 
@@ -48,13 +56,13 @@ export default function StaffAttendance() {
     }))
     , [staffRedux]);
 
-  // Generate last 30 days
+  // Generate last 30 days (LOCAL dates, no UTC drift)
   const getLast30Days = () => {
     const dates = [];
     for (let i = 0; i < 30; i++) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      dates.push(date.toISOString().split('T')[0]);
+      dates.push(toLocalDateStr(date));
     }
     return dates;
   };
@@ -133,7 +141,9 @@ export default function StaffAttendance() {
     if (canFullManage) {
       // For full managers, show all staff for selected date
       return staffList.map(staff => {
-        const attendanceRecord = attendance.find(a => a.staffId === staff._id);
+        const attendanceRecord = attendance.find(a =>
+          a.staffId === staff._id && toLocalDateStr(a.date) === selectedDate
+        );
         if (attendanceRecord) {
           return attendanceRecord;
         }
@@ -205,7 +215,6 @@ export default function StaffAttendance() {
   };
 
   const handleEdit = (item) => {
-    // Non-managers can only edit their own attendance
     if (!canFullManage && item.staffId !== user._id) {
       alert('You can only edit your own attendance');
       return;
@@ -215,18 +224,10 @@ export default function StaffAttendance() {
     const staff = staffList.find(s => s._id === item.staffId);
     const defaultCheckIn = item.checkIn || (staff ? getShiftTime(staff.shift, staff.shiftStart) : '');
 
-    // Format date for HTML date input (YYYY-MM-DD)
-    const formatDateForInput = (dateValue) => {
-      if (!dateValue) return '';
-      const date = new Date(dateValue);
-      if (isNaN(date.getTime())) return '';
-      return date.toISOString().split('T')[0];
-    };
-
     setFormData({
       staffId: item.staffId,
-      date: formatDateForInput(item.date),
-      status: item.status,
+      date: toLocalDateStr(item.date || selectedDate),
+      status: item.status || 'present',
       checkIn: defaultCheckIn,
       checkOut: item.checkOut || ''
     });
@@ -307,28 +308,24 @@ export default function StaffAttendance() {
         return;
       }
 
-      // Date validation
       if (!formData.date) {
         alert('Please select a date');
         return;
       }
 
-      // Validate date is not in the future (for attendance marking)
-      const selectedDate = new Date(formData.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (selectedDate > today) {
+      // LOCAL date comparison — avoids UTC drift when YYYY-MM-DD string → new Date()
+      const formDateStr = toLocalDateStr(formData.date);
+      const todayStr = toLocalDateStr();
+      if (formDateStr > todayStr) {
         alert('Cannot mark attendance for future dates');
         return;
       }
 
-      // Status validation
       if (!formData.status) {
         alert('Please select a status');
         return;
       }
 
-      // Check In validation (time format)
       if (formData.checkIn && formData.checkIn.trim()) {
         const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
         if (!timeRegex.test(formData.checkIn)) {
@@ -337,7 +334,6 @@ export default function StaffAttendance() {
         }
       }
 
-      // Check Out validation (time format)
       if (formData.checkOut && formData.checkOut.trim()) {
         const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
         if (!timeRegex.test(formData.checkOut)) {
@@ -346,39 +342,42 @@ export default function StaffAttendance() {
         }
       }
 
-      // Validate check-out is after check-in
       if (formData.checkIn && formData.checkOut) {
-        const checkInTime = new Date(`2000-01-01T${formData.checkIn}`);
-        const checkOutTime = new Date(`2000-01-01T${formData.checkOut}`);
-        if (checkOutTime <= checkInTime) {
+        const [hi, mi] = formData.checkIn.split(':').map(Number);
+        const [ho, mo] = formData.checkOut.split(':').map(Number);
+        const checkInMin = hi * 60 + mi;
+        const checkOutMin = ho * 60 + mo;
+        if (checkOutMin <= checkInMin) {
           alert('Check-out time must be after check-in time');
           return;
         }
       }
 
-      // Non-managers can only edit their own attendance
       if (!canFullManage && currentItem && currentItem.staffId !== user._id) {
         alert('You can only edit your own attendance');
         return;
       }
 
-      // Non-managers can only create attendance for themselves
       if (!canFullManage && !currentItem && formData.staffId !== user._id) {
         alert('You can only mark your own attendance');
         return;
       }
 
-      if (currentItem) {
+      if (currentItem && currentItem.isVirtual) {
+        await attendanceAPI.create(formData);
+      } else if (currentItem) {
         await attendanceAPI.update(currentItem._id, formData);
       } else {
         await attendanceAPI.create(formData);
       }
 
       setShowForm(false);
+      setFormData({ staffId: canFullManage ? '' : user._id, date: selectedDate, status: 'present', checkIn: '', checkOut: '' });
+      setCurrentItem(null);
       loadData();
     } catch (error) {
       console.error('Error saving attendance:', error);
-      alert('Failed to save attendance');
+      alert(error.response?.data?.message || 'Failed to save attendance');
     }
   };
 
@@ -597,17 +596,17 @@ export default function StaffAttendance() {
                     {canManageAttendance ? (
                       <td>
                         <div className="d-flex gap-1">
-                          {!item.isVirtual && (
-                            <>
-                              <button className="d-navbar-icon-btn" onClick={() => handleEdit(item)}>
-                                <MdEdit />
-                              </button>
-                              {canFullManage && (
-                                <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(item)}>
-                                  <MdDelete />
-                                </button>
-                              )}
-                            </>
+                          <button
+                            className={`d-navbar-icon-btn ${item.isVirtual ? 'opacity-75' : ''}`}
+                            onClick={() => handleEdit(item)}
+                            title={item.isVirtual ? 'Mark attendance' : 'Edit attendance'}
+                          >
+                            <MdEdit />
+                          </button>
+                          {canFullManage && !item.isVirtual && (
+                            <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(item)}>
+                              <MdDelete />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -639,7 +638,9 @@ export default function StaffAttendance() {
             ) : (
               staffList
                 .map((staff) => {
-                  const todayAttendance = attendance.find(a => a.staffId === staff._id && a.date === selectedDate);
+                  const todayAttendance = attendance.find(a =>
+                    a.staffId === staff._id && toLocalDateStr(a.date) === selectedDate
+                  );
                   const staffLeaveStatus = leaveStatus[staff._id] || { onLeave: false };
                   const isOnLeave = staffLeaveStatus.onLeave;
 

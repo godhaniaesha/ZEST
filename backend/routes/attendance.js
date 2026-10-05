@@ -5,22 +5,33 @@ const User = require('../models/User');
 const Leave = require('../models/Leave');
 const { auth, authorizeRoles } = require('../middleware/auth');
 
-// Helper function to check if staff is on approved leave for a specific date
+const parseDateStr = (input) => {
+  if (input instanceof Date) {
+    if (isNaN(input.getTime())) return null;
+    const d = new Date(input.getFullYear(), input.getMonth(), input.getDate());
+    return d;
+  }
+  if (typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input.trim())) {
+    const [y, m, d] = input.trim().split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  const d = new Date(input);
+  if (isNaN(d.getTime())) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
 const isStaffOnLeave = async (staffId, date) => {
-  const targetDate = new Date(date);
-  targetDate.setHours(0, 0, 0, 0);
-  
+  const targetDate = parseDateStr(date);
+  if (!targetDate) return false;
   const approvedLeave = await Leave.findOne({
     staffId,
     status: 'approved',
     startDate: { $lte: targetDate },
     endDate: { $gte: targetDate }
   });
-  
   return !!approvedLeave;
 };
 
-// Helper function to determine if check-in time is late (after 9:30 AM)
 const isLateCheckIn = (checkInTime) => {
   if (!checkInTime) return false;
   const [hours, minutes] = checkInTime.split(':').map(Number);
@@ -34,24 +45,13 @@ router.get('/', auth, async (req, res) => {
     let query = {};
 
     if (date) {
-      // Handle date string from frontend (YYYY-MM-DD format)
-      const queryDate = new Date(date);
-      // Ensure we're using local time, not UTC
-      const year = queryDate.getFullYear();
-      const month = queryDate.getMonth();
-      const day = queryDate.getDate();
-      const normalizedDate = new Date(year, month, day);
-      
-      // Query for the entire day range
-      const startOfDay = new Date(year, month, day);
-      const endOfDay = new Date(year, month, day + 1);
-      
-      query.date = {
-        $gte: startOfDay,
-        $lt: endOfDay
-      };
-      
-      console.log('Querying attendance for date range:', { startOfDay, endOfDay });
+      const normalizedDate = parseDateStr(date);
+      if (normalizedDate) {
+        const startOfDay = new Date(normalizedDate.getFullYear(), normalizedDate.getMonth(), normalizedDate.getDate());
+        const endOfDay = new Date(normalizedDate.getFullYear(), normalizedDate.getMonth(), normalizedDate.getDate() + 1);
+        query.date = { $gte: startOfDay, $lt: endOfDay };
+        console.log('Querying attendance for date range:', { startOfDay, endOfDay });
+      }
     }
 
     if (staffId) {
@@ -59,18 +59,17 @@ router.get('/', auth, async (req, res) => {
     }
 
     if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setDate(end.getDate() + 1); // Include the entire end date
-      
-      query.date = {
-        $gte: start,
-        $lt: end
-      };
+      const s = parseDateStr(startDate);
+      const e = parseDateStr(endDate);
+      if (s && e) {
+        const start = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+        const end = new Date(e.getFullYear(), e.getMonth(), e.getDate() + 1);
+        query.date = { $gte: start, $lt: end };
+      }
     }
 
     const attendance = await Attendance.find(query).sort({ date: -1 });
-    console.log('Found attendance records:', attendance.length);
+    console.log('Found attendance records:', attendance.length, 'for query:', JSON.stringify(query));
     res.json(attendance);
   } catch (err) {
     console.error('Error fetching attendance:', err);
@@ -95,49 +94,27 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { staffId, date, status, checkIn, checkOut, notes } = req.body;
-    console.log('Creating attendance - checkIn:', checkIn, 'checkOut:', checkOut);
+    console.log('Creating attendance - staffId:', staffId, 'date:', date, 'checkIn:', checkIn, 'checkOut:', checkOut);
 
-    // Check if user is authorized to set status
     const canManageStatus = ['superadmin', 'manager'].includes(req.user.role);
     let finalStatus = status;
-    
-    if (!canManageStatus) {
-      // For non-managers, default to present or keep existing logic
-      finalStatus = 'present';
-    }
+    if (!canManageStatus) finalStatus = 'present';
 
-    // Get staff details
     const staff = await User.findById(staffId);
-    if (!staff) {
-      return res.status(404).json({ message: 'Staff member not found' });
-    }
+    if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
-    // Normalize date
-    const attendanceDate = new Date(date);
-    attendanceDate.setHours(0, 0, 0, 0);
+    const attendanceDate = parseDateStr(date);
+    if (!attendanceDate) return res.status(400).json({ message: 'Invalid date provided' });
 
-    // Check if attendance already exists for this staff and date
-    const existingAttendance = await Attendance.findOne({
-      staffId,
-      date: attendanceDate
-    });
-
+    const existingAttendance = await Attendance.findOne({ staffId, date: attendanceDate });
     if (existingAttendance) {
       return res.status(400).json({ message: 'Attendance already recorded for this date' });
     }
 
-    // Check if staff is on approved leave (only for present/absent status)
     if (finalStatus === 'present' || finalStatus === 'absent') {
       const onLeave = await isStaffOnLeave(staffId, attendanceDate);
-      if (onLeave) {
-        return res.status(400).json({ message: 'Staff is on approved leave for this date' });
-      }
+      if (onLeave) return res.status(400).json({ message: 'Staff is on approved leave for this date' });
     }
-
-    // Auto-detect late status if check-in time is provided and status is present - COMMENTED OUT as per user request
-    // if (finalStatus === 'present' && checkIn && isLateCheckIn(checkIn)) {
-    //   finalStatus = 'late';
-    // }
 
     const attendance = new Attendance({
       staffId,
@@ -151,9 +128,10 @@ router.post('/', auth, async (req, res) => {
     });
 
     const savedAttendance = await attendance.save();
-    console.log('Saved attendance - checkIn:', savedAttendance.checkIn, 'checkOut:', savedAttendance.checkOut);
+    console.log('Saved attendance - ID:', savedAttendance._id, 'status:', savedAttendance.status);
     res.status(201).json(savedAttendance);
   } catch (err) {
+    console.error('Create attendance error:', err);
     res.status(400).json({ message: err.message });
   }
 });
@@ -162,32 +140,28 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { staffId, date, status, checkIn, checkOut, notes } = req.body;
-    console.log('Updating attendance - checkIn:', checkIn, 'checkOut:', checkOut);
+    console.log('Updating attendance ID:', req.params.id, 'checkIn:', checkIn, 'checkOut:', checkOut);
 
-    // Get the existing attendance record
     const existingAttendance = await Attendance.findById(req.params.id);
     if (!existingAttendance) {
       return res.status(404).json({ message: 'Attendance record not found' });
     }
 
-    // Check if user is authorized to set status
     const canManageStatus = ['superadmin', 'manager'].includes(req.user.role);
-    
-    // If staffId is being updated, get new staff details
     let updateData = { ...req.body };
-    
-    if (!canManageStatus) {
-      // For non-managers, keep the original status
-      updateData.status = existingAttendance.status;
-    }
-    
+
+    if (!canManageStatus) updateData.status = existingAttendance.status;
+
     if (staffId) {
       const staff = await User.findById(staffId);
-      if (!staff) {
-        return res.status(404).json({ message: 'Staff member not found' });
-      }
+      if (!staff) return res.status(404).json({ message: 'Staff member not found' });
       updateData.staffName = staff.name;
       updateData.role = staff.role;
+    }
+
+    if (date) {
+      const normalizedDate = parseDateStr(date);
+      if (normalizedDate) updateData.date = normalizedDate;
     }
 
     const attendance = await Attendance.findByIdAndUpdate(
@@ -196,9 +170,10 @@ router.put('/:id', auth, async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    console.log('Updated attendance - checkIn:', attendance.checkIn, 'checkOut:', attendance.checkOut);
+    console.log('Updated attendance - ID:', attendance._id, 'status:', attendance.status);
     res.json(attendance);
   } catch (err) {
+    console.error('Update attendance error:', err);
     res.status(400).json({ message: err.message });
   }
 });
@@ -220,52 +195,29 @@ router.delete('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req,
 router.post('/mark-present/:staffId', auth, async (req, res) => {
   try {
     const { date, checkIn } = req.body;
-    let attendanceDate;
-    
-    if (date) {
-      // Handle date string from frontend (YYYY-MM-DD format)
-      attendanceDate = new Date(date);
-      // Ensure we're using local time, not UTC
-      const year = attendanceDate.getFullYear();
-      const month = attendanceDate.getMonth();
-      const day = attendanceDate.getDate();
-      attendanceDate = new Date(year, month, day);
-    } else {
-      attendanceDate = new Date();
-      attendanceDate.setHours(0, 0, 0, 0);
-    }
-    
-    console.log('Marking present for staffId:', req.params.staffId, 'on date:', attendanceDate);
+    const attendanceDate = date ? parseDateStr(date) : (() => {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    })();
+    if (!attendanceDate) return res.status(400).json({ message: 'Invalid date provided' });
+
+    console.log('Marking present staffId:', req.params.staffId, 'date:', attendanceDate);
 
     const staff = await User.findById(req.params.staffId);
-    if (!staff) {
-      return res.status(404).json({ message: 'Staff member not found' });
-    }
+    if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
-    // Check if staff is on approved leave
     const onLeave = await isStaffOnLeave(req.params.staffId, attendanceDate);
-    if (onLeave) {
-      return res.status(400).json({ message: 'Staff is on approved leave for this date' });
-    }
+    if (onLeave) return res.status(400).json({ message: 'Staff is on approved leave for this date' });
 
-    // Check if attendance already exists
-    let attendance = await Attendance.findOne({
-      staffId: req.params.staffId,
-      date: attendanceDate
-    });
-
-    // Use provided check-in time or current time
+    let attendance = await Attendance.findOne({ staffId: req.params.staffId, date: attendanceDate });
     const checkInTime = checkIn || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    
-    // Auto-detect late status - COMMENTED OUT as per user request
-    // const status = isLateCheckIn(checkInTime) ? 'late' : 'present';
-    const status = 'present'; // Always mark as present, no late detection
+    const status = 'present';
 
     if (attendance) {
       attendance.status = status;
       attendance.checkIn = checkInTime;
       await attendance.save();
-      console.log('Updated existing attendance:', attendance);
+      console.log('Updated existing attendance to present:', attendance._id);
     } else {
       attendance = new Attendance({
         staffId: req.params.staffId,
@@ -276,7 +228,7 @@ router.post('/mark-present/:staffId', auth, async (req, res) => {
         checkIn: checkInTime
       });
       await attendance.save();
-      console.log('Created new attendance:', attendance);
+      console.log('Created new attendance (present):', attendance._id);
     }
 
     res.json(attendance);
@@ -290,46 +242,28 @@ router.post('/mark-present/:staffId', auth, async (req, res) => {
 router.post('/mark-absent/:staffId', auth, async (req, res) => {
   try {
     const { date } = req.body;
-    let attendanceDate;
-    
-    if (date) {
-      // Handle date string from frontend (YYYY-MM-DD format)
-      attendanceDate = new Date(date);
-      // Ensure we're using local time, not UTC
-      const year = attendanceDate.getFullYear();
-      const month = attendanceDate.getMonth();
-      const day = attendanceDate.getDate();
-      attendanceDate = new Date(year, month, day);
-    } else {
-      attendanceDate = new Date();
-      attendanceDate.setHours(0, 0, 0, 0);
-    }
-    
-    console.log('Marking absent for staffId:', req.params.staffId, 'on date:', attendanceDate);
+    const attendanceDate = date ? parseDateStr(date) : (() => {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    })();
+    if (!attendanceDate) return res.status(400).json({ message: 'Invalid date provided' });
+
+    console.log('Marking absent staffId:', req.params.staffId, 'date:', attendanceDate);
 
     const staff = await User.findById(req.params.staffId);
-    if (!staff) {
-      return res.status(404).json({ message: 'Staff member not found' });
-    }
+    if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
-    // Check if staff is on approved leave
     const onLeave = await isStaffOnLeave(req.params.staffId, attendanceDate);
-    if (onLeave) {
-      return res.status(400).json({ message: 'Staff is on approved leave for this date' });
-    }
+    if (onLeave) return res.status(400).json({ message: 'Staff is on approved leave for this date' });
 
-    // Check if attendance already exists
-    let attendance = await Attendance.findOne({
-      staffId: req.params.staffId,
-      date: attendanceDate
-    });
+    let attendance = await Attendance.findOne({ staffId: req.params.staffId, date: attendanceDate });
 
     if (attendance) {
       attendance.status = 'absent';
       attendance.checkIn = null;
       attendance.checkOut = null;
       await attendance.save();
-      console.log('Updated existing attendance to absent:', attendance);
+      console.log('Updated existing attendance to absent:', attendance._id);
     } else {
       attendance = new Attendance({
         staffId: req.params.staffId,
@@ -341,7 +275,7 @@ router.post('/mark-absent/:staffId', auth, async (req, res) => {
         checkOut: null
       });
       await attendance.save();
-      console.log('Created new absent attendance:', attendance);
+      console.log('Created new attendance (absent):', attendance._id);
     }
 
     res.json(attendance);
@@ -358,14 +292,24 @@ router.get('/stats/summary', auth, async (req, res) => {
     let query = {};
 
     if (date) {
-      query.date = new Date(date);
+      const nd = parseDateStr(date);
+      if (nd) {
+        query.date = {
+          $gte: new Date(nd.getFullYear(), nd.getMonth(), nd.getDate()),
+          $lt: new Date(nd.getFullYear(), nd.getMonth(), nd.getDate() + 1)
+        };
+      }
     }
 
     if (startDate && endDate) {
-      query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
+      const s = parseDateStr(startDate);
+      const e = parseDateStr(endDate);
+      if (s && e) {
+        query.date = {
+          $gte: new Date(s.getFullYear(), s.getMonth(), s.getDate()),
+          $lt: new Date(e.getFullYear(), e.getMonth(), e.getDate() + 1)
+        };
+      }
     }
 
     const attendance = await Attendance.find(query);
@@ -375,11 +319,13 @@ router.get('/stats/summary', auth, async (req, res) => {
       present: attendance.filter(a => a.status === 'present').length,
       absent: attendance.filter(a => a.status === 'absent').length,
       late: attendance.filter(a => a.status === 'late').length,
-      halfDay: attendance.filter(a => a.status === 'half-day').length
+      halfDay: attendance.filter(a => a.status === 'half-day').length,
+      onLeave: attendance.filter(a => a.status === 'on-leave').length
     };
 
     res.json(stats);
   } catch (err) {
+    console.error('Stats error:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -388,11 +334,14 @@ router.get('/stats/summary', auth, async (req, res) => {
 router.get('/check-leave/:staffId', auth, async (req, res) => {
   try {
     const { date } = req.query;
-    const targetDate = date ? new Date(date) : new Date();
-    targetDate.setHours(0, 0, 0, 0);
+    const targetDate = date ? parseDateStr(date) : (() => {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    })();
+    if (!targetDate) return res.status(400).json({ message: 'Invalid date provided' });
 
     const onLeave = await isStaffOnLeave(req.params.staffId, targetDate);
-    
+
     if (onLeave) {
       const leave = await Leave.findOne({
         staffId: req.params.staffId,
@@ -400,18 +349,19 @@ router.get('/check-leave/:staffId', auth, async (req, res) => {
         startDate: { $lte: targetDate },
         endDate: { $gte: targetDate }
       });
-      
+
       return res.json({
         onLeave: true,
-        leaveType: leave.type,
-        leaveReason: leave.reason,
-        startDate: leave.startDate,
-        endDate: leave.endDate
+        leaveType: leave?.type || 'leave',
+        leaveReason: leave?.reason || '',
+        startDate: leave?.startDate,
+        endDate: leave?.endDate
       });
     }
 
     res.json({ onLeave: false });
   } catch (err) {
+    console.error('Check leave error:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -439,37 +389,17 @@ router.post('/update-late-to-present', auth, authorizeRoles('superadmin', 'manag
 router.post('/auto-mark-leave/:staffId', auth, async (req, res) => {
   try {
     const { date } = req.body;
-    let attendanceDate;
-    
-    if (date) {
-      // Handle date string from frontend (YYYY-MM-DD format)
-      attendanceDate = new Date(date);
-      // Ensure we're using local time, not UTC
-      const year = attendanceDate.getFullYear();
-      const month = attendanceDate.getMonth();
-      const day = attendanceDate.getDate();
-      attendanceDate = new Date(year, month, day);
-    } else {
-      attendanceDate = new Date();
-      attendanceDate.setHours(0, 0, 0, 0);
-    }
-    
-    console.log('Auto-marking leave for staffId:', req.params.staffId, 'on date:', attendanceDate);
+    const attendanceDate = date ? parseDateStr(date) : (() => {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    })();
+    if (!attendanceDate) return res.status(400).json({ message: 'Invalid date provided' });
 
-    // Check if user is trying   to mark their own attendance or is a manager/superadmin
-    // const isOwnAttendance = req.user.id.toString() === req.params.staffId;
-    // const isManager = req.user.role === 'manager' || req.user.role === 'superadmin';
-    
-    // if (!isOwnAttendance && !isManager) {
-    //   return res.status(403).json({ message: 'Access denied. You can only mark your own attendance.' });
-    // }
+    console.log('Auto-marking leave staffId:', req.params.staffId, 'date:', attendanceDate);
 
     const staff = await User.findById(req.params.staffId);
-    if (!staff) {
-      return res.status(404).json({ message: 'Staff member not found' });
-    }
+    if (!staff) return res.status(404).json({ message: 'Staff member not found' });
 
-    // Check if staff is on approved leave
     const leave = await Leave.findOne({
       staffId: req.params.staffId,
       status: 'approved',
@@ -481,17 +411,13 @@ router.post('/auto-mark-leave/:staffId', auth, async (req, res) => {
       return res.status(400).json({ message: 'Staff is not on approved leave for this date' });
     }
 
-    // Check if attendance already exists
-    let attendance = await Attendance.findOne({
-      staffId: req.params.staffId,
-      date: attendanceDate
-    });
+    let attendance = await Attendance.findOne({ staffId: req.params.staffId, date: attendanceDate });
 
     if (attendance) {
       attendance.status = 'on-leave';
       attendance.notes = `On ${leave.type} leave: ${leave.reason}`;
       await attendance.save();
-      console.log('Updated existing attendance to on-leave:', attendance);
+      console.log('Updated existing attendance to on-leave:', attendance._id);
     } else {
       attendance = new Attendance({
         staffId: req.params.staffId,
@@ -502,7 +428,7 @@ router.post('/auto-mark-leave/:staffId', auth, async (req, res) => {
         notes: `On ${leave.type} leave: ${leave.reason}`
       });
       await attendance.save();
-      console.log('Created new on-leave attendance:', attendance);
+      console.log('Created new on-leave attendance:', attendance._id);
     }
 
     res.json(attendance);
