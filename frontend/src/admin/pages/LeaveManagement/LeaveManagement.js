@@ -181,6 +181,7 @@ export default function LeaveManagement() {
   const [formData, setFormData] = useState({
     staffId: "", startDate: "", endDate: "",
     startTime: "", endTime: "", type: "sick", reason: "",
+    status: "pending", rejectionReason: "",
   });
 
   const [startTime12, setStartTime12] = useState({ hour: "9", minute: "00", period: "AM" });
@@ -283,7 +284,8 @@ export default function LeaveManagement() {
     setCurrentItem(null);
     const shiftTimes = getShiftTime(user?.shift || "Morning", user?.shiftStart, user?.shiftEnd);
     setFormData({ staffId: user?._id || "", startDate: "", endDate: "",
-      startTime: shiftTimes.start, endTime: shiftTimes.end, type: "sick", reason: "" });
+      startTime: shiftTimes.start, endTime: shiftTimes.end, type: "sick", reason: "",
+      status: "pending", rejectionReason: "" });
     setStartTime12(convertTo12Hour(shiftTimes.start));
     setEndTime12(convertTo12Hour(shiftTimes.end));
     setShowForm(true);
@@ -302,7 +304,8 @@ export default function LeaveManagement() {
     const et = item.endTime   || shift.end;
     setFormData({ staffId: item.staffId, startDate: formatDate(item.startDate),
       endDate: formatDate(item.endDate), startTime: st, endTime: et,
-      type: item.type, reason: item.reason });
+      type: item.type, reason: item.reason, status: item.status,
+      rejectionReason: item.rejectionReason || "" });
     setStartTime12(convertTo12Hour(st));
     setEndTime12(convertTo12Hour(et));
     setShowForm(true);
@@ -326,6 +329,9 @@ export default function LeaveManagement() {
       }
       if (new Date(formData.endDate) < new Date(formData.startDate)) {
         alert("End date must be after start date"); return;
+      }
+      if (isAdmin && currentItem && formData.status === "rejected" && !formData.rejectionReason.trim()) {
+        alert("Please provide a reason for rejecting this leave request"); return;
       }
       const dataToSend = {
         ...formData,
@@ -534,15 +540,15 @@ export default function LeaveManagement() {
             fontFamily: 'Cormorant Garamond, serif', fontSize: '1.1rem',
             fontWeight: 700, color: 'var(--d-gold, #C9A84C)',
           }}>
-            {(user?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)}
+            {(currentItem?.staffName || user?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)}
           </div>
           <div>
             <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'rgba(201,168,76,0.7)', marginBottom: '2px' }}>Staff Member</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff' }}>{user?.name || 'Current User'}</div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff' }}>{currentItem?.staffName || user?.name || 'Current User'}</div>
           </div>
           <div style={{ marginLeft: 'auto' }}>
             <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '20px', padding: '4px 10px', color: 'var(--d-gold, #C9A84C)' }}>
-              {user?.role || 'staff'}
+              {currentItem?.role || user?.role || 'staff'}
             </span>
           </div>
         </div>
@@ -686,6 +692,35 @@ export default function LeaveManagement() {
               onBlur={e => e.target.style.borderColor = 'var(--d-border, #e2e0da)'}
             />
           </Form.Group>
+
+          {isAdmin && currentItem && (
+            <>
+              <Form.Group className="mt-3">
+                <Form.Label className="small fw-bold">Leave Status</Form.Label>
+                <Form.Select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </Form.Select>
+              </Form.Group>
+              {formData.status === "rejected" && (
+                <Form.Group className="mt-3">
+                  <Form.Label className="small fw-bold">Rejection Reason *</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    value={formData.rejectionReason}
+                    onChange={(e) => setFormData({ ...formData, rejectionReason: e.target.value })}
+                    placeholder="Please provide a reason for rejecting this leave request"
+                    required
+                  />
+                </Form.Group>
+              )}
+            </>
+          )}
         </div>
 
       </FormModal>

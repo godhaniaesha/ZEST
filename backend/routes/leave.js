@@ -206,73 +206,80 @@ router.put('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req, re
 
   try {
 
-    const { staffId, startDate, endDate, startTime, endTime, type, reason } = req.body;
-
-
-
-    // If staffId is being updated, get new staff details
-
-    let updateData = { ...req.body };
-
-    if (staffId) {
-
-      const staff = await User.findById(staffId);
-
-      if (!staff) {
-
-        return res.status(404).json({ message: 'Staff member not found' });
-
-      }
-
-      updateData.staffName = staff.name;
-
-      updateData.role = staff.role;
-
-    }
-
-    // Ensure time fields are included
-    if (startTime !== undefined) {
-      updateData.startTime = startTime;
-    }
-    if (endTime !== undefined) {
-      updateData.endTime = endTime;
-    }
-
-
-
-    // Recalculate days if dates changed
-
-    if (startDate && endDate) {
-
-      const start = new Date(startDate);
-
-      const end = new Date(endDate);
-
-      updateData.days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-    }
-
-
-
-    const leave = await Leave.findByIdAndUpdate(
-
-      req.params.id,
-
-      updateData,
-
-      { new: true, runValidators: true }
-
-    );
-
-
-
+    const leave = await Leave.findById(req.params.id);
     if (!leave) {
-
       return res.status(404).json({ message: 'Leave request not found' });
-
     }
 
+    const previousStaffId = String(leave.staffId);
+    const previousDays = leave.days;
+    const previousStatus = leave.status;
+    const wasApproved = leave.status === 'approved';
+    const {
+      staffId, startDate, endDate, startTime, endTime, type, reason,
+      status, rejectionReason,
+    } = req.body;
 
+    if (staffId && String(staffId) !== previousStaffId) {
+      const staff = await User.findById(staffId);
+      if (!staff) {
+        return res.status(404).json({ message: 'Staff member not found' });
+      }
+      leave.staffId = staff._id;
+      leave.staffName = staff.name;
+      leave.role = staff.role;
+    }
+
+    if (startDate !== undefined) leave.startDate = new Date(startDate);
+    if (endDate !== undefined) leave.endDate = new Date(endDate);
+    if (startTime !== undefined) leave.startTime = startTime;
+    if (endTime !== undefined) leave.endTime = endTime;
+    if (type !== undefined) leave.type = type;
+    if (reason !== undefined) leave.reason = reason;
+    if (status !== undefined) {
+      if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid leave status' });
+      }
+      leave.status = status;
+    }
+
+    if (leave.endDate < leave.startDate) {
+      return res.status(400).json({ message: 'End date must be after start date' });
+    }
+
+    if (leave.status === 'approved' && previousStatus !== 'approved') {
+      leave.approvedBy = req.user._id;
+      leave.approvedDate = new Date();
+      leave.rejectionReason = undefined;
+    } else if (leave.status === 'rejected' && previousStatus !== 'rejected') {
+      leave.approvedBy = req.user._id;
+      leave.approvedDate = new Date();
+      leave.rejectionReason = rejectionReason || 'No reason provided';
+    } else if (leave.status === 'rejected' && rejectionReason !== undefined) {
+      leave.rejectionReason = rejectionReason || 'No reason provided';
+    } else if (leave.status === 'pending') {
+      leave.approvedBy = undefined;
+      leave.approvedDate = undefined;
+      leave.rejectionReason = undefined;
+    }
+
+    await leave.save();
+
+    const currentStaffId = String(leave.staffId);
+    const isApproved = leave.status === 'approved';
+    if (previousStaffId === currentStaffId) {
+      const daysDelta = (isApproved ? leave.days : 0) - (wasApproved ? previousDays : 0);
+      if (daysDelta !== 0) {
+        await User.findByIdAndUpdate(currentStaffId, { $inc: { leavesTaken: daysDelta } });
+      }
+    } else {
+      if (wasApproved) {
+        await User.findByIdAndUpdate(previousStaffId, { $inc: { leavesTaken: -previousDays } });
+      }
+      if (isApproved) {
+        await User.findByIdAndUpdate(currentStaffId, { $inc: { leavesTaken: leave.days } });
+      }
+    }
 
     res.json(leave);
 
@@ -292,13 +299,20 @@ router.delete('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req,
 
   try {
 
-    const leave = await Leave.findByIdAndDelete(req.params.id);
+    const leave = await Leave.findById(req.params.id);
 
     if (!leave) {
 
       return res.status(404).json({ message: 'Leave request not found' });
 
     }
+
+    if (leave.status === 'approved') {
+      await User.findByIdAndUpdate(leave.staffId, {
+        $inc: { leavesTaken: -leave.days },
+      });
+    }
+    await leave.deleteOne();
 
     res.json({ message: 'Leave request deleted' });
 
@@ -515,4 +529,3 @@ router.get('/staff/:staffId/balance', auth, async (req, res) => {
 
 
 module.exports = router;
-

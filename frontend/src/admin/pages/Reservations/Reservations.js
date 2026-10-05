@@ -1,22 +1,48 @@
-import React, { useEffect, useState } from 'react';
-import { Row, Col, Form } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { Row, Col, Form } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import {
-  MdAdd, MdPhone, MdPeople, MdEventSeat,
-  MdCheckCircle, MdPendingActions, MdCancel, MdMoreVert,
-  MdEdit, MdDelete, MdCalendarToday
-} from 'react-icons/md';
-import DeleteModal from '../../components/DeleteModal';
-import FormModal from '../../components/FormModal';
-import { useAuth } from '../../../contexts/AuthContext';
-import { reservationsAPI, tablesAPI } from '../../../api';
+  MdAdd,
+  MdPhone,
+  MdPeople,
+  MdEventSeat,
+  MdCheckCircle,
+  MdPendingActions,
+  MdCancel,
+  MdMoreVert,
+  MdEdit,
+  MdDelete,
+  MdCalendarToday,
+} from "react-icons/md";
+import DeleteModal from "../../components/DeleteModal";
+import FormModal from "../../components/FormModal";
+import Pagination from "../../components/Pagination";
+import { useAuth } from "../../../contexts/AuthContext";
+import { reservationsAPI, tablesAPI } from "../../../api";
 
-const TIME_SLOTS = ['12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM'];
+const TIME_SLOTS = [
+  "12:00 PM",
+  "12:30 PM",
+  "1:00 PM",
+  "1:30 PM",
+  "2:00 PM",
+  "2:30 PM",
+  "3:00 PM",
+  "6:00 PM",
+  "6:30 PM",
+  "7:00 PM",
+  "7:30 PM",
+  "8:00 PM",
+  "8:30 PM",
+  "9:00 PM",
+  "9:30 PM",
+  "10:00 PM",
+];
 const STATUS_CLASS = {
-  Confirmed: 'd-chip-green',
-  Pending: 'd-chip-gold',
-  Cancelled: 'd-chip-red',
-  Completed: 'd-chip-blue',
+  Confirmed: "d-chip-green",
+  Pending: "d-chip-gold",
+  Cancelled: "d-chip-red",
+  Completed: "d-chip-blue",
 };
 
 export default function Reservations() {
@@ -28,39 +54,46 @@ export default function Reservations() {
   const [showDelete, setShowDelete] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [formData, setFormData] = useState({
-    name: '',
-    date: new Date().toISOString().split('T')[0],
-    time: '7:00 PM',
+    name: "",
+    date: new Date().toISOString().split("T")[0],
+    time: "7:00 PM",
     guests: 2,
-    table: '',
-    phone: '',
-    email: '',
-    status: 'Pending',
-    notes: ''
+    table: "",
+    phone: "",
+    email: "",
+    status: "Pending",
+    notes: "",
   });
   const [editingReservation, setEditingReservation] = useState(null);
   const [tempStatus, setTempStatus] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { user } = useAuth();
-  const userRole = user?.role || 'waiter';
+  const userRole = user?.role || "waiter";
 
-  const canAddEditDelete = userRole === 'manager' || userRole === 'superadmin';
+  const canAddEditDelete = userRole === "manager" || userRole === "superadmin";
+  const totalPages = Math.max(Math.ceil(reservations.length / itemsPerPage), 1);
+  const currentReservations = reservations.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [reservationsRes, tablesRes] = await Promise.all([
         reservationsAPI.getAll(),
-        tablesAPI.getAll()
+        tablesAPI.getAll(),
       ]);
       setReservations(reservationsRes.data || []);
       setTables(tablesRes.data || []);
-      
+
       // Set default table to first available table
       if (tablesRes.data && tablesRes.data.length > 0) {
-        setFormData(prev => ({ ...prev, table: tablesRes.data[0]._id }));
+        setFormData((prev) => ({ ...prev, table: tablesRes.data[0]._id }));
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -70,45 +103,80 @@ export default function Reservations() {
     loadData();
   }, []);
 
-  const confirmedCount = reservations.filter(r => r.status === 'Confirmed').length;
-  const pendingCount = reservations.filter(r => r.status === 'Pending').length;
-  const cancelledCount = reservations.filter(r => r.status === 'Cancelled').length;
-  const completedCount = reservations.filter(r => r.status === 'Completed').length;
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const confirmedCount = reservations.filter(
+    (r) => r.status === "Confirmed",
+  ).length;
+  const pendingCount = reservations.filter(
+    (r) => r.status === "Pending",
+  ).length;
+  const cancelledCount = reservations.filter(
+    (r) => r.status === "Cancelled",
+  ).length;
+  const completedCount = reservations.filter(
+    (r) => r.status === "Completed",
+  ).length;
+
+  const getTableLabel = (reservationTable) => {
+    if (reservationTable && typeof reservationTable === "object") {
+      return reservationTable.number != null
+        ? `Table ${reservationTable.number}`
+        : "Unassigned";
+    }
+
+    if (reservationTable == null || reservationTable === "")
+      return "Unassigned";
+
+    const matchingTable = tables.find(
+      (table) => table._id === reservationTable,
+    );
+    if (matchingTable) return `Table ${matchingTable.number}`;
+
+    return Number.isFinite(Number(reservationTable))
+      ? `Table ${reservationTable}`
+      : "Unassigned";
+  };
 
   const handleAdd = () => {
     if (!canAddEditDelete) return;
     setCurrentItem(null);
     setFormData({
-      name: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '7:00 PM',
+      name: "",
+      date: new Date().toISOString().split("T")[0],
+      time: "7:00 PM",
       guests: 2,
-      table: tables.length > 0 ? tables[0]._id : '',
-      phone: '',
-      email: '',
-      status: 'Pending',
-      notes: ''
+      table: tables.length > 0 ? tables[0]._id : "",
+      phone: "",
+      email: "",
+      status: "Pending",
+      notes: "",
     });
     setShowForm(true);
   };
 
   const handleViewFloorPlan = () => {
-    navigate('/admin/tables');
+    navigate("/admin/tables");
   };
 
   const handleEdit = (item) => {
     if (!canAddEditDelete) return;
     setCurrentItem(item);
     setFormData({
-      name: item.name || item.customerName,
-      date: item.date,
-      time: item.time,
-      guests: item.guests,
-      table: typeof item.table === 'object' ? item.table._id : item.table,
-      phone: item.phone,
-      email: item.email || '',
-      status: item.status,
-      notes: item.notes || ''
+      name: item.name || item.customerName || "",
+      date: item.date ? item.date.split("T")[0] : "",
+      time: item.time || "7:00 PM",
+      guests: item.guests || 2,
+      table:
+        item.table && typeof item.table === "object"
+          ? item.table._id || ""
+          : item.table || "",
+      phone: item.phone || "",
+      email: item.email || "",
+      status: item.status || "Pending",
+      notes: item.notes || "",
     });
     setShowForm(true);
   };
@@ -122,20 +190,20 @@ export default function Reservations() {
   const handleSave = async () => {
     // Name validation
     if (!formData.name || !formData.name.trim()) {
-      alert('Please enter a valid guest name');
+      alert("Please enter a valid guest name");
       return;
     }
 
     // Phone validation - must be exactly 10 digits
     if (!formData.phone || !formData.phone.trim()) {
-      alert('Please enter a phone number');
+      alert("Please enter a phone number");
       return;
     }
 
     const phoneRegex = /^[0-9]{10}$/;
-    const cleanPhone = formData.phone.replace(/\D/g, '');
+    const cleanPhone = formData.phone.replace(/\D/g, "");
     if (!phoneRegex.test(cleanPhone)) {
-      alert('Please enter a valid 10-digit phone number');
+      alert("Please enter a valid 10-digit phone number");
       return;
     }
 
@@ -143,37 +211,37 @@ export default function Reservations() {
     if (formData.email && formData.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
-        alert('Please enter a valid email format (e.g., guest@example.com)');
+        alert("Please enter a valid email format (e.g., guest@example.com)");
         return;
       }
     }
 
     // Date validation
     if (!formData.date) {
-      alert('Please select a date');
+      alert("Please select a date");
       return;
     }
 
     // Time validation
     if (!formData.time) {
-      alert('Please select a time');
+      alert("Please select a time");
       return;
     }
 
     // Guests validation
     if (!formData.guests || formData.guests < 1) {
-      alert('Please enter at least 1 guest');
+      alert("Please enter at least 1 guest");
       return;
     }
 
     if (formData.guests > 20) {
-      alert('Maximum 20 guests allowed per reservation');
+      alert("Maximum 20 guests allowed per reservation");
       return;
     }
 
     // Table validation
     if (!formData.table) {
-      alert('Please select a table');
+      alert("Please select a table");
       return;
     }
 
@@ -186,7 +254,7 @@ export default function Reservations() {
       guests: formData.guests,
       table: formData.table,
       status: formData.status,
-      notes: formData.notes
+      notes: formData.notes,
     };
 
     try {
@@ -198,8 +266,8 @@ export default function Reservations() {
       await loadData();
       setShowForm(false);
     } catch (error) {
-      console.error('Error saving reservation:', error);
-      alert('Failed to save reservation');
+      console.error("Error saving reservation:", error);
+      alert("Failed to save reservation");
     }
   };
 
@@ -209,8 +277,8 @@ export default function Reservations() {
       await loadData();
       setShowDelete(false);
     } catch (error) {
-      console.error('Error deleting reservation:', error);
-      alert('Failed to delete reservation');
+      console.error("Error deleting reservation:", error);
+      alert("Failed to delete reservation");
     }
   };
 
@@ -219,15 +287,11 @@ export default function Reservations() {
       await reservationsAPI.updateStatus(reservationId, status);
 
       setReservations((prev) =>
-        prev.map((r) =>
-          r._id === reservationId
-            ? { ...r, status }
-            : r
-        )
+        prev.map((r) => (r._id === reservationId ? { ...r, status } : r)),
       );
     } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status');
+      console.error("Error updating status:", error);
+      alert("Failed to update status");
     }
   };
 
@@ -238,28 +302,64 @@ export default function Reservations() {
           <div className="d-page-heading d-flex align-items-center gap-2">
             <MdEventSeat /> Reservations
           </div>
-          <div className="d-page-sub">Manage guest bookings and table assignments</div>
+          <div className="d-page-sub">
+            Manage guest bookings and table assignments
+          </div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline d-hide-mobile" onClick={handleViewFloorPlan}>View Floor Plan</button>
-          {canAddEditDelete && <button className="d-btn-gold" onClick={handleAdd}><MdAdd /> New Booking</button>}
+          <button
+            className="d-btn-outline d-hide-mobile"
+            onClick={handleViewFloorPlan}
+          >
+            View Floor Plan
+          </button>
+          {canAddEditDelete && (
+            <button className="d-btn-gold" onClick={handleAdd}>
+              <MdAdd /> New Booking
+            </button>
+          )}
         </div>
       </div>
 
       <Row className="g-3 mb-4">
         {[
-          { label: 'Confirmed', value: confirmedCount, icon: <MdCheckCircle />, color: 'd-green' },
-          { label: 'Pending', value: pendingCount, icon: <MdPendingActions />, color: 'd-gold' },
-          { label: 'Cancelled', value: cancelledCount, icon: <MdCancel />, color: 'd-red' },
-          { label: 'Completed', value: completedCount, icon: <MdCheckCircle />, color: 'd-green' }
+          {
+            label: "Confirmed",
+            value: confirmedCount,
+            icon: <MdCheckCircle />,
+            color: "d-green",
+          },
+          {
+            label: "Pending",
+            value: pendingCount,
+            icon: <MdPendingActions />,
+            color: "d-gold",
+          },
+          {
+            label: "Cancelled",
+            value: cancelledCount,
+            icon: <MdCancel />,
+            color: "d-red",
+          },
+          {
+            label: "Completed",
+            value: completedCount,
+            icon: <MdCheckCircle />,
+            color: "d-green",
+          },
         ].map((s) => (
           <Col key={s.label} xs={12} sm={6} lg={3}>
             <div className="d-stat-card">
-              <div className={`d-stat-icon ${s.color}`} style={{ width: '42px', height: '42px', fontSize: '1.1rem' }}>
+              <div
+                className={`d-stat-icon ${s.color}`}
+                style={{ width: "42px", height: "42px", fontSize: "1.1rem" }}
+              >
                 {s.icon}
               </div>
               <div>
-                <div className="d-stat-value" style={{ fontSize: '1.4rem' }}>{s.value}</div>
+                <div className="d-stat-value" style={{ fontSize: "1.4rem" }}>
+                  {s.value}
+                </div>
                 <div className="d-stat-label">{s.label}</div>
               </div>
             </div>
@@ -283,13 +383,17 @@ export default function Reservations() {
               </tr>
             </thead>
             <tbody>
-              {reservations.map(r => (
+              {currentReservations.map((r) => (
                 <tr key={r._id}>
-                  <td style={{ fontWeight: 700 }} title={r._id}>RES-{r._id?.slice(-6)}</td>
+                  <td style={{ fontWeight: 700 }} title={r._id}>
+                    RES-{r._id?.slice(-6)}
+                  </td>
+
                   <td title={r.customerName}>
                     <div>{r.customerName}</div>
                   </td>
-                  <td title={`${r.date} ${r.time}`}>
+
+                  <td title={`${r.date} ${r.time || ""}`}>
                     <div className="d-flex align-items-center gap-2">
                       <MdCalendarToday />
                       <span>
@@ -304,25 +408,32 @@ export default function Reservations() {
                       </span>
                     </div>
                   </td>
+
                   <td title={`${r.guests} Guests`}>
                     <div className="d-flex align-items-center gap-1">
-                      <MdPeople style={{ color: 'var(--d-text-light)' }} />
+                      <MdPeople style={{ color: "var(--d-text-light)" }} />
                       <span>{r.guests} Guests</span>
                     </div>
                   </td>
+
                   <td>
                     <div className="d-flex align-items-center gap-1">
-                      <MdEventSeat style={{ color: 'var(--d-gold)' }} />
-                      <span>
-                        {typeof r.table === 'object' && r.table !== null 
-                          ? `Table ${r.table.number}` 
-                          : r.table}
-                      </span>
+                      <MdEventSeat style={{ color: "var(--d-gold)" }} />
+
+                      {/* Show exact table displayId */}
+                      <span>{r.table?.displayId ?? "Unassigned"}</span>
                     </div>
                   </td>
                   <td title={r.phone}>
-                    <div style={{ color: 'var(--d-text-muted)', fontSize: '0.85rem' }}>
-                      <div><MdPhone className="me-1" /> {r.phone}</div>
+                    <div
+                      style={{
+                        color: "var(--d-text-muted)",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      <div>
+                        <MdPhone className="me-1" /> {r.phone}
+                      </div>
                       {r.email && <div className="small">{r.email}</div>}
                     </div>
                   </td>
@@ -341,8 +452,8 @@ export default function Reservations() {
                             prev.map((item) =>
                               item._id === r._id
                                 ? { ...item, status: newStatus }
-                                : item
-                            )
+                                : item,
+                            ),
                           );
 
                           // 2. API call
@@ -375,10 +486,16 @@ export default function Reservations() {
                   {canAddEditDelete && (
                     <td>
                       <div className="d-flex gap-1">
-                        <button className="d-navbar-icon-btn" onClick={() => handleEdit(r)}>
+                        <button
+                          className="d-navbar-icon-btn"
+                          onClick={() => handleEdit(r)}
+                        >
                           <MdEdit />
                         </button>
-                        <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(r)}>
+                        <button
+                          className="d-navbar-icon-btn text-danger"
+                          onClick={() => handleDeleteClick(r)}
+                        >
                           <MdDelete />
                         </button>
                       </div>
@@ -389,6 +506,15 @@ export default function Reservations() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="px-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
 
       <FormModal
@@ -405,7 +531,9 @@ export default function Reservations() {
                 type="text"
                 placeholder="Enter guest name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 required
                 minLength={2}
               />
@@ -419,13 +547,13 @@ export default function Reservations() {
                 placeholder="9876543210"
                 value={formData.phone}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 10);
                   setFormData({ ...formData, phone: value });
                 }}
                 required
                 maxLength={10}
               />
-              <Form.Text className="text-muted" style={{ fontSize: '0.75rem' }}>
+              <Form.Text className="text-muted" style={{ fontSize: "0.75rem" }}>
                 Enter 10-digit phone number (numbers only)
               </Form.Text>
             </Form.Group>
@@ -437,9 +565,11 @@ export default function Reservations() {
                 type="email"
                 placeholder="guest@email.com"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
               />
-              <Form.Text className="text-muted" style={{ fontSize: '0.75rem' }}>
+              <Form.Text className="text-muted" style={{ fontSize: "0.75rem" }}>
                 Optional
               </Form.Text>
             </Form.Group>
@@ -450,7 +580,9 @@ export default function Reservations() {
               <Form.Control
                 type="date"
                 value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
                 required
               />
             </Form.Group>
@@ -460,10 +592,16 @@ export default function Reservations() {
               <Form.Label className="small fw-bold">Time *</Form.Label>
               <Form.Select
                 value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, time: e.target.value })
+                }
                 required
               >
-                {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                {TIME_SLOTS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
               </Form.Select>
             </Form.Group>
           </Col>
@@ -475,21 +613,28 @@ export default function Reservations() {
                 min="1"
                 max="20"
                 value={formData.guests}
-                onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({ ...formData, guests: parseInt(e.target.value) })
+                }
                 required
               />
             </Form.Group>
           </Col>
           <Col xs={12} md={6}>
             <Form.Group>
-              <Form.Label className="small fw-bold">Table</Form.Label>
+              <Form.Label className="small fw-bold">Table *</Form.Label>
               <Form.Select
                 value={formData.table}
-                onChange={(e) => setFormData({ ...formData, table: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, table: e.target.value })
+                }
               >
-                {tables.map(t => (
+                <option value="">Select a table</option>
+                {tables.map((t) => (
                   <option key={t._id} value={t._id}>
-                    {t.displayId || `${t.type === 'Bar' ? 'B' : 'C'}-${String(t.number).padStart(2, '0')}`} (Capacity: {t.capacity})
+                    {t.displayId ||
+                      `${t.type === "Bar" ? "B" : "C"}-${String(t.number).padStart(2, "0")}`}{" "}
+                    (Capacity: {t.capacity})
                   </option>
                 ))}
               </Form.Select>
@@ -500,7 +645,9 @@ export default function Reservations() {
               <Form.Label className="small fw-bold">Status</Form.Label>
               <Form.Select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
               >
                 <option value="Pending">Pending</option>
                 <option value="Confirmed">Confirmed</option>
@@ -516,7 +663,9 @@ export default function Reservations() {
                 rows={3}
                 placeholder="Any special requests or notes"
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
               />
             </Form.Group>
           </Col>

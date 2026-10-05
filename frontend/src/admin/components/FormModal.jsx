@@ -378,7 +378,7 @@ const FormModal = ({
   const iconLetter = icon || (title ? title.trim()[0].toUpperCase() : '✦');
 
   return (
-    <div style={S.overlay} onClick={(e) => e.target === e.currentTarget && onHide()}>
+    <div style={S.overlay}>
       <div style={S.dialog}>
 
         {/* Gold top bar */}

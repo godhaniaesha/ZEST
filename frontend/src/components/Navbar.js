@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import LogoutConfirmModal from './LogoutConfirmModal';
 import '../styles/x_style.css';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, loading } = useAuth();
@@ -95,7 +97,8 @@ export default function Navbar() {
       <span className={className}>{userInitials}</span>
     );
 
-  const handleLogout = () => {
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
     logout();
     setProfileOpen(false);
     closeOffcanvas();
@@ -173,7 +176,7 @@ export default function Navbar() {
                     </Link>
                   )}
                   <div className="x_navbar_dropdown_divider" />
-                  <button type="button" className="x_navbar_dropdown_item logout" role="menuitem" onClick={handleLogout}>
+                  <button type="button" className="x_navbar_dropdown_item logout" role="menuitem" onClick={() => setShowLogoutConfirm(true)}>
                     <span className="x_navbar_dropdown_item_dot" />
                     Sign Out
                   </button>
@@ -254,7 +257,7 @@ export default function Navbar() {
 
           <div className="x_offcanvas-footer">
             {user ? (
-              <button type="button" className="x_offcanvas_logout" onClick={handleLogout}>
+              <button type="button" className="x_offcanvas_logout" onClick={() => setShowLogoutConfirm(true)}>
                 Sign Out
               </button>
             ) : null}
@@ -295,6 +298,11 @@ export default function Navbar() {
           aria-hidden="true"
         />
       )}
+      <LogoutConfirmModal
+        show={showLogoutConfirm}
+        onCancel={() => setShowLogoutConfirm(false)}
+        onConfirm={handleConfirmLogout}
+      />
     </>
   );
 }

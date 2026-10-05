@@ -112,77 +112,75 @@ export default function GalleryManagement() {
   };
 
 
-  // In the handleSave function, around line 130
-
   const handleSave = async (data, fileData) => {
     try {
       // Validation
       if (!data.title || !data.title.trim()) {
-        alert('Please enter a title');
+        alert('Error: Title is required.');
         return;
       }
 
-      // Title validation - text only, length
+      // Title validation - length
       if (data.title.length < 3) {
-        alert('Title must be at least 3 characters long');
+        alert(`Error: Title is too short (${data.title.length} characters). Minimum 3 characters required.`);
         return;
       }
 
       if (data.title.length > 100) {
-        alert('Title must not exceed 100 characters');
+        alert(`Error: Title is too long (${data.title.length} characters). Maximum 100 characters allowed.`);
         return;
       }
 
       if (!/^[a-zA-Z0-9\s\-.,'&]+$/.test(data.title)) {
-        alert('Title can only contain letters, numbers, spaces, and basic punctuation');
+        alert('Error: Title can only contain letters, numbers, spaces, and basic punctuation (. , - \' &).');
         return;
       }
 
       if (!data.category) {
-        alert('Please select a category');
+        alert('Error: Please select a category.');
         return;
       }
 
       if (!data.tag || !data.tag.trim()) {
-        alert('Please enter a tag');
+        alert('Error: Tag is required.');
         return;
       }
 
       // Tag validation - text only, length
       if (data.tag.length < 2) {
-        alert('Tag must be at least 2 characters long');
+        alert(`Error: Tag is too short (${data.tag.length} characters). Minimum 2 characters required.`);
         return;
       }
 
       if (data.tag.length > 30) {
-        alert('Tag must not exceed 30 characters');
+        alert(`Error: Tag is too long (${data.tag.length} characters). Maximum 30 characters allowed.`);
         return;
       }
 
       if (!/^[a-zA-Z0-9\s\-]+$/.test(data.tag)) {
-        alert('Tag can only contain letters, numbers, spaces, and hyphens');
+        alert('Error: Tag can only contain letters, numbers, spaces, and hyphens.');
         return;
       }
 
       if (!data.description || !data.description.trim()) {
-        alert('Please enter a description');
+        alert('Error: Description is required.');
         return;
       }
 
       // Description validation - length
       if (data.description.length < 10) {
-        alert('Description must be at least 10 characters long');
+        alert(`Error: Description is too short (${data.description.length} characters). Minimum 10 characters required.`);
         return;
       }
 
       if (data.description.length > 500) {
-        alert('Description must not exceed 500 characters');
+        alert(`Error: Description is too long (${data.description.length} characters). Maximum 500 characters allowed.`);
         return;
       }
 
       // Image validation for new items
       if (!currentItem && !fileData?.file) {
-        alert('Please select an image');
+        alert('Error: Please select an image for new gallery items.');
         return;
       }
 
@@ -229,7 +227,8 @@ export default function GalleryManagement() {
       setShowForm(false);
     } catch (error) {
       console.error('Error saving gallery item:', error);
-      alert('Failed to save gallery item');
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Failed to save gallery item: ${errorMessage}`);
     }
   };
 
@@ -265,6 +264,37 @@ export default function GalleryManagement() {
 
   return (
     <>
+      <style>{`
+        @media (max-width: 576px) {
+          .gallery-card-image {
+            width: 60px !important;
+            height: 60px !important;
+          }
+          .gallery-card-title {
+            font-size: 0.9rem !important;
+          }
+          .gallery-card-sub {
+            font-size: 0.75rem !important;
+          }
+          .gallery-card-desc {
+            font-size: 0.75rem !important;
+          }
+          .gallery-card-badge {
+            font-size: 0.7rem !important;
+          }
+          .gallery-card-date {
+            font-size: 0.7rem !important;
+          }
+          .gallery-card-content {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .gallery-card-image-wrapper {
+            width: 100% !important;
+            height: 120px !important;
+          }
+        }
+      `}</style>
       <div className="d-page-header">
         <div>
           <div className="d-page-heading d-flex align-items-center gap-2">
@@ -339,7 +369,7 @@ export default function GalleryManagement() {
               <Col key={item._id} xs={12} sm={6} xl={4}>
                 <div className="d-card h-100 position-relative" style={{ border: '1px solid #ba9c45' }}>
                   {item.image && (
-                    <div style={{
+                    <div className="gallery-card-image-wrapper" style={{
                       width: '100%',
                       height: '200px',
                       borderRadius: 'var(--d-radius-md)',
@@ -351,7 +381,7 @@ export default function GalleryManagement() {
                   )}
                   <div>
                     <div className="d-flex justify-content-between align-items-start mb-2">
-                      <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{item.title}</h5>
+                      <h5 className="d-section-title mb-0 gallery-card-title" style={{ fontSize: '1rem' }}>{item.title}</h5>
                       {canAddEditDelete && (
                         <div className="d-flex gap-1">
                           <button
@@ -371,11 +401,11 @@ export default function GalleryManagement() {
                         </div>
                       )}
                     </div>
-                    <div className="d-page-sub mb-2">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
-                    <div className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>{item.description}</div>
+                    <div className="d-page-sub mb-2 gallery-card-sub">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
+                    <div className="text-muted small mb-2 gallery-card-desc" style={{ fontSize: '0.8rem' }}>{item.description}</div>
                     <div className="d-flex justify-content-between align-items-center mt-2">
-                      <span className="badge d-chip-gold " style={{ fontSize: '0.75rem', color: '#8a6a1a' }}>Featured</span>
-                      <span className="text-muted small" style={{ fontSize: '0.8rem' }}>
+                      <span className="badge d-chip-gold gallery-card-badge" style={{ fontSize: '0.75rem', color: '#8a6a1a' }}>Featured</span>
+                      <span className="text-muted small gallery-card-date" style={{ fontSize: '0.8rem' }}>
                         {formatDate(item.createdAt)}
                       </span>
                     </div>
@@ -396,9 +426,9 @@ export default function GalleryManagement() {
             {filtered.map(item => (
               <Col key={item._id} xs={12} sm={6} xl={4}>
                 <div className="d-card h-100 position-relative">
-                  <div className="d-flex gap-3">
+                  <div className="d-flex gap-3 gallery-card-content">
                     {item.image && (
-                      <div style={{
+                      <div className="gallery-card-image-wrapper" style={{
                         width: '80px',
                         height: '80px',
                         borderRadius: 'var(--d-radius-md)',
@@ -410,7 +440,7 @@ export default function GalleryManagement() {
                     )}
                     <div className="flex-grow-1">
                       <div className="d-flex justify-content-between align-items-start">
-                        <h5 className="d-section-title mb-0" style={{ fontSize: '1rem' }}>{item.title}</h5>
+                        <h5 className="d-section-title mb-0 gallery-card-title" style={{ fontSize: '1rem' }}>{item.title}</h5>
                         {canAddEditDelete && (
                           <div className="d-flex gap-1">
                             <button
@@ -430,9 +460,9 @@ export default function GalleryManagement() {
                           </div>
                         )}
                       </div>
-                      <div className="d-page-sub mb-2">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
+                      <div className="d-page-sub mb-2 gallery-card-sub">{item.category.charAt(0).toUpperCase() + item.category.slice(1)} • {item.tag}</div>
                       <div
-                        className="text-muted small mb-2"
+                        className="text-muted small mb-2 gallery-card-desc"
                         style={{
                           fontSize: '0.8rem',
                           wordBreak: 'break-word',
@@ -445,9 +475,9 @@ export default function GalleryManagement() {
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
                         {(item.featured === true || item.featured === 'true') && (
-                          <span className="badge d-chip-gold " style={{ fontSize: '0.75rem', color: '#8a6a1a' }}>Featured</span>
+                          <span className="badge d-chip-gold gallery-card-badge" style={{ fontSize: '0.75rem', color: '#8a6a1a' }}>Featured</span>
                         )}
-                        <span className="text-muted small" style={{ fontSize: '0.8rem' }}>
+                        <span className="text-muted small gallery-card-date" style={{ fontSize: '0.8rem' }}>
                           {formatDate(item.createdAt)}
                         </span>
                       </div>
