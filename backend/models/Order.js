@@ -23,7 +23,8 @@ const orderSchema = new mongoose.Schema({
   status: { type: String, enum: ['Pending', 'Paid', 'Cancelled'], default: 'Pending' },
   time: { type: String, default: 'Just now' },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  reservationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reservation' }
+  reservationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reservation' },
+  paymentMethod: { type: String, enum: ['Card', 'UPI', 'Cash'], default: 'Card' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Order', orderSchema);

@@ -6,7 +6,7 @@ import {
 } from 'react-icons/md';
 import Pagination from '../../components/Pagination';
 import DeleteModal from '../../components/DeleteModal';
-import { ordersAPI } from '../../../api';
+import { ordersAPI, tablesAPI } from '../../../api';
 import { useAuth } from '../../../contexts/AuthContext';
 
 const ORDERS = [{}];
@@ -46,7 +46,10 @@ export default function Orders() {
   const loadData = async () => {
     try {
       const response = await ordersAPI.getAll();
-      setOrders(response.data);
+      const sortedOrders = (response.data || []).sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setOrders(sortedOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -64,6 +67,23 @@ export default function Orders() {
         status: newStatus
       });
 
+      // If item is marked as Served, check if all items in the order are served
+      // If yes, update table status to Reserved
+      if (newStatus === 'Served') {
+        // Reload data to get updated item statuses
+        const response = await ordersAPI.getAll();
+        const updatedOrders = response.data;
+        const order = updatedOrders.find(o => o._id === orderId);
+
+        if (order && order.tableId) {
+          const allServed = order.items.every(item => item.status === 'Served');
+          if (allServed) {
+            await tablesAPI.update(order.tableId, { status: 'Reserved' });
+          }
+        }
+      }
+
+      // Reload orders to reflect the update
       loadData();
     } catch (err) {
       console.error('Error updating item status:', err);

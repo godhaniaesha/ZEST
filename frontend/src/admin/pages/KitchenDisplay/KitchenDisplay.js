@@ -9,7 +9,7 @@ import {
   MdRadioButtonUnchecked, MdCheckCircleOutline, MdClose,
   MdRestaurant
 } from 'react-icons/md';
-import { ordersAPI, api } from '../../../api';
+import { ordersAPI, api, tablesAPI } from '../../../api';
 
 // We'll fetch live orders from the backend. Start with empty list.
 const INITIAL_ORDERS = [];
@@ -149,6 +149,12 @@ export default function KitchenDisplay() {
       try {
         // Update order status to Completed on backend
         await api.put(`/orders/${order._id}`, { status: 'Completed' });
+
+        // Update table status to Reserved when order is done
+        if (order.tableId) {
+          await tablesAPI.update(order.tableId, { status: 'Reserved' });
+        }
+
         // Remove order from local display
         setOrders((cur) => cur.filter(o => o._id !== order._id));
       } catch (err) {
