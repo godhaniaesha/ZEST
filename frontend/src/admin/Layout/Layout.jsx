@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useOutletContext, useLocation } from 'react-router-dom';
+import { Outlet, useOutletContext } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
 import AttendanceBanner from '../components/AttendanceBanner';
@@ -11,7 +11,6 @@ export default function Layout() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 992);
   const { user, loading } = useAuth();
   const userRole = user?.role;
-  const location = useLocation();
 
   const handleToggle = () => {
     if (isMobile) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   MdDashboard,
   MdRestaurantMenu,
@@ -196,7 +196,6 @@ const NAV_GROUPS = [
 ];
 
 export default function Sidebar({ collapsed, mobileOpen, onClose }) {
-  const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const currentUserRole = user?.role || "customer";
@@ -252,18 +251,12 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
               <div key={group.label} className="d-nav-group-wrapper">
                 <div className="d-nav-group-label">{group.label}</div>
                 {allowedItems.map((item) => {
-                  const isActive =
-                    item.to === "/"
-                      ? location.pathname === "/"
-                      : location.pathname.startsWith(item.to);
-
                   return (
                     <NavLink
                       key={item.to}
                       to={item.to}
-                      className={`d-nav-item ${isActive ? "d-active" : ""}`}
-                      onClick={onClose}
-                      end={item.to === "/"}
+                      className={({ isActive }) => `d-nav-item ${isActive ? "d-active" : ""}`}
+                      end
                     >
                       <span className="d-nav-icon">{item.icon}</span>
                       <span className="d-nav-label">{item.label}</span>
