@@ -69,6 +69,20 @@ const resolveBillOrderIds = async ({ reservationId, orderIds, tableLabel }) => {
       .map((id) => String(id)),
   );
 
+  if (!reservationId) {
+    // If no reservation, just use tableLabel to find orders
+    if (tableLabel) {
+      const unpaidFilter = { status: { $nin: ["Paid", "Cancelled"] } };
+      const variants = tableMatchVariants(tableLabel);
+      const byTable = await Order.find({
+        table: { $in: variants },
+        ...unpaidFilter,
+      });
+      byTable.forEach((o) => ids.add(String(o._id)));
+    }
+    return [...ids];
+  }
+
   const reservation = await Reservation.findById(reservationId).populate("table");
   if (!reservation) {
     return [...ids];
@@ -99,10 +113,14 @@ const finalizeBillSettlement = async ({
   reservationId,
   orderIds,
   tableLabel,
+  paymentMethod,
 }) => {
-  const reservation = await Reservation.findById(reservationId).populate("table");
-  if (!reservation) {
-    throw new Error("Reservation not found.");
+  let reservation = null;
+  if (reservationId) {
+    reservation = await Reservation.findById(reservationId).populate("table");
+    if (!reservation) {
+      throw new Error("Reservation not found.");
+    }
   }
 
   const allOrderIds = await resolveBillOrderIds({
@@ -112,26 +130,59 @@ const finalizeBillSettlement = async ({
   });
 
   if (allOrderIds.length) {
+    const updateData = { $set: { status: "Paid" } };
+    if (reservation) {
+      updateData.$set.reservationId = reservation._id;
+    }
+    if (paymentMethod) {
+      updateData.$set.paymentMethod = paymentMethod;
+    }
     await Order.updateMany(
       { _id: { $in: allOrderIds } },
-      { $set: { status: "Paid", reservationId: reservation._id } },
+      updateData,
     );
   }
 
-  await Reservation.findByIdAndUpdate(reservationId, {
-    fullPaymentDone: true,
-    status: "Completed",
-  });
+  if (reservation) {
+    await Reservation.findByIdAndUpdate(reservationId, {
+      fullPaymentDone: true,
+      status: "Completed",
+    });
 
-  const tableRef = reservation.table?._id || reservation.table;
-  if (tableRef) {
-    await Table.findByIdAndUpdate(tableRef, { status: "Free" });
+    const tableRef = reservation.table?._id || reservation.table;
+    if (tableRef) {
+      await Table.findByIdAndUpdate(tableRef, { status: "Free" });
+    }
+  } else if (tableLabel) {
+    // For non-reservation orders, find table by label and update status to Free
+    const variants = tableMatchVariants(tableLabel);
+    
+    // Try to find table by displayId first
+    let table = await Table.findOne({ displayId: { $in: variants } });
+    
+    // If not found by displayId, try by number
+    if (!table) {
+      const numbers = variants
+        .map(v => parseInt(v.replace(/^[BC]-/, "")))
+        .filter(n => !isNaN(n));
+      
+      if (numbers.length > 0) {
+        table = await Table.findOne({ number: { $in: numbers } });
+      }
+    }
+    
+    if (table) {
+      await Table.findByIdAndUpdate(table._id, { status: "Free" });
+      console.log(`Table ${tableLabel} (ID: ${table._id}) status updated to Free`);
+    } else {
+      console.log(`Could not find table with label: ${tableLabel}, variants:`, variants);
+    }
   }
 
   return {
     updatedOrderCount: allOrderIds.length,
     primaryOrderId: allOrderIds[0] || null,
-    tableRef,
+    tableRef: reservation?.table?._id || reservation?.table || null,
   };
 };
 
@@ -258,20 +309,21 @@ router.post("/reservation-advance-complete-direct", auth, async (req, res) => {
 });
 
 router.post("/bill-intent", auth, async (req, res) => {
+  console.log("Bill intent endpoint called", req.body);
   try {
     const { reservationId, subtotal, tax, paymentMethod } = req.body;
+    console.log("Bill intent request:", { reservationId, subtotal, tax, paymentMethod });
 
-    if (!reservationId) {
-      return res.status(400).json({ message: "Reservation is required." });
-    }
-
-    const reservation = await Reservation.findById(reservationId);
-    if (!reservation) {
-      return res.status(404).json({ message: "Reservation not found." });
+    let advanceDeducted = 0;
+    if (reservationId) {
+      const reservation = await Reservation.findById(reservationId);
+      if (!reservation) {
+        return res.status(404).json({ message: "Reservation not found." });
+      }
+      advanceDeducted = reservation.advancePaid || 0;
     }
 
     const grossTotal = (subtotal || 0) + (tax || 0);
-    const advanceDeducted = reservation.advancePaid || 0;
     const finalAmount = Math.max(0, grossTotal - advanceDeducted);
 
     if (finalAmount <= 0) {
@@ -319,23 +371,25 @@ router.post("/bill/complete", auth, async (req, res) => {
       tableLabel,
     } = req.body;
 
-    if (!reservationId) {
-      return res.status(400).json({ message: "Reservation is required." });
-    }
-
-    const reservation = await Reservation.findById(reservationId);
-    if (!reservation) {
-      return res.status(404).json({ message: "Reservation not found." });
+    let advanceDeducted = 0;
+    if (reservationId) {
+      const reservation = await Reservation.findById(reservationId);
+      if (!reservation) {
+        return res.status(404).json({ message: "Reservation not found." });
+      }
+      advanceDeducted = reservation.advancePaid || 0;
     }
 
     const grossTotal = (subtotal || 0) + (tax || 0);
-    const advanceDeducted = reservation.advancePaid || 0;
     const finalAmount = Math.max(0, grossTotal - advanceDeducted);
 
     const settlementPayload = { reservationId, orderIds, tableLabel };
 
     if (finalAmount <= 0) {
-      const settlement = await finalizeBillSettlement(settlementPayload);
+      const settlement = await finalizeBillSettlement({
+        ...settlementPayload,
+        paymentMethod,
+      });
 
       return res.json({
         success: true,
@@ -348,9 +402,40 @@ router.post("/bill/complete", auth, async (req, res) => {
       });
     }
 
+    // Handle Cash payments without Stripe verification
+    if (paymentMethod === "Cash") {
+      const settlement = await finalizeBillSettlement({
+        ...settlementPayload,
+        paymentMethod,
+      });
+
+      await Payment.create({
+        orderId: settlement.primaryOrderId,
+        reservationId,
+        amount: finalAmount,
+        advanceDeducted,
+        paymentMethod: "Cash",
+        paymentType: "Bill",
+        status: "Succeeded",
+      });
+
+      return res.json({
+        success: true,
+        amountPaid: finalAmount,
+        advanceDeducted,
+        grossTotal,
+        finalAmount,
+        ordersUpdated: settlement.updatedOrderCount,
+        message: "Cash payment completed successfully.",
+      });
+    }
+
     // Handle UPI payments without Stripe verification
     if (paymentMethod === "UPI") {
-      const settlement = await finalizeBillSettlement(settlementPayload);
+      const settlement = await finalizeBillSettlement({
+        ...settlementPayload,
+        paymentMethod,
+      });
 
       await Payment.create({
         orderId: settlement.primaryOrderId,
@@ -379,7 +464,10 @@ router.post("/bill/complete", auth, async (req, res) => {
 
     await verifyPaymentIntent(paymentIntentId, finalAmount);
 
-    const settlement = await finalizeBillSettlement(settlementPayload);
+    const settlement = await finalizeBillSettlement({
+      ...settlementPayload,
+      paymentMethod,
+    });
 
     await Payment.findOneAndUpdate(
       { stripePaymentIntentId: paymentIntentId },

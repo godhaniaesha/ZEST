@@ -333,15 +333,28 @@ const FormModal = ({
 }) => {
   const [formData, setFormData] = useState({});
   const [fileData, setFileData] = useState(null);
+  const prevInitialDataRef = React.useRef(null);
+  const isInitializedRef = React.useRef(false);
 
   useEffect(() => {
     if (show) {
-      setFormData(initialData || {});
-      setFileData(null);
+      // Check if initialData has actually changed (different item)
+      const hasChanged = prevInitialDataRef.current?._id !== initialData?._id;
+      
+      if (hasChanged || !isInitializedRef.current) {
+        setFormData(initialData || {});
+        setFileData(null);
+        isInitializedRef.current = true;
+      }
+      
+      prevInitialDataRef.current = initialData;
     } else {
       setFormData({});
       setFileData(null);
+      prevInitialDataRef.current = null;
+      isInitializedRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, initialData]);
 
   const handleChange = (name, value, field) => {

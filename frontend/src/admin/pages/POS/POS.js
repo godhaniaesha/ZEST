@@ -44,7 +44,8 @@ const orderMatchesTable = (order, tableLabel) => {
 const ordersForReservation = (reservation, allOrders) => {
   if (!reservation) return [];
   const byReservation = allOrders.filter(
-    (o) => o.reservationId && String(o.reservationId) === String(reservation._id),
+    (o) =>
+      o.reservationId && String(o.reservationId) === String(reservation._id),
   );
   if (byReservation.length > 0) return byReservation;
 
@@ -90,7 +91,10 @@ const buildBillFromOrders = (orders, advancePaid = 0) => {
 
 const reservationHasPendingPayment = (reservation, allOrders) => {
   if (!reservation) return false;
-  if (reservation.status !== "Confirmed" && reservation.status !== "Completed") {
+  if (
+    reservation.status !== "Confirmed" &&
+    reservation.status !== "Completed"
+  ) {
     return false;
   }
 
@@ -110,13 +114,16 @@ const reservationHasPendingPayment = (reservation, allOrders) => {
 export default function POS() {
   const [menuItems, setMenuItems] = useState([]);
   const [reservations, setReservations] = useState([]);
+  const [completedOrders, setCompletedOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
   const [selectedReservation, setSelectedReservation] = useState("");
   const [selectedReservationData, setSelectedReservationData] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [reservationOrders, setReservationOrders] = useState([]);
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("Card");
   const [upiVpa, setUpiVpa] = useState("");
+  const [cashAmount, setCashAmount] = useState("");
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState("");
   const [paying, setPaying] = useState(false);
@@ -130,7 +137,11 @@ export default function POS() {
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [todaySales, setTodaySales] = useState(null);
   const [salesLoading, setSalesLoading] = useState(false);
-  const [liveStats, setLiveStats] = useState({ revenue: 0, orders: 0, pending: 0 });
+  const [liveStats, setLiveStats] = useState({
+    revenue: 0,
+    orders: 0,
+    pending: 0,
+  });
 
   const loadTodaySales = useCallback(async () => {
     setSalesLoading(true);
@@ -154,15 +165,20 @@ export default function POS() {
         return sum + items.reduce((s, i) => s + (i.qty || 1), 0);
       }, 0);
 
-      const pendingCount  = todayOrders.filter((o) => o.status === "Pending").length;
-      const paidCount     = todayOrders.filter((o) => o.status === "Paid").length;
-      const cancelledCount = todayOrders.filter((o) => o.status === "Cancelled").length;
+      const pendingCount = todayOrders.filter(
+        (o) => o.status === "Pending",
+      ).length;
+      const paidCount = todayOrders.filter((o) => o.status === "Paid").length;
+      const cancelledCount = todayOrders.filter(
+        (o) => o.status === "Cancelled",
+      ).length;
 
       // Group by table (string field in Order model)
       const byTable = {};
       todayOrders.forEach((o) => {
         const label = o.table ? `Table ${o.table}` : "Walk-in";
-        if (!byTable[label]) byTable[label] = { orders: 0, revenue: 0, paid: 0 };
+        if (!byTable[label])
+          byTable[label] = { orders: 0, revenue: 0, paid: 0 };
         byTable[label].orders += 1;
         if (o.status === "Paid") {
           byTable[label].revenue += Number(o.amount || 0);
@@ -174,8 +190,9 @@ export default function POS() {
       const itemCount = {};
       todayOrders.forEach((o) => {
         (o.items || []).forEach((item) => {
-          if (!itemCount[item.name]) itemCount[item.name] = { qty: 0, revenue: 0 };
-          itemCount[item.name].qty     += item.qty || 1;
+          if (!itemCount[item.name])
+            itemCount[item.name] = { qty: 0, revenue: 0 };
+          itemCount[item.name].qty += item.qty || 1;
           itemCount[item.name].revenue += (item.price || 0) * (item.qty || 1);
         });
       });
@@ -184,22 +201,31 @@ export default function POS() {
         .slice(0, 5);
 
       const data = {
-        orders:    todayOrders.length,
-        paid:      paidCount,
-        pending:   pendingCount,
+        orders: todayOrders.length,
+        paid: paidCount,
+        pending: pendingCount,
         cancelled: cancelledCount,
-        revenue:   totalRevenue,
-        items:     totalItems,
-        byTable:   Object.entries(byTable).sort((a, b) => b[1].revenue - a[1].revenue),
+        revenue: totalRevenue,
+        items: totalItems,
+        byTable: Object.entries(byTable).sort(
+          (a, b) => b[1].revenue - a[1].revenue,
+        ),
         topItems,
         date: new Date().toLocaleDateString("en-IN", {
-          weekday: "long", day: "numeric", month: "long", year: "numeric",
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
         }),
       };
 
       setTodaySales(data);
       // Update live stats bar
-      setLiveStats({ revenue: totalRevenue, orders: todayOrders.length, pending: pendingCount });
+      setLiveStats({
+        revenue: totalRevenue,
+        orders: todayOrders.length,
+        pending: pendingCount,
+      });
     } catch (err) {
       console.error("Error loading today's sales:", err);
       setTodaySales(null);
@@ -209,7 +235,9 @@ export default function POS() {
   }, []);
 
   // Load live stats on mount
-  useEffect(() => { loadTodaySales(); }, [loadTodaySales]);
+  useEffect(() => {
+    loadTodaySales();
+  }, [loadTodaySales]);
 
   const handleTodaySales = () => {
     setShowSalesModal(true);
@@ -235,21 +263,34 @@ export default function POS() {
       const allReservations = Array.isArray(resRes.data) ? resRes.data : [];
       const ordersList = Array.isArray(ordersRes.data) ? ordersRes.data : [];
 
-      const eligible = allReservations.filter((r) =>
+      // Filter reservations with pending payments
+      const eligibleReservations = allReservations.filter((r) =>
         reservationHasPendingPayment(r, ordersList),
       );
 
-      // Auto-refresh sathe cart reset na thay e mate: data change thayo hoy to j state update karvu
+      // Also include completed/served orders from KitchenDisplay that are unpaid
+      const completedUnpaidOrders = ordersList.filter((o) => {
+        if (!isUnpaidOrder(o)) return false;
+        // Include if status is Completed OR if all items are Served
+        if (o.status === "Completed") return true;
+        const allServed = (o.items || []).every(
+          (item) => item.status === "Served",
+        );
+        return allServed;
+      });
+
+      
       const signature = JSON.stringify([
-        eligible.map((r) => [r._id, r.status, r.advancePaid]),
+        eligibleReservations.map((r) => [r._id, r.status, r.advancePaid]),
         ordersList.map((o) => [o._id, o.status, (o.items || []).length]),
       ]);
       if (signature !== lastSignatureRef.current) {
         lastSignatureRef.current = signature;
         setAllOrders(ordersList);
-        setReservations(eligible);
+        setReservations(eligibleReservations);
+        setCompletedOrders(completedUnpaidOrders);
       }
-      return { ordersList, eligible };
+      return { ordersList, eligibleReservations, completedUnpaidOrders };
     } catch (error) {
       console.error("Error loading data:", error);
       return null;
@@ -307,10 +348,7 @@ export default function POS() {
         }
 
         setReservationOrders(orders);
-        const bill = buildBillFromOrders(
-          orders,
-          reservation?.advancePaid || 0,
-        );
+        const bill = buildBillFromOrders(orders, reservation?.advancePaid || 0);
         setCart(bill.items);
       } catch (error) {
         console.error("Error loading orders:", error);
@@ -319,6 +357,28 @@ export default function POS() {
 
     loadOrdersForReservation();
   }, [selectedReservation, reservations, allOrders]);
+
+  // Handle completed order selection from KitchenDisplay
+  useEffect(() => {
+    if (!selectedOrder) {
+      if (!selectedReservation) {
+        setCart([]);
+        setSelectedReservationData(null);
+        setReservationOrders([]);
+      }
+      return;
+    }
+
+    // Load completed order data
+    const bill = buildBillFromOrders([selectedOrder], 0);
+    setCart(bill.items);
+    setReservationOrders([selectedOrder]);
+    setSelectedReservationData({
+      table: { displayId: selectedOrder.table || "Walk-in" },
+      customerName: selectedOrder.waiter || "Guest",
+      advancePaid: 0,
+    });
+  }, [selectedOrder]);
 
   // Totals cart parthi calculate thay chhe, etle qty / item delete karo to total live change thase
   const round2 = (n) => Math.round(n * 100) / 100;
@@ -329,7 +389,11 @@ export default function POS() {
   const total = round2(Math.max(0, grossTotal - advanceDeducted));
 
   useEffect(() => {
-    if (!selectedReservation || total <= 0 || paymentMethod !== "Card") {
+    if (
+      (!selectedReservation && !selectedOrder) ||
+      total <= 0 ||
+      paymentMethod !== "Card"
+    ) {
       return undefined;
     }
 
@@ -381,10 +445,10 @@ export default function POS() {
       cardElementRef.current = null;
       stripeRef.current = null;
     };
-  }, [selectedReservation, total > 0, paymentMethod]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedReservation, selectedOrder, total > 0, paymentMethod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePrintBill = () => {
-    if (!selectedReservation || cart.length === 0) return;
+    if ((!selectedReservation && !selectedOrder) || cart.length === 0) return;
     const printWindow = window.open("", "_blank", "width=420,height=640");
     if (!printWindow) return;
 
@@ -467,9 +531,16 @@ export default function POS() {
       setPaying(true);
       setPaymentError("");
 
-      if (!selectedReservation) {
-        setPaymentError("Please select a reservation to pay");
+      if (!selectedReservation && !selectedOrder) {
+        setPaymentError("Please select a reservation or order to pay");
         return;
+      }
+
+      if (paymentMethod === "Cash") {
+        if (!cashAmount || Number(cashAmount) < total) {
+          setPaymentError(`Insufficient cash amount. Required: ₹${total.toLocaleString("en-IN")}`);
+          return;
+        }
       }
 
       const unpaidOrderIds = reservationOrders
@@ -479,10 +550,12 @@ export default function POS() {
       const result = await payBill({
         paymentMethod,
         upiVpa,
+        cashAmount,
         stripe:
           total > 0 && paymentMethod === "Card" ? stripeRef.current : null,
-        cardElement: total > 0 && paymentMethod === "Card" ? cardElementRef.current : null,
-        reservationId: selectedReservation,
+        cardElement:
+          total > 0 && paymentMethod === "Card" ? cardElementRef.current : null,
+        reservationId: selectedReservation || null,
         subtotal: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
         tax,
         orderIds: unpaidOrderIds,
@@ -496,13 +569,16 @@ export default function POS() {
       const tableLabel = getTableLabel(selectedReservationData);
       setPaymentSuccess(
         result?.message ||
-          `Payment recorded for Table ${tableLabel}. Orders updated: ${result?.ordersUpdated ?? unpaidOrderIds.length}.`,
+          `Payment recorded for ${tableLabel}. Orders updated: ${result?.ordersUpdated ?? unpaidOrderIds.length}.`,
       );
 
       setSelectedReservation("");
+      setSelectedOrder(null);
       setCart([]);
       setReservationOrders([]);
       setSelectedReservationData(null);
+      setCashAmount("");
+      setUpiVpa("");
 
       await Promise.all([loadPosData(), loadTodaySales()]);
     } catch (err) {
@@ -549,19 +625,86 @@ export default function POS() {
       </div>
 
       {/* ── LIVE STATS BAR ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px", marginBottom: "20px" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3,1fr)",
+          gap: "12px",
+          marginBottom: "20px",
+        }}
+      >
         {[
-          { label: "Today's Revenue", value: `₹${liveStats.revenue.toLocaleString("en-IN")}`, icon: <MdAttachMoney size={18} />, color: "#C9A84C" },
-          { label: "Total Orders",    value: liveStats.orders,                                   icon: <MdReceipt size={18} />,      color: "#16302B" },
-          { label: "Pending Orders",  value: liveStats.pending,                                  icon: <MdShoppingCart size={18} />, color: liveStats.pending > 0 ? "#e74c3c" : "#2ecc71" },
+          {
+            label: "Today's Revenue",
+            value: `₹${liveStats.revenue.toLocaleString("en-IN")}`,
+            icon: <MdAttachMoney size={18} />,
+            color: "#C9A84C",
+          },
+          {
+            label: "Total Orders",
+            value: liveStats.orders,
+            icon: <MdReceipt size={18} />,
+            color: "#16302B",
+          },
+          {
+            label: "Pending Orders",
+            value: liveStats.pending,
+            icon: <MdShoppingCart size={18} />,
+            color: liveStats.pending > 0 ? "#e74c3c" : "#2ecc71",
+          },
         ].map((s) => (
-          <div key={s.label} style={{ background: "#fff", border: "1px solid var(--d-border,#e2e0da)", borderRadius: "14px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-            <div style={{ width: 36, height: 36, borderRadius: "10px", background: `${s.color}18`, display: "flex", alignItems: "center", justifyContent: "center", color: s.color, flexShrink: 0 }}>
+          <div
+            key={s.label}
+            style={{
+              background: "#fff",
+              border: "1px solid var(--d-border,#e2e0da)",
+              borderRadius: "14px",
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}
+          >
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "10px",
+                background: `${s.color}18`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: s.color,
+                flexShrink: 0,
+              }}
+            >
               {s.icon}
             </div>
             <div>
-              <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: "1.3rem", fontWeight: 700, color: "var(--d-primary,#16302B)", lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--d-text-muted,#6b7280)", marginTop: "3px" }}>{s.label}</div>
+              <div
+                style={{
+                  fontFamily: "Cormorant Garamond,serif",
+                  fontSize: "1.3rem",
+                  fontWeight: 700,
+                  color: "var(--d-primary,#16302B)",
+                  lineHeight: 1,
+                }}
+              >
+                {s.value}
+              </div>
+              <div
+                style={{
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                  color: "var(--d-text-muted,#6b7280)",
+                  marginTop: "3px",
+                }}
+              >
+                {s.label}
+              </div>
             </div>
           </div>
         ))}
@@ -581,7 +724,10 @@ export default function POS() {
                     borderRadius: "999px",
                     fontSize: "0.72rem",
                     fontWeight: 800,
-                    background: reservations.length > 0 ? "rgba(231,76,60,0.12)" : "rgba(46,204,113,0.12)",
+                    background:
+                      reservations.length > 0
+                        ? "rgba(231,76,60,0.12)"
+                        : "rgba(46,204,113,0.12)",
                     color: reservations.length > 0 ? "#e74c3c" : "#27ae60",
                   }}
                 >
@@ -600,12 +746,16 @@ export default function POS() {
 
             {reservationsLoading ? (
               <div className="text-muted small">Loading tables…</div>
-            ) : reservations.length === 0 ? (
-              <div className="text-muted small">
-                Badha tables nu payment thai gayu chhe ✓
-              </div>
+            ) : reservations.length === 0 && completedOrders.length === 0 ? (
+              <div className="text-muted small">No Payment Avilable.</div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: "10px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))",
+                  gap: "10px",
+                }}
+              >
                 {reservations.map((r) => {
                   const due = buildBillFromOrders(
                     ordersForReservation(r, allOrders),
@@ -616,11 +766,18 @@ export default function POS() {
                     <button
                       key={r._id}
                       type="button"
-                      onClick={() => setSelectedReservation(r._id)}
+                      onClick={() => {
+                        setSelectedReservation(r._id);
+                        setSelectedOrder(null);
+                      }}
                       style={{
                         textAlign: "left",
-                        background: active ? "rgba(201,168,76,0.12)" : "var(--d-bg,#f5f4f0)",
-                        border: active ? "1.5px solid var(--d-gold,#C9A84C)" : "1px solid var(--d-border,#e2e0da)",
+                        background: active
+                          ? "rgba(201,168,76,0.12)"
+                          : "var(--d-bg,#f5f4f0)",
+                        border: active
+                          ? "1.5px solid var(--d-gold,#C9A84C)"
+                          : "1px solid var(--d-border,#e2e0da)",
                         borderRadius: "12px",
                         padding: "10px 12px",
                         cursor: "pointer",
@@ -631,14 +788,35 @@ export default function POS() {
                           <MdTableRestaurant className="text-gold me-1" />
                           {getTableLabel(r)}
                         </strong>
-                        <span style={{ fontSize: "0.62rem", fontWeight: 700, color: r.status === "Completed" ? "#27ae60" : "#C9A84C" }}>
+                        <span
+                          style={{
+                            fontSize: "0.62rem",
+                            fontWeight: 700,
+                            color:
+                              r.status === "Completed" ? "#27ae60" : "#C9A84C",
+                          }}
+                        >
                           {r.status === "Completed" ? "Served" : "Occupied"}
                         </span>
                       </div>
-                      <div className="text-muted small" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <div
+                        className="text-muted small"
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
                         {r.customerName || r.name}
                       </div>
-                      <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: "1.15rem", fontWeight: 700, color: "var(--d-gold,#C9A84C)" }}>
+                      <div
+                        style={{
+                          fontFamily: "Cormorant Garamond,serif",
+                          fontSize: "1.15rem",
+                          fontWeight: 700,
+                          color: "var(--d-gold,#C9A84C)",
+                        }}
+                      >
                         Due ₹{due.toLocaleString("en-IN")}
                       </div>
                     </button>
@@ -648,66 +826,105 @@ export default function POS() {
             )}
           </div>
 
-          <div className="d-card mb-4">
-            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
-              <div className="d-section-title mb-0">Quick Select Menu</div>
-              <div className="d-flex gap-3 flex-wrap">
-                <div
-                  className="d-navbar-search-box m-0"
-                  style={{ width: "250px" }}
-                >
-                  <MdSearch className="d-search-icon" />
-                  <input
-                    type="text"
-                    placeholder="Search items..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="d-pos-table-select">
-                  <MdTableRestaurant className="text-gold" fontSize="1.2rem" />
-                  <select
-                    value={selectedReservation}
-                    onChange={(e) => setSelectedReservation(e.target.value)}
-                    style={{ minWidth: "200px" }}
-                    disabled={reservationsLoading}
+          {/* ── COMPLETED ORDERS FROM KITCHEN DISPLAY ── */}
+          {completedOrders.length > 0 && (
+            <div className="d-card mb-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className="d-section-title mb-0">
+                  Completed Orders
+                  <span
+                    style={{
+                      marginLeft: "10px",
+                      padding: "2px 10px",
+                      borderRadius: "999px",
+                      fontSize: "0.72rem",
+                      fontWeight: 800,
+                      background: "rgba(52,152,219,0.12)",
+                      color: "#3498db",
+                    }}
                   >
-                    {reservationsLoading ? (
-                      <option value="">Loading tables…</option>
-                    ) : reservations.length === 0 ? (
-                      <option value="">No tables pending payment</option>
-                    ) : (
-                      <>
-                        <option value="">Select Table for Billing</option>
-                        {reservations.map((r) => {
-                          const pendingBill = buildBillFromOrders(
-                            ordersForReservation(r, allOrders),
-                            r.advancePaid,
-                          );
-                          const statusTag =
-                            r.status === "Completed" ? " · Served" : "";
-                          return (
-                            <option key={r._id} value={r._id}>
-                              {getTableLabel(r)} — {r.customerName || r.name} (
-                              {r.guests} guests){statusTag} · Due ₹
-                              {pendingBill.total.toLocaleString("en-IN")}
-                            </option>
-                          );
-                        })}
-                      </>
-                    )}
-                  </select>
+                    {completedOrders.length}
+                  </span>
                 </div>
               </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))",
+                  gap: "10px",
+                }}
+              >
+                {completedOrders.map((order) => {
+                  const bill = buildBillFromOrders([order], 0);
+                  const active = selectedOrder?._id === order._id;
+                  return (
+                    <button
+                      key={order._id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setSelectedReservation("");
+                      }}
+                      style={{
+                        textAlign: "left",
+                        background: active
+                          ? "rgba(52,152,219,0.12)"
+                          : "var(--d-bg,#f5f4f0)",
+                        border: active
+                          ? "1.5px solid #3498db"
+                          : "1px solid var(--d-border,#e2e0da)",
+                        borderRadius: "12px",
+                        padding: "10px 12px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div className="d-flex justify-content-between align-items-center">
+                        <strong style={{ color: "var(--d-primary,#16302B)" }}>
+                          <MdReceipt className="text-primary me-1" />
+                          {order.id}
+                        </strong>
+                        <span
+                          style={{
+                            fontSize: "0.62rem",
+                            fontWeight: 700,
+                            color: "#3498db",
+                          }}
+                        >
+                          Kitchen Done
+                        </span>
+                      </div>
+                      <div
+                        className="text-muted small"
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {order.table}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "Cormorant Garamond,serif",
+                          fontSize: "1.15rem",
+                          fontWeight: 700,
+                          color: "var(--d-gold,#C9A84C)",
+                        }}
+                      >
+                        Due ₹{bill.total.toLocaleString("en-IN")}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-
+          )}
           <div className="d-card">
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-0">
               <div className="d-section-title mb-0">
-                {selectedReservation
+                {selectedReservation || selectedOrder
                   ? "Bill Summary"
-                  : "Select a table to view bill"}
+                  : "Select a table or order to view bill"}
               </div>
               {selectedReservationData && (
                 <div className="d-flex gap-2 flex-wrap align-items-center">
@@ -727,15 +944,23 @@ export default function POS() {
                       borderRadius: "999px",
                       fontSize: "0.7rem",
                       fontWeight: 700,
-                      background: selectedReservationData.status === "Completed"
-                        ? "rgba(46,204,113,0.12)"
-                        : "rgba(201,168,76,0.15)",
-                      color: selectedReservationData.status === "Completed"
-                        ? "#27ae60"
-                        : "#C9A84C",
+                      background: selectedOrder
+                        ? "rgba(52,152,219,0.12)"
+                        : selectedReservationData.status === "Completed"
+                          ? "rgba(46,204,113,0.12)"
+                          : "rgba(201,168,76,0.15)",
+                      color: selectedOrder
+                        ? "#3498db"
+                        : selectedReservationData.status === "Completed"
+                          ? "#27ae60"
+                          : "#C9A84C",
                     }}
                   >
-                    {selectedReservationData.status === "Completed" ? "Items Served" : "Table Occupied"}
+                    {selectedOrder
+                      ? "Kitchen Done"
+                      : selectedReservationData.status === "Completed"
+                        ? "Items Served"
+                        : "Table Occupied"}
                   </span>
                   {selectedReservationData.fullPaymentDone && (
                     <span
@@ -762,15 +987,16 @@ export default function POS() {
                         color: "#6b7280",
                       }}
                     >
-                      {reservationOrders.length} order{reservationOrders.length !== 1 ? "s" : ""} linked
+                      {reservationOrders.length} order
+                      {reservationOrders.length !== 1 ? "s" : ""} linked
                     </span>
                   )}
                 </div>
               )}
             </div>
-            {selectedReservation && (
+            {(selectedReservation || selectedOrder) && (
               <div className="d-table-wrap mt-3">
-                <table className="d-table"> 
+                <table className="d-table">
                   <thead>
                     <tr>
                       <th>Item</th>
@@ -852,12 +1078,14 @@ export default function POS() {
         <Col xs={12} lg={4}>
           <div className="d-card h-100">
             <div className="d-section-title mb-4">Checkout Summary</div>
-            {selectedReservation ? (
+            {selectedReservation || selectedOrder ? (
               <div className="d-checkout-details">
                 {selectedReservationData && (
                   <div
                     className="mb-3 pb-2"
-                    style={{ borderBottom: "1px solid var(--d-border,#e2e0da)" }}
+                    style={{
+                      borderBottom: "1px solid var(--d-border,#e2e0da)",
+                    }}
                   >
                     <div
                       style={{
@@ -937,6 +1165,13 @@ export default function POS() {
                         >
                           UPI
                         </button>
+                        <button
+                          className={`d-btn-outline flex-grow-1 ${paymentMethod === "Cash" ? "active" : ""}`}
+                          style={{ fontSize: "0.75rem" }}
+                          onClick={() => setPaymentMethod("Cash")}
+                        >
+                          Cash
+                        </button>
                       </div>
                     </div>
 
@@ -956,7 +1191,7 @@ export default function POS() {
                           </div>
                         )}
                       </div>
-                    ) : (
+                    ) : paymentMethod === "UPI" ? (
                       <div className="mb-3">
                         <input
                           className="form-control"
@@ -964,6 +1199,29 @@ export default function POS() {
                           value={upiVpa}
                           onChange={(e) => setUpiVpa(e.target.value)}
                         />
+                      </div>
+                    ) : (
+                      <div className="mb-3">
+                        <div className="text-muted small mb-2">
+                          Cash Amount
+                        </div>
+                        <input
+                          className="form-control"
+                          type="number"
+                          placeholder="Enter cash amount"
+                          value={cashAmount}
+                          onChange={(e) => setCashAmount(e.target.value)}
+                        />
+                        {cashAmount && Number(cashAmount) >= total && (
+                          <div className="text-success small mt-2">
+                            Change to return: ₹{(Number(cashAmount) - total).toLocaleString("en-IN")}
+                          </div>
+                        )}
+                        {cashAmount && Number(cashAmount) < total && (
+                          <div className="text-danger small mt-2">
+                            Insufficient amount. Need ₹{(total - Number(cashAmount)).toLocaleString("en-IN")} more.
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
@@ -1013,36 +1271,115 @@ export default function POS() {
 
       {/* ── TODAY'S SALES MODAL ── */}
       {showSalesModal && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 1055,
-          background: "rgba(11,25,21,0.55)", backdropFilter: "blur(4px)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
-        }}
-          onClick={(e) => e.target === e.currentTarget && setShowSalesModal(false)}
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1055,
+            background: "rgba(11,25,21,0.55)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+          onClick={(e) =>
+            e.target === e.currentTarget && setShowSalesModal(false)
+          }
         >
-          <div style={{
-            background: "#fff", borderRadius: "20px", width: "100%", maxWidth: "560px",
-            maxHeight: "88vh", display: "flex", flexDirection: "column",
-            boxShadow: "0 32px 80px rgba(11,25,21,0.2), 0 0 0 1px rgba(201,168,76,0.15)",
-            overflow: "hidden",
-          }}>
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              width: "100%",
+              maxWidth: "560px",
+              maxHeight: "88vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow:
+                "0 32px 80px rgba(11,25,21,0.2), 0 0 0 1px rgba(201,168,76,0.15)",
+              overflow: "hidden",
+            }}
+          >
             {/* Top bar */}
-            <div style={{ height: "4px", background: "linear-gradient(90deg,#16302B,#C9A84C,#16302B)", flexShrink: 0 }} />
+            <div
+              style={{
+                height: "4px",
+                background: "linear-gradient(90deg,#16302B,#C9A84C,#16302B)",
+                flexShrink: 0,
+              }}
+            />
 
             {/* Header */}
-            <div style={{ padding: "18px 24px 16px", background: "linear-gradient(135deg,#16302B,#1f4238)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: 32, height: 32, borderRadius: "8px", background: "rgba(201,168,76,0.2)", border: "1px solid rgba(201,168,76,0.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A84C" }}>
+            <div
+              style={{
+                padding: "18px 24px 16px",
+                background: "linear-gradient(135deg,#16302B,#1f4238)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "8px",
+                    background: "rgba(201,168,76,0.2)",
+                    border: "1px solid rgba(201,168,76,0.35)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#C9A84C",
+                  }}
+                >
                   <MdTrendingUp size={16} />
                 </div>
                 <div>
-                  <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: "1.2rem", fontWeight: 600, color: "#fff" }}>Today's Sales</div>
-                  <div style={{ fontSize: "0.65rem", color: "rgba(201,168,76,0.8)", letterSpacing: "0.5px" }}>{todaySales?.date || new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</div>
+                  <div
+                    style={{
+                      fontFamily: "Cormorant Garamond,serif",
+                      fontSize: "1.2rem",
+                      fontWeight: 600,
+                      color: "#fff",
+                    }}
+                  >
+                    Today's Sales
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.65rem",
+                      color: "rgba(201,168,76,0.8)",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {todaySales?.date ||
+                      new Date().toLocaleDateString("en-IN", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                      })}
+                  </div>
                 </div>
               </div>
               <button
                 onClick={() => setShowSalesModal(false)}
-                style={{ width: 32, height: 32, borderRadius: "8px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.7)" }}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "8px",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "rgba(255,255,255,0.7)",
+                }}
               >
                 <MdClose size={16} />
               </button>
@@ -1051,41 +1388,160 @@ export default function POS() {
             {/* Body */}
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
               {salesLoading ? (
-                <div style={{ textAlign: "center", padding: "40px 0", color: "var(--d-text-muted)" }}>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "40px 0",
+                    color: "var(--d-text-muted)",
+                  }}
+                >
                   <div style={{ fontSize: "0.9rem" }}>Loading sales data…</div>
                 </div>
               ) : !todaySales ? (
-                <div style={{ textAlign: "center", padding: "40px 0", color: "var(--d-text-muted)" }}>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "40px 0",
+                    color: "var(--d-text-muted)",
+                  }}
+                >
                   <MdReceipt style={{ fontSize: "3rem", opacity: 0.3 }} />
-                  <div style={{ marginTop: "12px" }}>Could not load sales data</div>
+                  <div style={{ marginTop: "12px" }}>
+                    Could not load sales data
+                  </div>
                 </div>
               ) : (
                 <>
                   {/* Stat cards */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: "12px",
+                      marginBottom: "20px",
+                    }}
+                  >
                     {[
-                      { icon: <MdAttachMoney size={20} />, label: "Revenue (Paid)", value: `₹${todaySales.revenue.toLocaleString("en-IN")}`, color: "#C9A84C" },
-                      { icon: <MdReceipt size={20} />,      label: "Total Orders",  value: todaySales.orders,  color: "#16302B" },
-                      { icon: <MdShoppingCart size={20} />, label: "Items Sold",    value: todaySales.items,   color: "#2ecc71" },
+                      {
+                        icon: <MdAttachMoney size={20} />,
+                        label: "Revenue (Paid)",
+                        value: `₹${todaySales.revenue.toLocaleString("en-IN")}`,
+                        color: "#C9A84C",
+                      },
+                      {
+                        icon: <MdReceipt size={20} />,
+                        label: "Total Orders",
+                        value: todaySales.orders,
+                        color: "#16302B",
+                      },
+                      {
+                        icon: <MdShoppingCart size={20} />,
+                        label: "Items Sold",
+                        value: todaySales.items,
+                        color: "#2ecc71",
+                      },
                     ].map((s) => (
-                      <div key={s.label} style={{ background: "var(--d-bg,#f5f4f0)", borderRadius: "14px", padding: "16px 14px", border: "1px solid var(--d-border,#e2e0da)", textAlign: "center" }}>
-                        <div style={{ color: s.color, marginBottom: "6px" }}>{s.icon}</div>
-                        <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: "1.6rem", fontWeight: 700, color: "var(--d-primary,#16302B)", lineHeight: 1 }}>{s.value}</div>
-                        <div style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--d-text-muted,#6b7280)", marginTop: "4px" }}>{s.label}</div>
+                      <div
+                        key={s.label}
+                        style={{
+                          background: "var(--d-bg,#f5f4f0)",
+                          borderRadius: "14px",
+                          padding: "16px 14px",
+                          border: "1px solid var(--d-border,#e2e0da)",
+                          textAlign: "center",
+                        }}
+                      >
+                        <div style={{ color: s.color, marginBottom: "6px" }}>
+                          {s.icon}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: "Cormorant Garamond,serif",
+                            fontSize: "1.6rem",
+                            fontWeight: 700,
+                            color: "var(--d-primary,#16302B)",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {s.value}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "0.6rem",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                            color: "var(--d-text-muted,#6b7280)",
+                            marginTop: "4px",
+                          }}
+                        >
+                          {s.label}
+                        </div>
                       </div>
                     ))}
                   </div>
 
                   {/* Order status pills */}
-                  <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginBottom: "20px",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     {[
-                      { label: "Paid",      count: todaySales.paid,      bg: "rgba(46,204,113,0.12)",  color: "#27ae60" },
-                      { label: "Pending",   count: todaySales.pending,   bg: "rgba(201,168,76,0.12)",  color: "#C9A84C" },
-                      { label: "Cancelled", count: todaySales.cancelled, bg: "rgba(231,76,60,0.10)",   color: "#e74c3c" },
+                      {
+                        label: "Paid",
+                        count: todaySales.paid,
+                        bg: "rgba(46,204,113,0.12)",
+                        color: "#27ae60",
+                      },
+                      {
+                        label: "Pending",
+                        count: todaySales.pending,
+                        bg: "rgba(201,168,76,0.12)",
+                        color: "#C9A84C",
+                      },
+                      {
+                        label: "Cancelled",
+                        count: todaySales.cancelled,
+                        bg: "rgba(231,76,60,0.10)",
+                        color: "#e74c3c",
+                      },
                     ].map((s) => (
-                      <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.color}30`, borderRadius: "20px", padding: "5px 14px", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span style={{ fontSize: "0.82rem", fontWeight: 800, color: s.color }}>{s.count}</span>
-                        <span style={{ fontSize: "0.68rem", fontWeight: 600, color: s.color, textTransform: "uppercase", letterSpacing: "0.8px" }}>{s.label}</span>
+                      <div
+                        key={s.label}
+                        style={{
+                          background: s.bg,
+                          border: `1px solid ${s.color}30`,
+                          borderRadius: "20px",
+                          padding: "5px 14px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "0.82rem",
+                            fontWeight: 800,
+                            color: s.color,
+                          }}
+                        >
+                          {s.count}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "0.68rem",
+                            fontWeight: 600,
+                            color: s.color,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.8px",
+                          }}
+                        >
+                          {s.label}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1093,24 +1549,107 @@ export default function POS() {
                   {/* By table breakdown */}
                   {todaySales.byTable.length > 0 && (
                     <>
-                      <div style={{ fontSize: "0.6rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1.5px", color: "var(--d-gold,#C9A84C)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }} />
+                      <div
+                        style={{
+                          fontSize: "0.6rem",
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                          letterSpacing: "1.5px",
+                          color: "var(--d-gold,#C9A84C)",
+                          marginBottom: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            flex: 1,
+                            height: 1,
+                            background: "rgba(201,168,76,0.2)",
+                          }}
+                        />
                         By Table
-                        <span style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }} />
+                        <span
+                          style={{
+                            flex: 1,
+                            height: 1,
+                            background: "rgba(201,168,76,0.2)",
+                          }}
+                        />
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "7px", marginBottom: "20px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "7px",
+                          marginBottom: "20px",
+                        }}
+                      >
                         {todaySales.byTable.map(([label, data]) => (
-                          <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--d-bg,#f5f4f0)", borderRadius: "10px", padding: "10px 14px", border: "1px solid var(--d-border,#e2e0da)" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                              <div style={{ width: 30, height: 30, borderRadius: "8px", background: "rgba(201,168,76,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--d-gold,#C9A84C)" }}>
+                          <div
+                            key={label}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              background: "var(--d-bg,#f5f4f0)",
+                              borderRadius: "10px",
+                              padding: "10px 14px",
+                              border: "1px solid var(--d-border,#e2e0da)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 30,
+                                  height: 30,
+                                  borderRadius: "8px",
+                                  background: "rgba(201,168,76,0.12)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "var(--d-gold,#C9A84C)",
+                                }}
+                              >
                                 <MdTableRestaurant size={15} />
                               </div>
                               <div>
-                                <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--d-primary,#16302B)" }}>{label}</div>
-                                <div style={{ fontSize: "0.68rem", color: "var(--d-text-muted,#6b7280)" }}>{data.orders} order{data.orders !== 1 ? "s" : ""} · {data.paid} paid</div>
+                                <div
+                                  style={{
+                                    fontSize: "0.85rem",
+                                    fontWeight: 700,
+                                    color: "var(--d-primary,#16302B)",
+                                  }}
+                                >
+                                  {label}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "0.68rem",
+                                    color: "var(--d-text-muted,#6b7280)",
+                                  }}
+                                >
+                                  {data.orders} order
+                                  {data.orders !== 1 ? "s" : ""} · {data.paid}{" "}
+                                  paid
+                                </div>
                               </div>
                             </div>
-                            <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: "1.15rem", fontWeight: 700, color: "var(--d-primary,#16302B)" }}>
+                            <div
+                              style={{
+                                fontFamily: "Cormorant Garamond,serif",
+                                fontSize: "1.15rem",
+                                fontWeight: 700,
+                                color: "var(--d-primary,#16302B)",
+                              }}
+                            >
                               ₹{data.revenue.toLocaleString("en-IN")}
                             </div>
                           </div>
@@ -1122,20 +1661,106 @@ export default function POS() {
                   {/* Top items */}
                   {todaySales.topItems.length > 0 && (
                     <>
-                      <div style={{ fontSize: "0.6rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1.5px", color: "var(--d-gold,#C9A84C)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }} />
+                      <div
+                        style={{
+                          fontSize: "0.6rem",
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                          letterSpacing: "1.5px",
+                          color: "var(--d-gold,#C9A84C)",
+                          marginBottom: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            flex: 1,
+                            height: 1,
+                            background: "rgba(201,168,76,0.2)",
+                          }}
+                        />
                         Top Items Today
-                        <span style={{ flex: 1, height: 1, background: "rgba(201,168,76,0.2)" }} />
+                        <span
+                          style={{
+                            flex: 1,
+                            height: 1,
+                            background: "rgba(201,168,76,0.2)",
+                          }}
+                        />
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "6px",
+                        }}
+                      >
                         {todaySales.topItems.map(([name, data], idx) => (
-                          <div key={name} style={{ display: "flex", alignItems: "center", gap: "10px", background: "var(--d-bg,#f5f4f0)", borderRadius: "10px", padding: "9px 14px", border: "1px solid var(--d-border,#e2e0da)" }}>
-                            <div style={{ width: 22, height: 22, borderRadius: "50%", background: idx === 0 ? "rgba(201,168,76,0.25)" : "rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.65rem", fontWeight: 800, color: idx === 0 ? "var(--d-gold,#C9A84C)" : "var(--d-text-muted,#6b7280)", flexShrink: 0 }}>
+                          <div
+                            key={name}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              background: "var(--d-bg,#f5f4f0)",
+                              borderRadius: "10px",
+                              padding: "9px 14px",
+                              border: "1px solid var(--d-border,#e2e0da)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: "50%",
+                                background:
+                                  idx === 0
+                                    ? "rgba(201,168,76,0.25)"
+                                    : "rgba(0,0,0,0.06)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "0.65rem",
+                                fontWeight: 800,
+                                color:
+                                  idx === 0
+                                    ? "var(--d-gold,#C9A84C)"
+                                    : "var(--d-text-muted,#6b7280)",
+                                flexShrink: 0,
+                              }}
+                            >
                               {idx + 1}
                             </div>
-                            <div style={{ flex: 1, fontSize: "0.85rem", fontWeight: 600, color: "var(--d-primary,#16302B)" }}>{name}</div>
-                            <div style={{ fontSize: "0.75rem", color: "var(--d-text-muted,#6b7280)", marginRight: "10px" }}>×{data.qty}</div>
-                            <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--d-primary,#16302B)" }}>₹{data.revenue.toLocaleString("en-IN")}</div>
+                            <div
+                              style={{
+                                flex: 1,
+                                fontSize: "0.85rem",
+                                fontWeight: 600,
+                                color: "var(--d-primary,#16302B)",
+                              }}
+                            >
+                              {name}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--d-text-muted,#6b7280)",
+                                marginRight: "10px",
+                              }}
+                            >
+                              ×{data.qty}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "0.88rem",
+                                fontWeight: 700,
+                                color: "var(--d-primary,#16302B)",
+                              }}
+                            >
+                              ₹{data.revenue.toLocaleString("en-IN")}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1143,7 +1768,14 @@ export default function POS() {
                   )}
 
                   {todaySales.orders === 0 && (
-                    <div style={{ textAlign: "center", padding: "24px 0", color: "var(--d-text-muted)", fontSize: "0.9rem" }}>
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "24px 0",
+                        color: "var(--d-text-muted)",
+                        fontSize: "0.9rem",
+                      }}
+                    >
                       No orders recorded today yet
                     </div>
                   )}
@@ -1152,17 +1784,45 @@ export default function POS() {
             </div>
 
             {/* Footer */}
-            <div style={{ padding: "12px 24px 16px", borderTop: "1px solid rgba(201,168,76,0.1)", background: "var(--d-bg,#f5f4f0)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+            <div
+              style={{
+                padding: "12px 24px 16px",
+                borderTop: "1px solid rgba(201,168,76,0.1)",
+                background: "var(--d-bg,#f5f4f0)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexShrink: 0,
+              }}
+            >
               <button
                 onClick={loadTodaySales}
                 disabled={salesLoading}
-                style={{ background: "transparent", border: "1.5px solid var(--d-border,#e2e0da)", borderRadius: "10px", padding: "8px 16px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", color: "var(--d-text-muted,#6b7280)" }}
+                style={{
+                  background: "transparent",
+                  border: "1.5px solid var(--d-border,#e2e0da)",
+                  borderRadius: "10px",
+                  padding: "8px 16px",
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  color: "var(--d-text-muted,#6b7280)",
+                }}
               >
                 ↻ Refresh
               </button>
               <button
                 onClick={() => setShowSalesModal(false)}
-                style={{ background: "linear-gradient(135deg,#C9A84C,#e4c47a)", border: "none", borderRadius: "10px", padding: "8px 20px", fontSize: "0.78rem", fontWeight: 800, cursor: "pointer", color: "#16302B" }}
+                style={{
+                  background: "linear-gradient(135deg,#C9A84C,#e4c47a)",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "8px 20px",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  color: "#16302B",
+                }}
               >
                 Close
               </button>

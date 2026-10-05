@@ -224,12 +224,33 @@ export const payBill = async ({
   stripe,
   cardElement,
   upiVpa,
+  cashAmount,
   reservationId,
   subtotal,
   tax,
   orderIds,
   tableLabel,
 }) => {
+
+  // -----------------------------
+  // CASH
+  // -----------------------------
+  if (paymentMethod === "Cash") {
+    if (!cashAmount || Number(cashAmount) <= 0) {
+      throw new Error("Please enter a valid cash amount.");
+    }
+
+    const completeRes = await paymentAPI.completeBill({
+      reservationId,
+      orderIds,
+      paymentMethod: "Cash",
+      subtotal,
+      tax,
+      tableLabel,
+    });
+
+    return completeRes.data;
+  }
 
   // -----------------------------
   // UPI

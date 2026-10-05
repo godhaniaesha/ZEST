@@ -51,12 +51,8 @@ export default function TakeOrder() {
           // Role may not allow reservation access — continue with tables only
         }
 
-        // Build dropdown entries: one per Reserved table, enriched with reservation data if available
-        const reservedTables = allTables.filter(
-          (t) => t.status === 'Reserved' || t.status === 'Occupied',
-        );
-
-        const entries = reservedTables.map(table => {
+        // Build dropdown entries: one per table, enriched with reservation data if available
+        const entries = allTables.map(table => {
           // Match reservation by table._id (reservation.table is populated object)
           const reservation = confirmedReservations.find(r => {
             const rTableId = r.table?._id || r.table;
@@ -70,12 +66,15 @@ export default function TakeOrder() {
             tableId:     table._id,
             displayId,
             capacity:    table.capacity,
+            type:        table.type,
+            location:    table.location,
+            status:      table.status,
             reservation: reservation || null,
             // Use reservation _id as the select value when available, otherwise table _id
             value:       reservation ? reservation._id : table._id,
             label:       reservation
               ? `${displayId} — ${reservation.customerName} (${reservation.guests} guests)`
-              : `${displayId} — ${table.capacity} seats (no reservation)`,
+              : `${displayId} — ${table.capacity} seats (${table.status})`,
           };
         });
 
@@ -127,10 +126,12 @@ export default function TakeOrder() {
 
     const entry = reservations.find(e => e.value === selectedTable);
     const tableLabel = entry?.displayId || selectedTable;
+    const tableId = entry?.tableId;
 
     const orderData = {
       id: `ORD-${Date.now()}`,
       table: tableLabel,
+      tableId: tableId, // Add table ID for status updates
       waiter: user?.name || 'Staff',
       items: cart.map(item => ({
         name: item.name,
@@ -148,7 +149,14 @@ export default function TakeOrder() {
     };
 
     try {
+      // Create order
       await ordersAPI.create(orderData);
+
+      // Update table status to Occupied
+      if (tableId) {
+        await tablesAPI.update(tableId, { status: 'Occupied' });
+      }
+
       alert('Order sent to kitchen successfully!');
       setCart([]);
       setSelectedTable('');
@@ -215,7 +223,7 @@ export default function TakeOrder() {
                   onChange={(e) => setSelectedTable(e.target.value)}
                 >
                   <option className='d_cnf_tbl' value="">
-                    {loading ? 'Loading tables…' : reservations.length === 0 ? 'No reserved tables' : 'Select Table'}
+                    {loading ? 'Loading tables…' : reservations.length === 0 ? 'No tables available' : 'Select Table'}
                   </option>
                   {reservations.map(entry => (
                     <option key={entry.value} value={entry.value}>
