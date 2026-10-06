@@ -10,7 +10,9 @@ const userSchema = new mongoose.Schema({
   shift: { type: String, enum: ['Morning', 'Evening', 'Both'], default: 'Morning' },
   phone: { type: String },
   address: { type: String },
-  salary: { type: String },
+  salary: { type: Number, default: 0, min: 0 },
+  salaryType: { type: String, enum: ['monthly', 'weekly', 'daily', 'hourly'], default: 'monthly' },
+  bankAccount: { type: String },
   leavesTaken: { type: Number, default: 0 },
   leavesTotal: { type: Number, default: 12 },
   joiningDate: { type: Date },
@@ -30,5 +32,15 @@ userSchema.pre('save', async function() {
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+// Normalise legacy string salaries to numbers on save
+userSchema.pre('save', async function() {
+  if (this.salary !== undefined && this.salary !== null && this.salary !== '') {
+    const parsed = Number(String(this.salary).replace(/[^0-9.-]/g, ''));
+    this.salary = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } else {
+    this.salary = 0;
+  }
+});
 
 module.exports = mongoose.model('User', userSchema);

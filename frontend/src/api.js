@@ -172,13 +172,30 @@ export const attendanceAPI = {
 export const leaveAPI = {
   getAll: (params) => api.get('/leave', { params }),
   getById: (id) => api.get(`/leave/${id}`),
+  getMy: () => api.get('/leave/my'),
   create: (data) => api.post('/leave', data),
   update: (id, data) => api.put(`/leave/${id}`, data),
   delete: (id) => api.delete(`/leave/${id}`),
   approve: (id) => api.post(`/leave/approve/${id}`),
   reject: (id, rejectionReason) => api.post(`/leave/reject/${id}`, { rejectionReason }),
+  cancel: (id) => api.post(`/leave/cancel/${id}`),
   getStats: () => api.get('/leave/stats/summary'),
   getStaffBalance: (staffId) => api.get(`/leave/staff/${staffId}/balance`),
+};
+
+export const salaryAPI = {
+  getAll: (params) => api.get('/salary', { params }),
+  getById: (id) => api.get(`/salary/${id}`),
+  getSummary: (params) => api.get('/salary/summary', { params }),
+  // Accepts { month, year } so the leave balance is year-scoped and the
+  // "leave days in this month" figure matches the selected payroll period.
+  getStaffOverview: (params) => api.get('/salary/staff/overview', { params }),
+  getEstimate: (staffId, params) => api.get(`/salary/estimate/${staffId}`, { params }),
+  create: (data) => api.post('/salary', data),
+  generate: (data) => api.post('/salary/generate', data),
+  update: (id, data) => api.put(`/salary/${id}`, data),
+  markPaid: (id, data) => api.post(`/salary/${id}/pay`, data),
+  delete: (id) => api.delete(`/salary/${id}`),
 };
 
 export const contactAPI = {

@@ -40,6 +40,13 @@ const toUserResponse = (user) => {
   return userResponse;
 };
 
+const toSalaryNumber = (value) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const parsed = Number(String(value).replace(/[^0-9.-]/g, ''));
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return parsed;
+};
+
 const applyStaffFields = (user, body) => {
   if (body.name !== undefined) user.name = body.name;
   if (body.email !== undefined) user.email = body.email;
@@ -47,9 +54,10 @@ const applyStaffFields = (user, body) => {
   if (body.address !== undefined) user.address = body.address;
   if (body.status !== undefined) user.status = body.status;
   if (body.shift !== undefined) user.shift = body.shift;
-  if (body.salary !== undefined && body.salary !== null && body.salary !== '') {
-    user.salary = String(body.salary);
-  }
+  if (body.salaryType !== undefined) user.salaryType = body.salaryType;
+  if (body.bankAccount !== undefined) user.bankAccount = body.bankAccount;
+  const salary = toSalaryNumber(body.salary);
+  if (salary !== undefined) user.salary = salary;
   if (body.leavesTaken !== undefined) user.leavesTaken = body.leavesTaken;
   if (body.leavesTotal !== undefined) user.leavesTotal = body.leavesTotal;
   if (body.joiningDate !== undefined) user.joiningDate = body.joiningDate || null;
@@ -94,7 +102,9 @@ router.post('/staff', auth, authorizeRoles('manager', 'superadmin'), async (req,
     address: req.body.address,
     status: req.body.status || 'Active',
     shift: req.body.shift || 'Morning',
-    salary: req.body.salary != null && req.body.salary !== '' ? String(req.body.salary) : undefined,
+    salary: toSalaryNumber(req.body.salary) ?? 0,
+    salaryType: req.body.salaryType || 'monthly',
+    bankAccount: req.body.bankAccount,
     leavesTaken: req.body.leavesTaken ?? 0,
     leavesTotal: req.body.leavesTotal ?? 12,
     joiningDate: req.body.joiningDate || null
@@ -181,7 +191,9 @@ router.post('/', auth, authorizeRoles('superadmin'), async (req, res) => {
     address: req.body.address,
     status: req.body.status || 'Active',
     shift: req.body.shift || 'Morning',
-    salary: req.body.salary != null && req.body.salary !== '' ? String(req.body.salary) : undefined,
+    salary: toSalaryNumber(req.body.salary) ?? 0,
+    salaryType: req.body.salaryType || 'monthly',
+    bankAccount: req.body.bankAccount,
     leavesTaken: req.body.leavesTaken ?? 0,
     leavesTotal: req.body.leavesTotal ?? 12,
     joiningDate: req.body.joiningDate || null
@@ -215,7 +227,12 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     if (req.body.phone !== undefined) user.phone = req.body.phone;
     if (req.body.address !== undefined) user.address = req.body.address;
     if (req.body.shift !== undefined && req.user.role === 'superadmin') user.shift = req.body.shift;
-    if (req.body.salary !== undefined && req.user.role === 'superadmin') user.salary = req.body.salary;
+    if (req.body.salaryType !== undefined && req.user.role === 'superadmin') user.salaryType = req.body.salaryType;
+    if (req.body.bankAccount !== undefined) user.bankAccount = req.body.bankAccount;
+    const salary = toSalaryNumber(req.body.salary);
+    if (salary !== undefined && (req.user.role === 'superadmin' || req.user.role === 'manager')) {
+      user.salary = salary;
+    }
     if (req.body.leavesTaken !== undefined && req.user.role === 'superadmin') user.leavesTaken = req.body.leavesTaken;
     if (req.body.leavesTotal !== undefined && req.user.role === 'superadmin') user.leavesTotal = req.body.leavesTotal;
     if (req.body.joiningDate !== undefined && req.user.role === 'superadmin') user.joiningDate = req.body.joiningDate || null;

@@ -5,7 +5,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "test:payroll": "node test-payroll-regression.js",
+    "test:payroll-api": "node test-salary-api-readonly.js"
   },
   "keywords": [],
   "author": "",

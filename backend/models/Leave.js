@@ -22,7 +22,10 @@ const leaveSchema = new mongoose.Schema({
 
   reason: { type: String, required: true },
 
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'approved', 'rejected', 'cancelled'], default: 'pending' },
+
+  // Whether this leave counts as paid when running payroll
+  isPaid: { type: Boolean, default: true },
 
   days: { type: Number, required: true },
 

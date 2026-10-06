@@ -24,6 +24,7 @@ import {
   MdEvent,
   MdArticle,
   MdPhotoLibrary,
+  MdPayments,
 } from "react-icons/md";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -98,6 +99,12 @@ const NAV_GROUPS = [
         label: "Leave Management",
         badge: "2",
         roles: ["manager", "superadmin", "chef", "waiter", "cashier"],
+      },
+      {
+        to: `/admin/salary`,
+        icon: <MdPayments />,
+        label: "Salary & Payroll",
+        roles: ["manager", "superadmin"],
       },
       {
         to: `/admin/reports`,

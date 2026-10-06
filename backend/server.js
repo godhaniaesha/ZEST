@@ -40,6 +40,7 @@ const galleryRoutes = require('./routes/gallery');
 const paymentRoutes = require("./routes/payment");
 const attendanceRoutes = require('./routes/attendance');
 const leaveRoutes = require('./routes/leave');
+const salaryRoutes = require('./routes/salary');
 const reportsRouter = require('./routes/reports');
 
 const Menu = require('./models/Menu');
@@ -89,6 +90,7 @@ app.use('/api/contacts', contactRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leave', leaveRoutes);
+app.use('/api/salary', salaryRoutes);
 app.use('/api/reports', reportsRouter);
 // MongoDB connection
 mongoose
@@ -132,12 +134,12 @@ mongoose
 
     try {
       const STAFF_SEED_FIELDS = {
-        'admin@zest.com': { shift: 'Morning', salary: '80000', leavesTaken: 1, leavesTotal: 12, joiningDate: new Date('2023-01-01') },
-        'john@zest.com': { shift: 'Both', salary: '70000', leavesTaken: 2, leavesTotal: 12, joiningDate: new Date('2023-06-15') },
-        'marco@zest.com': { shift: 'Morning', salary: '55000', leavesTaken: 0, leavesTotal: 12, joiningDate: new Date('2024-02-01') },
-        'sam@zest.com': { shift: 'Evening', salary: '25000', leavesTaken: 1, leavesTotal: 12, joiningDate: new Date('2024-04-10') },
-        'sarah@zest.com': { shift: 'Morning', salary: '22000', leavesTaken: 3, leavesTotal: 12, joiningDate: new Date('2024-01-20') },
-        'mike@zest.com': { shift: 'Evening', salary: '30000', leavesTaken: 0, leavesTotal: 12, joiningDate: new Date('2024-03-01') },
+        'admin@zest.com': { shift: 'Morning', salary: 80000, leavesTaken: 1, leavesTotal: 12, joiningDate: new Date('2023-01-01') },
+        'john@zest.com': { shift: 'Both', salary: 70000, leavesTaken: 2, leavesTotal: 12, joiningDate: new Date('2023-06-15') },
+        'marco@zest.com': { shift: 'Morning', salary: 55000, leavesTaken: 0, leavesTotal: 12, joiningDate: new Date('2024-02-01') },
+        'sam@zest.com': { shift: 'Evening', salary: 25000, leavesTaken: 1, leavesTotal: 12, joiningDate: new Date('2024-04-10') },
+        'sarah@zest.com': { shift: 'Morning', salary: 22000, leavesTaken: 3, leavesTotal: 12, joiningDate: new Date('2024-01-20') },
+        'mike@zest.com': { shift: 'Evening', salary: 30000, leavesTaken: 0, leavesTotal: 12, joiningDate: new Date('2024-03-01') },
       };
 
       const staffUsers = await User.find({ role: { $ne: 'customer' } });
@@ -151,8 +153,19 @@ mongoose
           user.shift = seed?.shift || 'Morning';
           changed = true;
         }
-        if ((user.salary == null || user.salary === '') && seed?.salary) {
-          user.salary = seed.salary;
+        const salaryNumber =
+          user.salary == null || user.salary === ''
+            ? seed?.salary
+            : Number(user.salary);
+        if (salaryNumber != null && Number.isFinite(Number(salaryNumber)) && Number(salaryNumber) >= 0) {
+          const nextSalary = Number(salaryNumber);
+          if (Number(user.salary) !== nextSalary) {
+            user.salary = nextSalary;
+            changed = true;
+          }
+        }
+        if (!user.salaryType) {
+          user.salaryType = 'monthly';
           changed = true;
         }
         if (user.leavesTaken == null) {
