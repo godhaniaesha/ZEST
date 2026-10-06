@@ -80,6 +80,7 @@ export const ratingsAPI = {
 
 export const tablesAPI = {
   getAll: () => api.get('/tables'),
+  getAvailability: (date) => api.get('/tables/availability', { params: { date } }),
   create: (data) => api.post('/tables', data),
   update: (id, data) => api.put(`/tables/${id}`, data),
   delete: (id) => api.delete(`/tables/${id}`),

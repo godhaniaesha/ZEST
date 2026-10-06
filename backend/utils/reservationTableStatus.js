@@ -9,7 +9,7 @@ const ACTIVE_RESERVATION_FILTER = {
   ],
 };
 const RESERVATION_NOTICE_WINDOW_MS = 15 * 60 * 1000;
-const RESERVATION_DURATION_MS = 60 * 60 * 1000;
+const RESERVATION_DURATION_MS = 45 * 60 * 1000;
 const BOOKING_LOCK_DURATION_MS = 30 * 1000;
 const BUSINESS_TIME_ZONE = process.env.BUSINESS_TIME_ZONE || 'Asia/Kolkata';
 const timeZoneFormatter = new Intl.DateTimeFormat('en-US', {

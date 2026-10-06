@@ -17,7 +17,7 @@ const ADVANCE_AMOUNT = Reservation.ADVANCE_AMOUNT || 200;
 const getReservationConflictMessage = (table) => {
   const displayId = table.displayId
     || `${table.type === 'Bar' ? 'B' : 'C'}-${String(table.number).padStart(2, '0')}`;
-  return `${displayId} is already booked for that time. Choose another table or select a time at least 1 hour apart.`;
+  return `${displayId} is already booked for that time. Choose another table or select a time at least 45 minutes apart.`;
 };
 
 const optionalAuth = (req, res, next) => {

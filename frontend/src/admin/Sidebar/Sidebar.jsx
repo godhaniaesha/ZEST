@@ -176,6 +176,12 @@ const NAV_GROUPS = [
         roles: ["waiter", "manager", "superadmin"],
       },
       {
+        to: "/admin/table-booking",
+        icon: <MdEventSeat />,
+        label: "Table Booking",
+        roles: ["waiter", "manager", "superadmin"],
+      },
+      {
         to: "/admin/take-order",
         icon: <MdCountertops />,
         label: "Take New Order",

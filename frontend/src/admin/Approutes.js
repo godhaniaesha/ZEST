@@ -20,6 +20,7 @@ import SystemLogs from './pages/SystemLogs/SystemLogs';
 import POS from './pages/POS/POS';
 import KitchenDisplay from './pages/KitchenDisplay/KitchenDisplay';
 import Tables from './pages/Tables/Tables';
+import TableBooking from './pages/Tables/TableBooking';
 import TakeOrder from './pages/TakeOrder/TakeOrder';
 import ServiceRequests from './pages/ServiceRequests/ServiceRequests';
 import Profile from './pages/Profile/Profile';
@@ -65,6 +66,7 @@ export default function AppRoutes() {
         <Route path="pos" element={<POS />} />
         <Route path="kitchen-display" element={<KitchenDisplay />} />
         <Route path="tables" element={<Tables />} />
+        <Route path="table-booking" element={<TableBooking />} />
         <Route path="take-order" element={<TakeOrder />} />
         <Route path="service-requests" element={<ServiceRequests />} />
         <Route path="profile" element={<Profile />} />
