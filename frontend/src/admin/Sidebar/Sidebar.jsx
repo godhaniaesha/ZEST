@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   MdDashboard,
@@ -26,6 +26,7 @@ import {
   MdPhotoLibrary,
   MdPayments,
 } from "react-icons/md";
+import LogoutConfirmModal from "../../components/LogoutConfirmModal";
 import { useAuth } from "../../contexts/AuthContext";
 
 const ADMIN_BASE = "/admin";
@@ -205,9 +206,11 @@ const NAV_GROUPS = [
 export default function Sidebar({ collapsed, mobileOpen, onClose }) {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const currentUserRole = user?.role || "customer";
 
-  const handleLogout = () => {
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
     logout();
     onClose();
     navigate("/auth");
@@ -280,7 +283,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
         <div className="d-sidebar-footer">
           <div
             className="d-nav-item"
-            onClick={handleLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             style={{ cursor: "pointer" }}
           >
             <span className="d-nav-icon">
@@ -291,6 +294,11 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
           </div>
         </div>
       </aside>
+      <LogoutConfirmModal
+        show={showLogoutConfirm}
+        onCancel={() => setShowLogoutConfirm(false)}
+        onConfirm={handleConfirmLogout}
+      />
     </>
   );
 }

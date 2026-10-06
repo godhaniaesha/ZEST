@@ -540,35 +540,56 @@ export default function BlogManagement() {
       }
 
       // ── Validations ──
-      if (!data.title?.trim() || data.title.length < 5 || data.title.length > 200) {
-        alert('Title must be between 5 and 200 characters.'); return;
+      if (!data.title?.trim()) {
+        alert('Error: Title is required.'); return;
+      }
+      if (data.title.length < 5) {
+        alert(`Error: Title is too short (${data.title.length} characters). Minimum 5 characters required.`); return;
+      }
+      if (data.title.length > 200) {
+        alert(`Error: Title is too long (${data.title.length} characters). Maximum 200 characters allowed.`); return;
       }
       if (!/^[a-zA-Z0-9\s\-.,'&!?():]+$/.test(data.title)) {
-        alert('Title contains invalid characters.'); return;
+        alert('Error: Title contains invalid characters. Only letters, numbers, spaces, and .,-\'&!?(): are allowed.'); return;
       }
       if (!data.category) {
-        alert('Please select a category.'); return;
+        alert('Error: Please select a category.'); return;
       }
-      if (!data.author?.trim() || data.author.length < 2 || data.author.length > 50) {
-        alert('Author name must be between 2 and 50 characters.'); return;
+      if (!data.author?.trim()) {
+        alert('Error: Author name is required.'); return;
+      }
+      if (data.author.length < 2) {
+        alert(`Error: Author name is too short (${data.author.length} characters). Minimum 2 characters required.`); return;
+      }
+      if (data.author.length > 50) {
+        alert(`Error: Author name is too long (${data.author.length} characters). Maximum 50 characters allowed.`); return;
       }
       if (!/^[a-zA-Z\s\-']+$/.test(data.author)) {
-        alert('Author name can only contain letters, spaces, hyphens, and apostrophes.'); return;
+        alert('Error: Author name can only contain letters, spaces, hyphens, and apostrophes.'); return;
       }
       if (data.authorImage?.trim()) {
         const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
         if (!urlRegex.test(data.authorImage)) {
-          alert('Please enter a valid URL for author image.'); return;
+          alert('Error: Please enter a valid URL for author image (e.g., https://example.com/image.jpg).'); return;
         }
       }
       if (!data.readTime || data.readTime <= 0 || data.readTime > 120) {
-        alert('Read time must be between 1 and 120 minutes.'); return;
+        alert(`Error: Read time must be between 1 and 120 minutes. Current value: ${data.readTime || 0}.`); return;
       }
-      if (!data.excerpt?.trim() || data.excerpt.length < 20 || data.excerpt.length > 300) {
-        alert('Excerpt must be between 20 and 300 characters.'); return;
+      if (!data.excerpt?.trim()) {
+        alert('Error: Excerpt is required.'); return;
       }
-      if (!data.content?.trim() || data.content.length < 50) {
-        alert('Content must be at least 50 characters.'); return;
+      if (data.excerpt.length < 20) {
+        alert(`Error: Excerpt is too short (${data.excerpt.length} characters). Minimum 20 characters required.`); return;
+      }
+      if (data.excerpt.length > 300) {
+        alert(`Error: Excerpt is too long (${data.excerpt.length} characters). Maximum 300 characters allowed.`); return;
+      }
+      if (!data.content?.trim()) {
+        alert('Error: Content is required.'); return;
+      }
+      if (data.content.length < 50) {
+        alert(`Error: Content is too short (${data.content.length} characters). Minimum 50 characters required.`); return;
       }
 
       const formDataToSend = new FormData();
@@ -592,7 +613,8 @@ export default function BlogManagement() {
       setShowForm(false);
     } catch (error) {
       console.error('Error saving blog post:', error);
-      alert('Failed to save blog post.');
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Failed to save blog post: ${errorMessage}`);
     }
   };
 

@@ -113,56 +113,56 @@ export default function Menu() {
     try {
       // Name validation
       if (!formData.name || !formData.name.trim()) {
-        alert('Please enter an item name');
+        alert('Error: Item name is required.');
         return;
       }
 
       if (formData.name.length < 3) {
-        alert('Item name must be at least 3 characters long');
+        alert(`Error: Item name is too short (${formData.name.length} characters). Minimum 3 characters required.`);
         return;
       }
 
       if (formData.name.length > 100) {
-        alert('Item name must not exceed 100 characters');
+        alert(`Error: Item name is too long (${formData.name.length} characters). Maximum 100 characters allowed.`);
         return;
       }
 
       if (!/^[a-zA-Z0-9\s\-.,'&]+$/.test(formData.name)) {
-        alert('Item name can only contain letters, numbers, spaces, and basic punctuation');
+        alert('Error: Item name can only contain letters, numbers, spaces, and basic punctuation (. , - \' &).');
         return;
       }
 
       // Category validation
       if (!formData.category) {
-        alert('Please select a category');
+        alert('Error: Please select a category.');
         return;
       }
 
       // Price validation
       if (!formData.price || formData.price === '') {
-        alert('Please enter a price');
+        alert('Error: Price is required.');
         return;
       }
 
       const price = parseFloat(formData.price);
 
       if (isNaN(price)) {
-        alert('Price must be a valid number');
+        alert('Error: Price must be a valid number.');
         return;
       }
 
       if (price <= 0) {
-        alert('Price must be greater than 0');
+        alert(`Error: Price must be greater than 0. Current value: ${price}.`);
         return;
       }
 
       if (price > 999999) {
-        alert('Price must not exceed 999,999');
+        alert(`Error: Price must not exceed 999,999. Current value: ${price}.`);
         return;
       }
 
       if (!/^\d+(\.\d{1,2})?$/.test(formData.price.toString())) {
-        alert('Price can have at most 2 decimal places');
+        alert('Error: Price can have at most 2 decimal places.');
         return;
       }
 
@@ -171,17 +171,17 @@ export default function Menu() {
         const prepTime = parseInt(formData.prepTime, 10);
 
         if (isNaN(prepTime)) {
-          alert('Prep time must be a valid number');
+          alert('Error: Prep time must be a valid number.');
           return;
         }
 
         if (prepTime < 0) {
-          alert('Prep time cannot be negative');
+          alert(`Error: Prep time cannot be negative. Current value: ${prepTime}.`);
           return;
         }
 
         if (prepTime > 180) {
-          alert('Prep time must not exceed 180 minutes');
+          alert(`Error: Prep time must not exceed 180 minutes. Current value: ${prepTime}.`);
           return;
         }
       }
@@ -189,7 +189,7 @@ export default function Menu() {
       // Description validation (if provided)
       if (formData.description && formData.description.trim()) {
         if (formData.description.length > 500) {
-          alert('Description must not exceed 500 characters');
+          alert(`Error: Description is too long (${formData.description.length} characters). Maximum 500 characters allowed.`);
           return;
         }
       }
@@ -197,7 +197,7 @@ export default function Menu() {
       // Ingredients validation (if provided)
       if (formData.ingredients && formData.ingredients.trim()) {
         if (formData.ingredients.length > 1000) {
-          alert('Ingredients must not exceed 1000 characters');
+          alert(`Error: Ingredients is too long (${formData.ingredients.length} characters). Maximum 1000 characters allowed.`);
           return;
         }
       }
@@ -249,7 +249,8 @@ export default function Menu() {
       setImagePreview(null);
     } catch (error) {
       console.error('Error saving menu item:', error);
-      alert('Failed to save menu item');
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Failed to save menu item: ${errorMessage}`);
     }
   };
 

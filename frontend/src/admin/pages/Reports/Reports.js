@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Row, Col } from "react-bootstrap";
 import {
   MdTrendingUp,
   MdShowChart,
@@ -182,12 +181,77 @@ export default function Reports() {
         .d_chart_wrapper::-webkit-scrollbar-thumb:hover {
           background: rgba(201, 168, 76, 0.5);
         }
-        @media (max-width: 768px) {
+        .reports-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        .reports-main-grid {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 16px;
+        }
+        @media (max-width: 1024px) {
+          .reports-stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+          }
+          .reports-main-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
           .d_chart_wrapper {
             gap: 12px;
           }
           .d_chart_axis {
             width: 40px;
+          }
+          .d_chart_bar_item {
+            min-width: 35px !important;
+          }
+          .d_chart_day {
+            font-size: 0.6rem !important;
+          }
+          .d_chart_bar_value {
+            font-size: 0.7rem !important;
+          }
+          .d-stat-value {
+            font-size: 1.2rem !important;
+          }
+          .d-stat-icon {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 1rem !important;
+          }
+          .d-page-heading {
+            font-size: 1.3rem !important;
+          }
+          .d-section-title {
+            font-size: 1.1rem !important;
+          }
+          .d_stat_value {
+            font-size: 1.1rem !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .reports-stats-grid {
+            grid-template-columns: 1fr;
+          }
+          .d_chart_wrapper {
+            gap: 12px;
+          }
+          .d_chart_axis {
+            width: 35px;
+          }
+          .d_chart_bar_item {
+            min-width: 30px !important;
+          }
+          .d_chart_day {
+            font-size: 0.55rem !important;
+          }
+          .d_chart_bar_value {
+            font-size: 0.65rem !important;
           }
         }
       `}</style>
@@ -225,7 +289,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <Row className="g-3 mb-4">
+      <div className="reports-stats-grid">
         {[
           {
             label: "Net Revenue",
@@ -249,7 +313,7 @@ export default function Reports() {
             color: "d-green",
           },
         ].map((s, i) => (
-          <Col key={`${dateRange}-stat-${i}`} xs={12} sm={4}>
+          <div key={`${dateRange}-stat-${i}`}>
             <div className="d-stat-card">
               <div
                 className={`d-stat-icon ${s.color}`}
@@ -272,234 +336,230 @@ export default function Reports() {
                 </div>
               </div>
             </div>
-          </Col>
+          </div>
         ))}
-      </Row>
+      </div>
 
-      <Row className="g-4">
-        <Col xs={12} lg={8}>
-          <div className="d_chart_card position-relative overflow-hidden" key={`chart-${dateRange}`}>
-            <div className="d_chart_glow d_chart_glow_gold"></div>
-            <div className="d_chart_glow d_chart_glow_green"></div>
+      <div className="reports-main-grid">
+        <div className="d_chart_card position-relative overflow-hidden" key={`chart-${dateRange}`}>
+          <div className="d_chart_glow d_chart_glow_gold"></div>
+          <div className="d_chart_glow d_chart_glow_green"></div>
 
-            <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
-              <div>
-                <div className="d-section-title">Revenue Analytics</div>
-                <div className="d-section-sub">
-                  {chartMeta.chartSubtitle || "Sales overview for selected period"}
-                </div>
-              </div>
-
-              <div className="d-flex gap-2 flex-wrap">
-                <div className="d_badge d_badge_success">
-                  {formatGrowth(revenueAnalytics?.growth)}
-                </div>
-                <div className="d_badge">{chartMeta.periodLabel || RANGE_LABELS[dateRange]}</div>
+          <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+              <div className="d-section-title">Revenue Analytics</div>
+              <div className="d-section-sub">
+                {chartMeta.chartSubtitle || "Sales overview for selected period"}
               </div>
             </div>
 
-            <div className="row g-3 mt-2">
-              {[
-                {
-                  title: "Total Revenue",
-                  value: formatCurrency(revenueAnalytics?.totalRevenue || 0),
-                  sub: chartMeta.periodLabel || "This Period",
-                  color: "var(--d-primary)",
-                },
-                {
-                  title: "Average Daily",
-                  value: formatCurrency(revenueAnalytics?.avgDailyRevenue || 0),
-                  sub: "Per Day",
-                  color: "var(--d-gold)",
-                },
-                {
-                  title: "Top Day",
-                  value: revenueAnalytics?.topDay || "N/A",
-                  sub: "Highest Revenue",
-                  color: "var(--d-success)",
-                },
-              ].map((item, i) => (
-                <div className="col-12 col-md-4" key={`${dateRange}-rev-${i}`}>
-                  <div className="d_stat_card">
-                    <div className="d_stat_sub">{item.title}</div>
-                    <div className="d_stat_value" style={{ color: item.color }}>
-                      {item.value}
-                    </div>
-                    <div className="d_stat_desc">{item.sub}</div>
+            <div className="d-flex gap-2 flex-wrap">
+              <div className="d_badge d_badge_success">
+                {formatGrowth(revenueAnalytics?.growth)}
+              </div>
+              <div className="d_badge">{chartMeta.periodLabel || RANGE_LABELS[dateRange]}</div>
+            </div>
+          </div>
+
+          <div className="row g-3 mt-2">
+            {[
+              {
+                title: "Total Revenue",
+                value: formatCurrency(revenueAnalytics?.totalRevenue || 0),
+                sub: chartMeta.periodLabel || "This Period",
+                color: "var(--d-primary)",
+              },
+              {
+                title: "Average Daily",
+                value: formatCurrency(revenueAnalytics?.avgDailyRevenue || 0),
+                sub: "Per Day",
+                color: "var(--d-gold)",
+              },
+              {
+                title: "Top Day",
+                value: revenueAnalytics?.topDay || "N/A",
+                sub: "Highest Revenue",
+                color: "var(--d-success)",
+              },
+            ].map((item, i) => (
+              <div className="col-12 col-md-4" key={`${dateRange}-rev-${i}`}>
+                <div className="d_stat_card">
+                  <div className="d_stat_sub">{item.title}</div>
+                  <div className="d_stat_value" style={{ color: item.color }}>
+                    {item.value}
                   </div>
+                  <div className="d_stat_desc">{item.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="d_chart_wrapper" style={{ overflowX: 'auto', overflowY: 'hidden' }}>
+            <div className="d_chart_axis">
+              {axisLabels.map((value, i) => (
+                <div key={i} className="d_chart_axis_label">
+                  ₹{value}k
                 </div>
               ))}
             </div>
 
-            <div className="d_chart_wrapper" style={{ overflowX: 'auto', overflowY: 'hidden' }}>
-              <div className="d_chart_axis">
-                {axisLabels.map((value, i) => (
-                  <div key={i} className="d_chart_axis_label">
-                    ₹{value}k
-                  </div>
-                ))}
-              </div>
-
-              <div className="d_chart_main" style={{ minWidth: `${Math.max(chartData.length * 60, 300)}px` }}>
-                {[0, 1, 2, 3, 4, 5].map((_, i) => (
-                  <div
-                    key={i}
-                    className="d_chart_grid_line"
-                    style={{ top: `${i * 20}%` }}
-                  />
-                ))}
-
+            <div className="d_chart_main" style={{ minWidth: `${Math.max(chartData.length * 60, 300)}px` }}>
+              {[0, 1, 2, 3, 4, 5].map((_, i) => (
                 <div
-                  className="d_chart_bars"
-                  style={{
-                    gap: chartData.length > 12 ? "4px" : undefined,
-                    minWidth: `${Math.max(chartData.length * 50, 300)}px`,
-                  }}
-                >
-                  {chartData.length > 0 ? (
-                    chartData.map((bar, index) => {
-                      const percentage = chartMax > 0 ? (bar.rev / chartMax) * 100 : 0;
-                      const isTopBar = topRevenueBars.includes(bar.label) && bar.rev > 0;
+                  key={i}
+                  className="d_chart_grid_line"
+                  style={{ top: `${i * 20}%` }}
+                />
+              ))}
 
-                      return (
-                        <div
-                          key={`${dateRange}-${bar.label}-${index}`}
-                          className="d_chart_bar_item"
-                          style={{ minWidth: chartData.length > 12 ? '40px' : undefined }}
-                        >
-                          <div className="d_chart_bar_value">
-                            {bar.rev > 0 ? formatCurrency(bar.rev) : "—"}
-                          </div>
+              <div
+                className="d_chart_bars"
+                style={{
+                  gap: chartData.length > 12 ? "4px" : undefined,
+                  minWidth: `${Math.max(chartData.length * 50, 300)}px`,
+                }}
+              >
+                {chartData.length > 0 ? (
+                  chartData.map((bar, index) => {
+                    const percentage = chartMax > 0 ? (bar.rev / chartMax) * 100 : 0;
+                    const isTopBar = topRevenueBars.includes(bar.label) && bar.rev > 0;
 
-                          <div className="d_chart_bar_container">
-                            <div
-                              className={`d_chart_bar ${isTopBar ? "d_chart_bar_gold" : ""}`}
-                              style={{ height: `${percentage}%` }}
-                            >
-                              <div className="d_chart_bar_shine"></div>
-                              <div className="d_chart_bar_overlay"></div>
-                              {bar.rev > 0 && <div className="d_chart_bar_dot"></div>}
-                            </div>
-                          </div>
-
-                          <div
-                            className={`d_chart_day ${isTopBar ? "d_chart_day_active" : ""}`}
-                            title={bar.sublabel || bar.label}
-                            style={{ fontSize: chartData.length > 12 ? "0.65rem" : undefined }}
-                          >
-                            {bar.label}
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-muted w-100 text-center py-5">
-                      No revenue data for {RANGE_LABELS[dateRange]}.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Col>
-
-        <Col xs={12} lg={4}>
-          <div className="d_chart_card h-100" key={`sources-${dateRange}`}>
-            <div className="d-section-title">Revenue Sources</div>
-            <div className="d-section-sub">
-              {chartMeta.periodLabel || RANGE_LABELS[dateRange]} breakdown
-            </div>
-
-            <div className="d_category_list">
-              {sourcesData.length > 0 ? (
-                sourcesData.map((cat, i) => (
-                  <div className="d_category_item" key={`${dateRange}-src-${i}`}>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <div className="d-flex align-items-center gap-3">
-                        <div
-                          className="d_category_icon"
-                          style={{
-                            background: `${cat.color || "var(--d-info)"}15`,
-                            color: cat.color || "var(--d-info)",
-                          }}
-                        >
-                          {cat.label.includes("Bar") ? (
-                            <MdLocalBar />
-                          ) : cat.label.includes("Café") ? (
-                            <MdLocalCafe />
-                          ) : (
-                            <MdTrendingUp />
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="d_category_title">{cat.label}</div>
-                          <div className="d_category_growth">
-                            Growth {cat.growth || "+0%"}
-                          </div>
-                        </div>
-                      </div>
-
+                    return (
                       <div
-                        className="d_category_percent"
-                        style={{ color: cat.color || "var(--d-info)" }}
+                        key={`${dateRange}-${bar.label}-${index}`}
+                        className="d_chart_bar_item"
+                        style={{ minWidth: chartData.length > 12 ? '40px' : undefined }}
                       >
-                        {cat.value}%
+                        <div className="d_chart_bar_value">
+                          {bar.rev > 0 ? formatCurrency(bar.rev) : "—"}
+                        </div>
+
+                        <div className="d_chart_bar_container">
+                          <div
+                            className={`d_chart_bar ${isTopBar ? "d_chart_bar_gold" : ""}`}
+                            style={{ height: `${percentage}%` }}
+                          >
+                            <div className="d_chart_bar_shine"></div>
+                            <div className="d_chart_bar_overlay"></div>
+                            {bar.rev > 0 && <div className="d_chart_bar_dot"></div>}
+                          </div>
+                        </div>
+
+                        <div
+                          className={`d_chart_day ${isTopBar ? "d_chart_day_active" : ""}`}
+                          title={bar.sublabel || bar.label}
+                          style={{ fontSize: chartData.length > 12 ? "0.65rem" : undefined }}
+                        >
+                          {bar.label}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-muted w-100 text-center py-5">
+                    No revenue data for {RANGE_LABELS[dateRange]}.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="d_chart_card h-100" key={`sources-${dateRange}`}>
+          <div className="d-section-title">Revenue Sources</div>
+          <div className="d-section-sub">
+            {chartMeta.periodLabel || RANGE_LABELS[dateRange]} breakdown
+          </div>
+
+          <div className="d_category_list">
+            {sourcesData.length > 0 ? (
+              sourcesData.map((cat, i) => (
+                <div className="d_category_item" key={`${dateRange}-src-${i}`}>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <div className="d-flex align-items-center gap-3">
+                      <div
+                        className="d_category_icon"
+                        style={{
+                          background: `${cat.color || "var(--d-info)"}15`,
+                          color: cat.color || "var(--d-info)",
+                        }}
+                      >
+                        {cat.label.includes("Bar") ? (
+                          <MdLocalBar />
+                        ) : cat.label.includes("Café") ? (
+                          <MdLocalCafe />
+                        ) : (
+                          <MdTrendingUp />
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="d_category_title">{cat.label}</div>
+                        <div className="d_category_growth">
+                          Growth {cat.growth || "+0%"}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="d_progress_track">
-                      <div
-                        className="d_progress_fill"
-                        style={{
-                          width: `${cat.value}%`,
-                          background: `linear-gradient(90deg, ${cat.color || "var(--d-info)"}, ${cat.color || "var(--d-info)"}cc)`,
-                        }}
-                      />
+                    <div
+                      className="d_category_percent"
+                      style={{ color: cat.color || "var(--d-info)" }}
+                    >
+                      {cat.value}%
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-muted py-3">
-                  No revenue data for {RANGE_LABELS[dateRange]}.
+
+                  <div className="d_progress_track">
+                    <div
+                      className="d_progress_fill"
+                      style={{
+                        width: `${cat.value}%`,
+                        background: `linear-gradient(90deg, ${cat.color || "var(--d-info)"}, ${cat.color || "var(--d-info)"}cc)`,
+                      }}
+                    />
+                  </div>
                 </div>
-              )}
+              ))
+            ) : (
+              <div className="text-muted py-3">
+                No revenue data for {RANGE_LABELS[dateRange]}.
+              </div>
+            )}
+          </div>
+
+          <div className="d_insight_card">
+            <div className="d_insight_glow"></div>
+            <div className="d_insight_label">Peak Revenue Window</div>
+            <div className="d_insight_title">
+              {peakData?.peakWindow || "No data yet"}
+            </div>
+            <div className="d_insight_revenue">
+              Avg Revenue {formatCurrency(peakData?.avgRevenue || 0)}
             </div>
 
-            <div className="d_insight_card">
-              <div className="d_insight_glow"></div>
-              <div className="d_insight_label">Peak Revenue Window</div>
-              <div className="d_insight_title">
-                {peakData?.peakWindow || "No data yet"}
-              </div>
-              <div className="d_insight_revenue">
-                Avg Revenue {formatCurrency(peakData?.avgRevenue || 0)}
-              </div>
-
-              <div className="d_insight_stats">
-                <div>
-                  <div className="d_insight_stat_label">Orders</div>
-                  <div className="d_insight_stat_value">
-                    {peakData?.orders ?? 0}
-                  </div>
+            <div className="d_insight_stats">
+              <div>
+                <div className="d_insight_stat_label">Orders</div>
+                <div className="d_insight_stat_value">
+                  {peakData?.orders ?? 0}
                 </div>
-                <div>
-                  <div className="d_insight_stat_label">Customers</div>
-                  <div className="d_insight_stat_value">
-                    {peakData?.customers ?? 0}
-                  </div>
+              </div>
+              <div>
+                <div className="d_insight_stat_label">Customers</div>
+                <div className="d_insight_stat_value">
+                  {peakData?.customers ?? 0}
                 </div>
-                <div>
-                  <div className="d_insight_stat_label">Growth</div>
-                  <div className="d_insight_stat_value">
-                    {peakData?.growth || "+0%"}
-                  </div>
+              </div>
+              <div>
+                <div className="d_insight_stat_label">Growth</div>
+                <div className="d_insight_stat_value">
+                  {peakData?.growth || "+0%"}
                 </div>
               </div>
             </div>
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
     </>
   );
 }

@@ -9,6 +9,27 @@ const { auth, authorizeRoles } = require('../middleware/auth');
 const stripe = Stripe(process.env.STRIPE_SECRET);
 const ADVANCE_AMOUNT = Reservation.ADVANCE_AMOUNT || 200;
 
+const syncTableReservationStatus = async (tableId) => {
+  if (!tableId) return;
+
+  const table = await Table.findById(tableId);
+  if (!table || table.status === 'Occupied') return;
+
+  const hasActiveReservation = await Reservation.exists({
+    table: tableId,
+    $or: [
+      { status: { $in: ['Pending', 'Confirmed'] } },
+      { status: 'Completed', fullPaymentDone: { $ne: true } },
+    ],
+  });
+
+  const nextStatus = hasActiveReservation ? 'Reserved' : 'Free';
+  if (table.status !== nextStatus) {
+    table.status = nextStatus;
+    await table.save();
+  }
+};
+
 const optionalAuth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return next();
@@ -138,7 +159,7 @@ router.post('/', optionalAuth, async (req, res) => {
       { new: true }
     );
 
-    await Table.findByIdAndUpdate(tableId, { status: 'Reserved' });
+    await syncTableReservationStatus(tableId);
 
     const populatedReservation = await Reservation.findById(newReservation._id)
       .populate('table');
@@ -185,10 +206,7 @@ router.post('/admin', auth, authorizeRoles('manager', 'superadmin', 'waiter'), a
 
     const newReservation = await reservation.save();
 
-    const initialStatus = req.body.status || 'Pending';
-    if (initialStatus !== 'Cancelled') {
-      await Table.findByIdAndUpdate(tableId, { status: 'Reserved' });
-    }
+    await syncTableReservationStatus(tableId);
 
     const populatedReservation = await Reservation.findById(newReservation._id)
       .populate('table');
@@ -202,9 +220,21 @@ router.post('/admin', auth, authorizeRoles('manager', 'superadmin', 'waiter'), a
 router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'waiter'),
   async (req, res) => {
     try {
+      const existingReservation = await Reservation.findById(req.params.id);
+      if (!existingReservation) {
+        return res.status(404).json({ message: 'Reservation not found' });
+      }
+
       const tableId = req.body.table
         ? req.body.table
         : await resolveTableId(req.body);
+
+      if (tableId) {
+        const table = await Table.findById(tableId);
+        if (!table) {
+          return res.status(400).json({ message: 'Selected table not found.' });
+        }
+      }
 
       const reservation = await Reservation.findByIdAndUpdate(
         req.params.id,
@@ -220,6 +250,12 @@ router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'waiter'),
         },
         { new: true }
       ).populate('table');
+
+      const previousTableId = existingReservation.table?._id || existingReservation.table;
+      if (String(previousTableId) !== String(tableId)) {
+        await syncTableReservationStatus(previousTableId);
+      }
+      await syncTableReservationStatus(tableId);
 
       res.json(reservation);
     } catch (err) {
@@ -249,17 +285,7 @@ router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waite
       }
 
       const tableRef = reservation.table?._id || reservation.table;
-
-      if (
-        (status === 'Confirmed' || status === 'Pending') &&
-        tableRef
-      ) {
-        await Table.findByIdAndUpdate(tableRef, { status: 'Reserved' });
-      }
-
-      if (status === 'Cancelled' && tableRef) {
-        await Table.findByIdAndUpdate(tableRef, { status: 'Free' });
-      }
+      await syncTableReservationStatus(tableRef);
 
       res.json(reservation);
     } catch (err) {
@@ -271,10 +297,13 @@ router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waite
 router.delete('/:id', auth, authorizeRoles('manager', 'superadmin'), async (req, res) => {
   try {
     const reservation = await Reservation.findById(req.params.id);
-    if (reservation?.table) {
-      await Table.findByIdAndUpdate(reservation.table, { status: 'Free' });
+    if (!reservation) {
+      return res.status(404).json({ message: 'Reservation not found' });
     }
+
+    const tableId = reservation.table?._id || reservation.table;
     await Reservation.findByIdAndDelete(req.params.id);
+    await syncTableReservationStatus(tableId);
     res.json({ message: 'Reservation deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

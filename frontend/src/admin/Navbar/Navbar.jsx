@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { MdNotifications, MdSearch, MdFullscreen, MdPerson, MdSettings, MdLogout } from 'react-icons/md';
+import LogoutConfirmModal from '../../components/LogoutConfirmModal';
 import { useAuth } from '../../contexts/AuthContext';
 
 const PAGE_TITLES = {
@@ -41,6 +42,7 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -61,13 +63,15 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
       .slice(0, 2);
   };
 
-  const handleLogout = () => {
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
     logout();
     setProfileOpen(false);
     navigate('/auth');
   };
 
   return (
+    <>
     <header className={navbarClass}>
       {/* Left */}
       <div className="d-navbar-left">
@@ -175,7 +179,7 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
                 <MdSettings /> Settings
               </Link> */}
               <div className="d-dropdown-divider" />
-              <button className="d-dropdown-item logout" onClick={handleLogout}>
+              <button className="d-dropdown-item logout" onClick={() => setShowLogoutConfirm(true)}>
                 <MdLogout /> Logout
               </button>
             </div>
@@ -183,5 +187,11 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
         </div>
       </div>
     </header>
+    <LogoutConfirmModal
+      show={showLogoutConfirm}
+      onCancel={() => setShowLogoutConfirm(false)}
+      onConfirm={handleConfirmLogout}
+    />
+    </>
   );
 }

@@ -143,8 +143,8 @@ export default function POS() {
     pending: 0,
   });
 
-  const loadTodaySales = useCallback(async () => {
-    setSalesLoading(true);
+  const loadTodaySales = useCallback(async (silent = false) => {
+    if (!silent) setSalesLoading(true);
     try {
       const res = await ordersAPI.getAll();
       const allOrders = Array.isArray(res.data) ? res.data : [];
@@ -230,7 +230,7 @@ export default function POS() {
       console.error("Error loading today's sales:", err);
       setTodaySales(null);
     } finally {
-      setSalesLoading(false);
+      if (!silent) setSalesLoading(false);
     }
   }, []);
 
@@ -279,7 +279,6 @@ export default function POS() {
         return allServed;
       });
 
-      
       const signature = JSON.stringify([
         eligibleReservations.map((r) => [r._id, r.status, r.advancePaid]),
         ordersList.map((o) => [o._id, o.status, (o.items || []).length]),
@@ -306,13 +305,12 @@ export default function POS() {
   // ── Dynamic: pending payment tables automatic refresh (every 10s) ──
   useEffect(() => {
     const id = setInterval(() => {
-      if (!paying) {
-        loadPosData(true);
-        loadTodaySales();
-      }
+      if (paying) return;
+      loadPosData(true);
+      if (!showSalesModal) loadTodaySales(true);
     }, 10000);
     return () => clearInterval(id);
-  }, [loadPosData, loadTodaySales, paying]);
+  }, [loadPosData, loadTodaySales, paying, showSalesModal]);
 
   // Selected table nu payment bija thi thai gayu hoy to selection clear karo
   useEffect(() => {
@@ -538,7 +536,9 @@ export default function POS() {
 
       if (paymentMethod === "Cash") {
         if (!cashAmount || Number(cashAmount) < total) {
-          setPaymentError(`Insufficient cash amount. Required: ₹${total.toLocaleString("en-IN")}`);
+          setPaymentError(
+            `Insufficient cash amount. Required: ₹${total.toLocaleString("en-IN")}`,
+          );
           return;
         }
       }
@@ -1202,9 +1202,7 @@ export default function POS() {
                       </div>
                     ) : (
                       <div className="mb-3">
-                        <div className="text-muted small mb-2">
-                          Cash Amount
-                        </div>
+                        <div className="text-muted small mb-2">Cash Amount</div>
                         <input
                           className="form-control"
                           type="number"
@@ -1214,12 +1212,19 @@ export default function POS() {
                         />
                         {cashAmount && Number(cashAmount) >= total && (
                           <div className="text-success small mt-2">
-                            Change to return: ₹{(Number(cashAmount) - total).toLocaleString("en-IN")}
+                            Change to return: ₹
+                            {(Number(cashAmount) - total).toLocaleString(
+                              "en-IN",
+                            )}
                           </div>
                         )}
                         {cashAmount && Number(cashAmount) < total && (
                           <div className="text-danger small mt-2">
-                            Insufficient amount. Need ₹{(total - Number(cashAmount)).toLocaleString("en-IN")} more.
+                            Insufficient amount. Need ₹
+                            {(total - Number(cashAmount)).toLocaleString(
+                              "en-IN",
+                            )}{" "}
+                            more.
                           </div>
                         )}
                       </div>
