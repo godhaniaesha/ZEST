@@ -46,6 +46,10 @@ const reportsRouter = require('./routes/reports');
 const Menu = require('./models/Menu');
 const Table = require('./models/Table');
 const User = require('./models/User');
+const {
+  findReservationConflict,
+  syncAllTableReservationStatuses,
+} = require('./utils/reservationTableStatus');
 
 const { auth, authorizeRoles } = require('./middleware/auth');
 const { toMenuTypeArray } = require('./utils/menuType');
@@ -68,8 +72,20 @@ app.use('/api/gallery', galleryRoutes);
 // Public tables endpoint
 app.get('/api/tables/public', async (req, res) => {
   try {
+    await syncAllTableReservationStatuses();
     const tables = await Table.find({ type: 'Cafe' }).sort({ number: 1 });
-    res.json(tables);
+    const hasRequestedSlot = Boolean(req.query.date && req.query.time);
+    const result = await Promise.all(tables.map(async (table) => {
+      const hasConflictingReservation = hasRequestedSlot
+        ? Boolean(await findReservationConflict(table._id, req.query.date, req.query.time))
+        : false;
+      return {
+        ...table.toJSON(),
+        hasConflictingReservation,
+      };
+    }));
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -100,6 +116,17 @@ mongoose
   )
   .then(async () => {
     console.log('MongoDB connected');
+
+    try {
+      await syncAllTableReservationStatuses();
+    } catch (err) {
+      console.error('Error syncing reservation table statuses:', err);
+    }
+    setInterval(() => {
+      syncAllTableReservationStatuses().catch((err) => {
+        console.error('Error syncing reservation table statuses:', err);
+      });
+    }, 15000);
 
     try {
       const items = await Menu.find({});

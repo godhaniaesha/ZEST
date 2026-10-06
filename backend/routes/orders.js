@@ -5,6 +5,7 @@ const Reservation = require('../models/Reservation');
 const Table = require('../models/Table');
 const ItemRating = require('../models/ItemRating');
 const { auth, authorizeRoles } = require('../middleware/auth');
+const { syncTableReservationStatus } = require('../utils/reservationTableStatus');
 
 router.get('/my', auth, async (req, res) => {
   try {
@@ -139,6 +140,7 @@ router.patch('/:id/payment-status', auth, async (req, res) => {
       const reservation = await Reservation.findById(order.reservationId).populate('table');
       if (reservation && reservation.table) {
         await Table.findByIdAndUpdate(reservation.table._id, { status: 'Free' });
+        await syncTableReservationStatus(reservation.table._id);
       }
     }
 
@@ -147,6 +149,7 @@ router.patch('/:id/payment-status', auth, async (req, res) => {
       const reservation = await Reservation.findById(order.reservationId).populate('table');
       if (reservation && reservation.table) {
         await Table.findByIdAndUpdate(reservation.table._id, { status: 'Free' });
+        await syncTableReservationStatus(reservation.table._id);
       }
     }
 
@@ -163,36 +166,69 @@ router.patch('/:orderId/items/:itemId/status', auth, async (req, res) => {
   try {
     const { status } = req.body;
 
-    const validStatuses = ['Pending', 'Preparing', 'Ready', 'Served'];
-    if (!validStatuses.includes(status)) {
+    const nextStatusByCurrent = {
+      Pending: 'Preparing',
+      Preparing: 'Ready',
+      Ready: 'Served',
+    };
+    if (!Object.values(nextStatusByCurrent).includes(status)) {
       return res.status(400).json({
-        message: 'Invalid item status'
+        message: 'Item status must move from Pending to Preparing to Ready to Served.',
+      });
+    }
+
+    const existingOrder = await Order.findOne(
+      {
+        _id: req.params.orderId,
+        'items._id': req.params.itemId,
+      },
+    );
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        message: 'Order or item not found'
+      });
+    }
+
+    if (existingOrder.status === 'Completed') {
+      return res.status(409).json({ message: 'This order is already completed.' });
+    }
+
+    const existingItem = existingOrder.items.id(req.params.itemId);
+    if (nextStatusByCurrent[existingItem.status] !== status) {
+      return res.status(409).json({
+        message: `This item is currently ${existingItem.status}. Refresh the kitchen display and try again.`,
       });
     }
 
     const order = await Order.findOneAndUpdate(
       {
         _id: req.params.orderId,
-        'items._id': req.params.itemId
+        status: { $ne: 'Completed' },
+        items: {
+          $elemMatch: {
+            _id: req.params.itemId,
+            status: existingItem.status,
+          },
+        },
       },
-      {
-        $set: {
-          'items.$.status': status
-        }
-      },
+      { $set: { 'items.$.status': status } },
       { new: true }
     );
 
     if (!order) {
-      return res.status(404).json({
-        message: 'Order or item not found'
+      return res.status(409).json({
+        message: 'This item was updated by another user. Refresh the kitchen display and try again.',
       });
     }
 
-    const allItemsServed = order.items.every(item => item.status === 'Served');
-    if (allItemsServed) {
-      await Order.findByIdAndUpdate(req.params.orderId, { status: 'Completed' });
-      order.status = 'Completed';
+    if (order.items.length > 0 && order.items.every((item) => item.status === 'Served')) {
+      const completedOrder = await Order.findByIdAndUpdate(
+        order._id,
+        { status: 'Completed' },
+        { new: true }
+      );
+      return res.json(completedOrder);
     }
 
     res.json(order);

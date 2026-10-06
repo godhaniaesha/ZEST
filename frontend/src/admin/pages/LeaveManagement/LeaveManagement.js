@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Row, Col, Form } from "react-bootstrap";
+import { Row, Col, Form, Modal } from "react-bootstrap";
 import {
   MdEvent, MdCheckCircle, MdCancel, MdSearch,
-  MdEdit, MdDelete, MdAdd, MdAccessTime, MdPeople,
+  MdEdit, MdDelete, MdAdd, MdAccessTime, MdPeople, MdVisibility,
 } from "react-icons/md";
 import DeleteModal from "../../components/DeleteModal";
 import FormModal from "../../components/FormModal";
@@ -175,6 +175,7 @@ export default function LeaveManagement() {
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showReject, setShowReject] = useState(false);
+  const [showView, setShowView] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
@@ -193,7 +194,7 @@ export default function LeaveManagement() {
       setLoading(true);
       const isAdminLocal = user?.role === "superadmin" || user?.role === "manager";
       const requests = [leaveAPI.getAll()];
-      if (isAdminLocal) requests.push(usersAPI.getAll());
+      if (isAdminLocal) requests.push(usersAPI.getStaff());
 
       const responses = await Promise.all(requests);
       const leavesRes = responses[0];
@@ -283,7 +284,7 @@ export default function LeaveManagement() {
   const handleAdd = () => {
     setCurrentItem(null);
     const shiftTimes = getShiftTime(user?.shift || "Morning", user?.shiftStart, user?.shiftEnd);
-    setFormData({ staffId: user?._id || "", startDate: "", endDate: "",
+    setFormData({ staffId: user?._id || user?.id || "", startDate: "", endDate: "",
       startTime: shiftTimes.start, endTime: shiftTimes.end, type: "sick", reason: "",
       status: "pending", rejectionReason: "" });
     setStartTime12(convertTo12Hour(shiftTimes.start));
@@ -312,6 +313,7 @@ export default function LeaveManagement() {
   };
 
   const handleDeleteClick = (item) => { setCurrentItem(item); setShowDelete(true); };
+  const handleView = (item) => { setCurrentItem(item); setShowView(true); };
   const handleApprove = async (item) => {
     try { await leaveAPI.approve(item._id); alert("Leave approved successfully"); loadData(); }
     catch (e) { console.error(e); alert("Failed to approve leave"); }
@@ -492,8 +494,11 @@ export default function LeaveManagement() {
                                 <button className="d-btn-outline text-danger" onClick={() => handleRejectClick(item)} style={{ padding: "6px", fontSize: "0.8rem" }}><MdCancel /> Reject</button>
                               </>
                             )}
-                            {((!isAdmin && item.staffId === user._id && item.status === "pending") || isAdmin) && (
+                            {((!isAdmin && String(item.staffId) === String(user?._id || user?.id) && item.status === "pending") || isAdmin) && (
                               <button className="d-navbar-icon-btn" onClick={() => handleEdit(item)}><MdEdit /></button>
+                            )}
+                            {!isAdmin && String(item.staffId) === String(user?._id || user?.id) && item.status === "approved" && (
+                              <button className="d-navbar-icon-btn" onClick={() => handleView(item)} title="View leave details" aria-label="View leave details"><MdVisibility /></button>
                             )}
                             {isAdmin && <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(item)}><MdDelete /></button>}
                           </div>
@@ -724,6 +729,26 @@ export default function LeaveManagement() {
         </div>
 
       </FormModal>
+
+      <Modal show={showView} onHide={() => setShowView(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Leave Request Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {currentItem && (
+            <div className="d-grid gap-2">
+              <div><strong>Staff:</strong> {currentItem.staffName} ({currentItem.role})</div>
+              <div><strong>Dates:</strong> {formatDateRange(currentItem.startDate, currentItem.endDate)}</div>
+              <div><strong>Duration:</strong> {currentItem.days} day{currentItem.days !== 1 ? "s" : ""}</div>
+              <div><strong>Working hours:</strong> {currentItem.startTime || "—"} - {currentItem.endTime || "—"}</div>
+              <div><strong>Leave type:</strong> {currentItem.type}</div>
+              <div><strong>Status:</strong> {currentItem.status}</div>
+              <div><strong>Reason:</strong> {currentItem.reason}</div>
+              {currentItem.rejectionReason && <div><strong>Rejection reason:</strong> {currentItem.rejectionReason}</div>}
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
 
       {/* Reject Modal */}
       <FormModal show={showReject} onHide={() => setShowReject(false)}

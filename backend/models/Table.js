@@ -5,7 +5,9 @@ const tableSchema = new mongoose.Schema({
   capacity: { type: Number, required: true },
   type: { type: String, enum: ['Cafe', 'Bar'], required: true },
   status: { type: String, enum: ['Free', 'Occupied', 'Reserved'], default: 'Free' },
-  location: { type: String, required: true }
+  location: { type: String, required: true },
+  bookingLockId: { type: String, select: false },
+  bookingLockExpiresAt: { type: Date, select: false },
 }, { timestamps: true });
 
 // Virtual to get display ID (C-01, B-01)

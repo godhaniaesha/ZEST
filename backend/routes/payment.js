@@ -5,6 +5,7 @@ const Reservation = require("../models/Reservation");
 const Order = require("../models/Order");
 const Table = require("../models/Table");
 const { auth } = require("../middleware/auth");
+const { syncTableReservationStatus } = require("../utils/reservationTableStatus");
 
 const router = express.Router();
 const stripe = Stripe(process.env.STRIPE_SECRET);
@@ -152,6 +153,7 @@ const finalizeBillSettlement = async ({
     const tableRef = reservation.table?._id || reservation.table;
     if (tableRef) {
       await Table.findByIdAndUpdate(tableRef, { status: "Free" });
+      await syncTableReservationStatus(tableRef);
     }
   } else if (tableLabel) {
     // For non-reservation orders, find table by label and update status to Free

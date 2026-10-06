@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Table = require('../models/Table');
 const { auth, authorizeRoles } = require('../middleware/auth');
+const { syncAllTableReservationStatuses } = require('../utils/reservationTableStatus');
 
 router.get('/', auth, async (req, res) => {
   try {
+    await syncAllTableReservationStatuses();
     const tables = await Table.find();
     res.json(tables);
   } catch (err) {

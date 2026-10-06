@@ -267,7 +267,7 @@ export default function Reservations() {
       setShowForm(false);
     } catch (error) {
       console.error("Error saving reservation:", error);
-      alert("Failed to save reservation");
+      alert(error.response?.data?.message || "Failed to save reservation");
     }
   };
 

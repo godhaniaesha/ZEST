@@ -5,29 +5,19 @@ const Table = require('../models/Table');
 const Payment = require('../models/Payment');
 const Stripe = require('stripe');
 const { auth, authorizeRoles } = require('../middleware/auth');
+const {
+  findReservationConflict,
+  isReservationStartingSoon,
+  syncTableReservationStatus,
+  withTableBookingLock,
+} = require('../utils/reservationTableStatus');
 
 const stripe = Stripe(process.env.STRIPE_SECRET);
 const ADVANCE_AMOUNT = Reservation.ADVANCE_AMOUNT || 200;
-
-const syncTableReservationStatus = async (tableId) => {
-  if (!tableId) return;
-
-  const table = await Table.findById(tableId);
-  if (!table || table.status === 'Occupied') return;
-
-  const hasActiveReservation = await Reservation.exists({
-    table: tableId,
-    $or: [
-      { status: { $in: ['Pending', 'Confirmed'] } },
-      { status: 'Completed', fullPaymentDone: { $ne: true } },
-    ],
-  });
-
-  const nextStatus = hasActiveReservation ? 'Reserved' : 'Free';
-  if (table.status !== nextStatus) {
-    table.status = nextStatus;
-    await table.save();
-  }
+const getReservationConflictMessage = (table) => {
+  const displayId = table.displayId
+    || `${table.type === 'Bar' ? 'B' : 'C'}-${String(table.number).padStart(2, '0')}`;
+  return `${displayId} is already booked for that time. Choose another table or select a time at least 1 hour apart.`;
 };
 
 const optionalAuth = (req, res, next) => {
@@ -65,12 +55,45 @@ router.get('/', auth, authorizeRoles('manager', 'superadmin', 'waiter'),
   async (req, res) => {
     try {
       const reservations = await Reservation.find().populate('table');
-      res.json(reservations);
+      res.json(reservations.map((reservation) => ({
+        ...reservation.toJSON(),
+        reservationAlertDue: Boolean(
+          reservation.stripePaymentIntentId &&
+          isReservationStartingSoon(reservation)
+        ),
+      })));
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   }
 );
+
+router.get('/availability', async (req, res) => {
+  try {
+    const { table, date, time } = req.query;
+    if (!table || !date || !time) {
+      return res.status(400).json({
+        available: false,
+        message: 'Table, date, and time are required.',
+      });
+    }
+
+    const tableDoc = await Table.findById(table);
+    if (!tableDoc) {
+      return res.status(404).json({ available: false, message: 'Selected table not found.' });
+    }
+
+    const conflict = await findReservationConflict(table, date, time);
+    res.json({
+      available: !conflict,
+      message: conflict
+        ? getReservationConflictMessage(tableDoc)
+        : 'Table is available.',
+    });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ available: false, message: err.message });
+  }
+});
 
 router.get('/my', auth, async (req, res) => {
   try {
@@ -85,6 +108,8 @@ router.get('/my', auth, async (req, res) => {
 });
 
 router.post('/', optionalAuth, async (req, res) => {
+  let paymentCompleted = false;
+  let reservationSaved = false;
   try {
     const tableId = await resolveTableId(req.body);
 
@@ -93,14 +118,8 @@ router.post('/', optionalAuth, async (req, res) => {
         message: 'Table is required. Please select a valid table.',
       });
     }
-
-    const tableDoc = await Table.findById(tableId);
-    if (!tableDoc) {
+    if (!(await Table.exists({ _id: tableId }))) {
       return res.status(400).json({ message: 'Selected table not found.' });
-    }
-
-    if (tableDoc.status === 'Occupied') {
-      return res.status(400).json({ message: 'Selected table is not available.' });
     }
 
     const { stripePaymentIntentId, paymentMethod } = req.body;
@@ -124,30 +143,40 @@ router.post('/', optionalAuth, async (req, res) => {
         message: `Invalid advance payment amount. Expected ₹${ADVANCE_AMOUNT}.`,
       });
     }
+    paymentCompleted = true;
 
     const finalUserId = req.body.userId || (req.user ? req.user.id : null);
+    const newReservation = await withTableBookingLock(tableId, async (tableDoc) => {
+      const conflict = await findReservationConflict(tableId, req.body.date, req.body.time);
+      if (conflict) {
+        const error = new Error(getReservationConflictMessage(tableDoc));
+        error.statusCode = 409;
+        error.bookingConflict = true;
+        throw error;
+      }
 
-    const reservation = new Reservation({
-      customerName: req.body.customerName,
-      phone: req.body.phone,
-      email: req.body.email,
-      userId: finalUserId,
-      date: req.body.date,
-      time: req.body.time,
-      guests: req.body.guests,
-      table: tableId,
-      seatingArea: req.body.seatingArea,
-      specialOccasion: req.body.specialOccasion || 'none',
-      specialRequests: req.body.specialRequests,
-      advanceAmount: ADVANCE_AMOUNT,
-      advancePaid: ADVANCE_AMOUNT,
-      advancePaymentStatus: 'Paid',
-      advancePaymentMethod: paymentMethod,
-      stripePaymentIntentId,
-      status: 'Pending',
+      const reservation = new Reservation({
+        customerName: req.body.customerName,
+        phone: req.body.phone,
+        email: req.body.email,
+        userId: finalUserId,
+        date: req.body.date,
+        time: req.body.time,
+        guests: req.body.guests,
+        table: tableId,
+        seatingArea: req.body.seatingArea,
+        specialOccasion: req.body.specialOccasion || 'none',
+        specialRequests: req.body.specialRequests,
+        advanceAmount: ADVANCE_AMOUNT,
+        advancePaid: ADVANCE_AMOUNT,
+        advancePaymentStatus: 'Paid',
+        advancePaymentMethod: paymentMethod,
+        stripePaymentIntentId,
+        status: 'Pending',
+      });
+      return reservation.save();
     });
-
-    const newReservation = await reservation.save();
+    reservationSaved = true;
 
     await Payment.findOneAndUpdate(
       { stripePaymentIntentId },
@@ -166,7 +195,27 @@ router.post('/', optionalAuth, async (req, res) => {
 
     res.status(201).json(populatedReservation);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    if (paymentCompleted && !reservationSaved && req.body.stripePaymentIntentId) {
+      try {
+        await stripe.refunds.create({
+          payment_intent: req.body.stripePaymentIntentId,
+        });
+        await Payment.findOneAndUpdate(
+          { stripePaymentIntentId: req.body.stripePaymentIntentId },
+          { status: 'Cancelled' }
+        );
+      } catch (refundError) {
+        console.error('Failed to refund advance payment after table conflict:', refundError);
+        return res.status(502).json({
+          message: `${err.message} Your advance payment refund could not be confirmed. Please contact the restaurant with your payment reference.`,
+          refundPending: true,
+        });
+      }
+    }
+    res.status(err.statusCode || 400).json({
+      message: err.message,
+      refunded: paymentCompleted && !reservationSaved,
+    });
   }
 });
 
@@ -180,31 +229,38 @@ router.post('/admin', auth, authorizeRoles('manager', 'superadmin', 'waiter'), a
         message: 'Table is required. Please select a valid table.',
       });
     }
-
-    const tableDoc = await Table.findById(tableId);
-    if (!tableDoc) {
+    if (!(await Table.exists({ _id: tableId }))) {
       return res.status(400).json({ message: 'Selected table not found.' });
     }
 
-    const reservation = new Reservation({
-      customerName: req.body.customerName,
-      phone: req.body.phone,
-      email: req.body.email,
-      userId: req.user.id,
-      date: req.body.date,
-      time: req.body.time,
-      guests: req.body.guests,
-      table: tableId,
-      seatingArea: req.body.seatingArea,
-      specialOccasion: req.body.specialOccasion || 'none',
-      specialRequests: req.body.specialRequests || req.body.notes,
-      advanceAmount: ADVANCE_AMOUNT,
-      advancePaid: 0,
-      advancePaymentStatus: 'None',
-      status: req.body.status || 'Pending',
-    });
+    const newReservation = await withTableBookingLock(tableId, async (tableDoc) => {
+      const conflict = req.body.status === 'Cancelled'
+        ? null
+        : await findReservationConflict(tableId, req.body.date, req.body.time);
+      if (conflict) {
+        const error = new Error(getReservationConflictMessage(tableDoc));
+        error.statusCode = 409;
+        throw error;
+      }
 
-    const newReservation = await reservation.save();
+      return new Reservation({
+        customerName: req.body.customerName,
+        phone: req.body.phone,
+        email: req.body.email,
+        userId: req.user.id,
+        date: req.body.date,
+        time: req.body.time,
+        guests: req.body.guests,
+        table: tableId,
+        seatingArea: req.body.seatingArea,
+        specialOccasion: req.body.specialOccasion || 'none',
+        specialRequests: req.body.specialRequests || req.body.notes,
+        advanceAmount: ADVANCE_AMOUNT,
+        advancePaid: 0,
+        advancePaymentStatus: 'None',
+        status: req.body.status || 'Pending',
+      }).save();
+    });
 
     await syncTableReservationStatus(tableId);
 
@@ -213,7 +269,7 @@ router.post('/admin', auth, authorizeRoles('manager', 'superadmin', 'waiter'), a
 
     res.status(201).json(populatedReservation);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(err.statusCode || 400).json({ message: err.message });
   }
 });
 
@@ -228,38 +284,54 @@ router.put('/:id', auth, authorizeRoles('manager', 'superadmin', 'waiter'),
       const tableId = req.body.table
         ? req.body.table
         : await resolveTableId(req.body);
-
-      if (tableId) {
-        const table = await Table.findById(tableId);
-        if (!table) {
-          return res.status(400).json({ message: 'Selected table not found.' });
-        }
-      }
-
-      const reservation = await Reservation.findByIdAndUpdate(
-        req.params.id,
-        {
-          customerName: req.body.customerName,
-          phone: req.body.phone,
-          email: req.body.email,
-          date: req.body.date,
-          time: req.body.time,
-          guests: req.body.guests,
-          ...(tableId ? { table: tableId } : {}),
-          status: req.body.status,
-        },
-        { new: true }
-      ).populate('table');
-
       const previousTableId = existingReservation.table?._id || existingReservation.table;
-      if (String(previousTableId) !== String(tableId)) {
+      const targetTableId = tableId || previousTableId;
+      if (!targetTableId) {
+        return res.status(400).json({ message: 'Table is required. Please select a valid table.' });
+      }
+      const targetDate = req.body.date || existingReservation.date;
+      const targetTime = req.body.time || existingReservation.time;
+      const targetStatus = req.body.status || existingReservation.status;
+
+      const reservation = await withTableBookingLock(targetTableId, async (tableDoc) => {
+        if (targetStatus !== 'Cancelled') {
+          const conflict = await findReservationConflict(
+            targetTableId,
+            targetDate,
+            targetTime,
+            existingReservation._id
+          );
+          if (conflict) {
+            const error = new Error(getReservationConflictMessage(tableDoc));
+            error.statusCode = 409;
+            throw error;
+          }
+        }
+
+        return Reservation.findByIdAndUpdate(
+          req.params.id,
+          {
+            customerName: req.body.customerName,
+            phone: req.body.phone,
+            email: req.body.email,
+            date: targetDate,
+            time: targetTime,
+            guests: req.body.guests,
+            table: targetTableId,
+            status: targetStatus,
+          },
+          { new: true }
+        ).populate('table');
+      });
+
+      if (String(previousTableId) !== String(targetTableId)) {
         await syncTableReservationStatus(previousTableId);
       }
-      await syncTableReservationStatus(tableId);
+      await syncTableReservationStatus(targetTableId);
 
       res.json(reservation);
     } catch (err) {
-      res.status(400).json({ message: err.message });
+      res.status(err.statusCode || 400).json({ message: err.message });
     }
   }
 );
@@ -274,22 +346,41 @@ router.patch('/:id/status', auth, authorizeRoles('manager', 'superadmin', 'waite
         return res.status(400).json({ message: 'Invalid reservation status' });
       }
 
-      const reservation = await Reservation.findByIdAndUpdate(
-        req.params.id,
-        { status },
-        { new: true }
-      ).populate('table');
-
-      if (!reservation) {
+      const currentReservation = await Reservation.findById(req.params.id);
+      if (!currentReservation) {
         return res.status(404).json({ message: 'Reservation not found' });
       }
 
-      const tableRef = reservation.table?._id || reservation.table;
+      const tableRef = currentReservation.table?._id || currentReservation.table;
+      const reservation = await withTableBookingLock(tableRef, async () => {
+        if (status !== 'Cancelled') {
+          const conflict = await findReservationConflict(
+            tableRef,
+            currentReservation.date,
+            currentReservation.time,
+            currentReservation._id
+          );
+          if (conflict) {
+            const error = new Error(
+              'This table is already booked at that time. The reservation cannot be reactivated.'
+            );
+            error.statusCode = 409;
+            throw error;
+          }
+        }
+
+        return Reservation.findByIdAndUpdate(
+          req.params.id,
+          { status },
+          { new: true }
+        ).populate('table');
+      });
+
       await syncTableReservationStatus(tableRef);
 
       res.json(reservation);
     } catch (err) {
-      res.status(400).json({ message: err.message });
+      res.status(err.statusCode || 400).json({ message: err.message });
     }
   }
 );

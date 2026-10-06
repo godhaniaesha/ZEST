@@ -19,6 +19,16 @@ import { payBill, mountCardElement } from "../../../utils/stripePay";
 
 const ADVANCE_AMOUNT = 200;
 const GST_RATE = 0.05;
+const POS_PAYMENT_METHOD_KEY = "zest-pos-payment-method";
+const POS_RESERVATION_KEY = "zest-pos-selected-reservation";
+const POS_ORDER_KEY = "zest-pos-selected-order";
+const roundUpPrice = (price) => Math.ceil(Number(price) || 0);
+const roundRupees = (amount) => Math.round(Number(amount) || 0);
+const formatRupees = (amount) => roundRupees(amount).toLocaleString("en-IN");
+const getSavedPaymentMethod = () => {
+  const savedMethod = sessionStorage.getItem(POS_PAYMENT_METHOD_KEY);
+  return ["Card", "UPI", "Cash"].includes(savedMethod) ? savedMethod : "Card";
+};
 
 const getTableLabel = (reservation) => {
   if (!reservation) return "";
@@ -65,7 +75,11 @@ const buildBillFromOrders = (orders, advancePaid = 0) => {
       if (existing) {
         existing.qty += item.qty;
       } else {
-        combinedItems.push({ ...item, id: item.name });
+        combinedItems.push({
+          ...item,
+          price: roundUpPrice(item.price),
+          id: item.name,
+        });
       }
     });
   });
@@ -74,10 +88,10 @@ const buildBillFromOrders = (orders, advancePaid = 0) => {
     (acc, item) => acc + item.price * item.qty,
     0,
   );
-  const tax = subtotal * GST_RATE;
+  const tax = roundRupees(subtotal * GST_RATE);
   const grossTotal = subtotal + tax;
-  const advanceDeducted = Number(advancePaid) || 0;
-  const total = Math.max(0, grossTotal - advanceDeducted);
+  const advanceDeducted = roundRupees(advancePaid);
+  const total = Math.max(0, roundRupees(grossTotal - advanceDeducted));
 
   return {
     items: combinedItems,
@@ -116,12 +130,17 @@ export default function POS() {
   const [reservations, setReservations] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
-  const [selectedReservation, setSelectedReservation] = useState("");
+  const [selectedReservation, setSelectedReservation] = useState(
+    () => sessionStorage.getItem(POS_RESERVATION_KEY) || "",
+  );
   const [selectedReservationData, setSelectedReservationData] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrderId, setSelectedOrderId] = useState(
+    () => sessionStorage.getItem(POS_ORDER_KEY) || "",
+  );
   const [reservationOrders, setReservationOrders] = useState([]);
   const [cart, setCart] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState("Card");
+  const [paymentMethod, setPaymentMethod] = useState(getSavedPaymentMethod);
   const [upiVpa, setUpiVpa] = useState("");
   const [cashAmount, setCashAmount] = useState("");
   const [cardComplete, setCardComplete] = useState(false);
@@ -302,6 +321,38 @@ export default function POS() {
     loadPosData();
   }, [loadPosData]);
 
+  useEffect(() => {
+    sessionStorage.setItem(POS_PAYMENT_METHOD_KEY, paymentMethod);
+  }, [paymentMethod]);
+
+  useEffect(() => {
+    if (selectedReservation) {
+      sessionStorage.setItem(POS_RESERVATION_KEY, selectedReservation);
+    } else {
+      sessionStorage.removeItem(POS_RESERVATION_KEY);
+    }
+  }, [selectedReservation]);
+
+  useEffect(() => {
+    if (selectedOrderId) {
+      sessionStorage.setItem(POS_ORDER_KEY, selectedOrderId);
+    } else {
+      sessionStorage.removeItem(POS_ORDER_KEY);
+    }
+  }, [selectedOrderId]);
+
+  useEffect(() => {
+    if (!selectedOrderId || reservationsLoading) return;
+    const matchingOrder = completedOrders.find(
+      (order) => String(order._id) === String(selectedOrderId),
+    );
+    if (matchingOrder) {
+      setSelectedOrder(matchingOrder);
+      return;
+    }
+    setSelectedOrderId("");
+  }, [completedOrders, selectedOrderId, reservationsLoading]);
+
   // ── Dynamic: pending payment tables automatic refresh (every 10s) ──
   useEffect(() => {
     const id = setInterval(() => {
@@ -379,12 +430,14 @@ export default function POS() {
   }, [selectedOrder]);
 
   // Totals cart parthi calculate thay chhe, etle qty / item delete karo to total live change thase
-  const round2 = (n) => Math.round(n * 100) / 100;
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const tax = round2(subtotal * GST_RATE);
+  const subtotal = cart.reduce(
+    (acc, item) => acc + roundUpPrice(item.price) * item.qty,
+    0,
+  );
+  const tax = roundRupees(subtotal * GST_RATE);
   const grossTotal = subtotal + tax;
-  const advanceDeducted = Number(selectedReservationData?.advancePaid) || 0;
-  const total = round2(Math.max(0, grossTotal - advanceDeducted));
+  const advanceDeducted = roundRupees(selectedReservationData?.advancePaid);
+  const total = Math.max(0, roundRupees(grossTotal - advanceDeducted));
 
   useEffect(() => {
     if (
@@ -463,8 +516,8 @@ export default function POS() {
         <tr>
           <td>${item.name}</td>
           <td style="text-align:center">${item.qty}</td>
-          <td style="text-align:right">₹${item.price.toLocaleString("en-IN")}</td>
-          <td style="text-align:right">₹${(item.price * item.qty).toLocaleString("en-IN")}</td>
+          <td style="text-align:right">₹${formatRupees(roundUpPrice(item.price))}</td>
+          <td style="text-align:right">₹${formatRupees(roundUpPrice(item.price) * item.qty)}</td>
         </tr>`,
       )
       .join("");
@@ -505,14 +558,14 @@ export default function POS() {
             <tbody>${rows}</tbody>
           </table>
           <div class="totals">
-            <div><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
-            <div><span>GST (5%)</span><span>₹${tax.toLocaleString("en-IN")}</span></div>
+            <div><span>Subtotal</span><span>₹${formatRupees(subtotal)}</span></div>
+            <div><span>GST (5%)</span><span>₹${formatRupees(tax)}</span></div>
             ${
               advanceDeducted > 0
-                ? `<div><span>Advance paid</span><span>− ₹${advanceDeducted.toLocaleString("en-IN")}</span></div>`
+                ? `<div><span>Advance paid</span><span>− ₹${formatRupees(advanceDeducted)}</span></div>`
                 : ""
             }
-            <div class="grand"><span>Amount due</span><span class="gold">₹${total.toLocaleString("en-IN")}</span></div>
+            <div class="grand"><span>Amount due</span><span class="gold">₹${formatRupees(total)}</span></div>
           </div>
           <p style="text-align:center;font-size:0.75rem;color:#888;margin-top:20px">Thank you for dining with us</p>
         </body>
@@ -537,7 +590,7 @@ export default function POS() {
       if (paymentMethod === "Cash") {
         if (!cashAmount || Number(cashAmount) < total) {
           setPaymentError(
-            `Insufficient cash amount. Required: ₹${total.toLocaleString("en-IN")}`,
+            `Insufficient cash amount. Required: ₹${formatRupees(total)}`,
           );
           return;
         }
@@ -556,7 +609,10 @@ export default function POS() {
         cardElement:
           total > 0 && paymentMethod === "Card" ? cardElementRef.current : null,
         reservationId: selectedReservation || null,
-        subtotal: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
+        subtotal: cart.reduce(
+          (sum, item) => sum + roundUpPrice(item.price) * item.qty,
+          0,
+        ),
         tax,
         orderIds: unpaidOrderIds,
         tableLabel: getTableLabel(selectedReservationData),
@@ -574,6 +630,7 @@ export default function POS() {
 
       setSelectedReservation("");
       setSelectedOrder(null);
+      setSelectedOrderId("");
       setCart([]);
       setReservationOrders([]);
       setSelectedReservationData(null);
@@ -636,7 +693,7 @@ export default function POS() {
         {[
           {
             label: "Today's Revenue",
-            value: `₹${liveStats.revenue.toLocaleString("en-IN")}`,
+            value: `₹${formatRupees(liveStats.revenue)}`,
             icon: <MdAttachMoney size={18} />,
             color: "#C9A84C",
           },
@@ -769,6 +826,7 @@ export default function POS() {
                       onClick={() => {
                         setSelectedReservation(r._id);
                         setSelectedOrder(null);
+                        setSelectedOrderId("");
                       }}
                       style={{
                         textAlign: "left",
@@ -817,7 +875,7 @@ export default function POS() {
                           color: "var(--d-gold,#C9A84C)",
                         }}
                       >
-                        Due ₹{due.toLocaleString("en-IN")}
+                        Due ₹{formatRupees(due)}
                       </div>
                     </button>
                   );
@@ -863,6 +921,7 @@ export default function POS() {
                       type="button"
                       onClick={() => {
                         setSelectedOrder(order);
+                        setSelectedOrderId(order._id);
                         setSelectedReservation("");
                       }}
                       style={{
@@ -911,7 +970,7 @@ export default function POS() {
                           color: "var(--d-gold,#C9A84C)",
                         }}
                       >
-                        Due ₹{bill.total.toLocaleString("en-IN")}
+                        Due ₹{formatRupees(bill.total)}
                       </div>
                     </button>
                   );
@@ -1027,7 +1086,7 @@ export default function POS() {
                           <td>
                             <strong>{item.name}</strong>
                           </td>
-                          <td>₹{item.price}</td>
+                          <td>₹{roundUpPrice(item.price)}</td>
                           <td>
                             <div className="d-flex align-items-center gap-2">
                               <button
@@ -1053,7 +1112,7 @@ export default function POS() {
                             </div>
                           </td>
                           <td>
-                            <strong>₹{item.price * item.qty}</strong>
+                            <strong>₹{roundUpPrice(item.price) * item.qty}</strong>
                           </td>
                           <td>
                             <button
@@ -1105,23 +1164,23 @@ export default function POS() {
                 )}
                 <div className="d-flex justify-content-between mb-2">
                   <span className="text-muted">Subtotal</span>
-                  <span>₹{subtotal.toLocaleString()}</span>
+                  <span>₹{formatRupees(subtotal)}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span className="text-muted">Tax (GST 5%)</span>
-                  <span>₹{tax.toLocaleString()}</span>
+                  <span>₹{formatRupees(tax)}</span>
                 </div>
                 {advanceDeducted > 0 && (
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted">Reservation Advance</span>
                     <span style={{ color: "var(--d-green, #2ecc71)" }}>
-                      − ₹{advanceDeducted.toLocaleString()}
+                      − ₹{formatRupees(advanceDeducted)}
                     </span>
                   </div>
                 )}
                 <div className="d-flex justify-content-between mb-4">
                   <span className="text-muted">Service Charge</span>
-                  <span>₹0.00</span>
+                  <span>₹0</span>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between mb-4 mt-4">
@@ -1140,7 +1199,7 @@ export default function POS() {
                       fontFamily: "Playfair Display",
                     }}
                   >
-                    ₹{total.toLocaleString()}
+                    ₹{formatRupees(total)}
                   </strong>
                 </div>
 
@@ -1153,21 +1212,57 @@ export default function POS() {
                       <div className="d-flex gap-3">
                         <button
                           className={`d-btn-outline flex-grow-1 ${paymentMethod === "Card" ? "active" : ""}`}
-                          style={{ fontSize: "0.75rem" }}
+                          type="button"
+                          aria-pressed={paymentMethod === "Card"}
+                          style={{
+                            fontSize: "0.75rem",
+                            ...(paymentMethod === "Card"
+                              ? {
+                                  background: "var(--d-primary)",
+                                  color: "var(--d-accent)",
+                                  borderColor: "var(--d-gold)",
+                                  boxShadow: "0 0 0 2px rgba(201,168,76,0.2)",
+                                }
+                              : {}),
+                          }}
                           onClick={() => setPaymentMethod("Card")}
                         >
                           Card
                         </button>
                         <button
                           className={`d-btn-outline flex-grow-1 ${paymentMethod === "UPI" ? "active" : ""}`}
-                          style={{ fontSize: "0.75rem" }}
+                          type="button"
+                          aria-pressed={paymentMethod === "UPI"}
+                          style={{
+                            fontSize: "0.75rem",
+                            ...(paymentMethod === "UPI"
+                              ? {
+                                  background: "var(--d-primary)",
+                                  color: "var(--d-accent)",
+                                  borderColor: "var(--d-gold)",
+                                  boxShadow: "0 0 0 2px rgba(201,168,76,0.2)",
+                                }
+                              : {}),
+                          }}
                           onClick={() => setPaymentMethod("UPI")}
                         >
                           UPI
                         </button>
                         <button
                           className={`d-btn-outline flex-grow-1 ${paymentMethod === "Cash" ? "active" : ""}`}
-                          style={{ fontSize: "0.75rem" }}
+                          type="button"
+                          aria-pressed={paymentMethod === "Cash"}
+                          style={{
+                            fontSize: "0.75rem",
+                            ...(paymentMethod === "Cash"
+                              ? {
+                                  background: "var(--d-primary)",
+                                  color: "var(--d-accent)",
+                                  borderColor: "var(--d-gold)",
+                                  boxShadow: "0 0 0 2px rgba(201,168,76,0.2)",
+                                }
+                              : {}),
+                          }}
                           onClick={() => setPaymentMethod("Cash")}
                         >
                           Cash
@@ -1213,17 +1308,13 @@ export default function POS() {
                         {cashAmount && Number(cashAmount) >= total && (
                           <div className="text-success small mt-2">
                             Change to return: ₹
-                            {(Number(cashAmount) - total).toLocaleString(
-                              "en-IN",
-                            )}
+                            {formatRupees(Number(cashAmount) - total)}
                           </div>
                         )}
                         {cashAmount && Number(cashAmount) < total && (
                           <div className="text-danger small mt-2">
                             Insufficient amount. Need ₹
-                            {(total - Number(cashAmount)).toLocaleString(
-                              "en-IN",
-                            )}{" "}
+                            {formatRupees(total - Number(cashAmount))}{" "}
                             more.
                           </div>
                         )}
@@ -1430,7 +1521,7 @@ export default function POS() {
                       {
                         icon: <MdAttachMoney size={20} />,
                         label: "Revenue (Paid)",
-                        value: `₹${todaySales.revenue.toLocaleString("en-IN")}`,
+                        value: `₹${formatRupees(todaySales.revenue)}`,
                         color: "#C9A84C",
                       },
                       {
@@ -1655,7 +1746,7 @@ export default function POS() {
                                 color: "var(--d-primary,#16302B)",
                               }}
                             >
-                              ₹{data.revenue.toLocaleString("en-IN")}
+                              ₹{formatRupees(data.revenue)}
                             </div>
                           </div>
                         ))}
@@ -1764,7 +1855,7 @@ export default function POS() {
                                 color: "var(--d-primary,#16302B)",
                               }}
                             >
-                              ₹{data.revenue.toLocaleString("en-IN")}
+                              ₹{formatRupees(data.revenue)}
                             </div>
                           </div>
                         ))}

@@ -74,10 +74,7 @@ export default function Tables() {
 
   const getDynamicStatus = (table) => {
     if (table.status === 'Occupied') return 'Occupied';
-    if (getActiveReservationForTable(table) || table.status === 'Reserved') {
-      return 'Reserved';
-    }
-    return 'Free';
+    return table.status === 'Reserved' ? 'Reserved' : 'Free';
   };
 
   const handleTableClick = (table) => {

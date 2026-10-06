@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import {
-  MdKitchen, MdTimer, MdCheckCircle, MdWarning,
-  MdNotificationsActive, MdHistory, MdRestaurantMenu,
-  MdLocalBar, MdCoffee, MdArrowBack,
-  MdFilterList, MdDoneAll, MdDragIndicator, MdMoreVert,
-  MdRadioButtonUnchecked, MdCheckCircleOutline, MdClose,
+  MdKitchen, MdTimer, MdCheckCircle,
+  MdHistory, MdRestaurantMenu,
+  MdLocalBar, MdCoffee,
+  MdFilterList, MdDragIndicator,
+  MdRadioButtonUnchecked, MdCheckCircleOutline,
   MdRestaurant
 } from 'react-icons/md';
-import { ordersAPI, api, tablesAPI } from '../../../api';
+import { ordersAPI } from '../../../api';
 
 // We'll fetch live orders from the backend. Start with empty list.
 const INITIAL_ORDERS = [];
@@ -45,6 +45,7 @@ export default function KitchenDisplay() {
   const [orders, setOrders] = useState(INITIAL_ORDERS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [updatingItems, setUpdatingItems] = useState({});
 
   // Helpers to map backend values to UI-friendly values
   const mapType = (t) => {
@@ -88,13 +89,11 @@ export default function KitchenDisplay() {
       const mapped = data.map(mapOrderToUI);
 
       const activeOrders = mapped.filter(order => {
-        const allDone =
+        const allServed =
           order.items.length > 0 &&
-          order.items.every(item =>
-            ['Ready', 'Served'].includes(item.status)
-          );
+          order.items.every(item => item.status === 'Served');
 
-        return !allDone && order.status !== 'Completed';
+        return !allServed && order.status !== 'Completed';
       });
 
       setOrders(activeOrders);
@@ -110,10 +109,14 @@ export default function KitchenDisplay() {
     const order = orders.find((o) => o._id === orderId);
     const item = order?.items[itemIndex];
     if (!order || !item?._id) return;
+    const updateKey = `${orderId}:${item._id}`;
+    if (updatingItems[updateKey] || item.status === 'Served') return;
 
     const kitchenFlow = ['Pending', 'Preparing', 'Ready', 'Served'];
     const currentIdx = kitchenFlow.indexOf(item.status);
-    const nextStatus = kitchenFlow[(currentIdx + 1) % kitchenFlow.length] || 'Pending';
+    const nextStatus = kitchenFlow[currentIdx + 1];
+    if (!nextStatus) return;
+    setUpdatingItems((current) => ({ ...current, [updateKey]: true }));
 
     (async () => {
       try {
@@ -129,44 +132,15 @@ export default function KitchenDisplay() {
       } catch (err) {
         console.error('Failed to update item status', err);
         setError(err.response?.data?.message || err.message || 'Failed to update item status');
+        await fetchOrders();
+      } finally {
+        setUpdatingItems((current) => {
+          const next = { ...current };
+          delete next[updateKey];
+          return next;
+        });
       }
     })();
-  };
-
-  const handleMarkReady = (id) => {
-    // Mark order as completed when all items are Ready
-    const order = orders.find(o => o.id === id || o._id === id);
-    if (!order) return;
-
-    // Check if all items are Ready
-    const allItemsReady = order.items.every(item => item.status === 'Ready');
-    if (!allItemsReady) {
-      setError('All items must be Ready before marking order as Done');
-      return;
-    }
-
-    (async () => {
-      try {
-        // Update order status to Completed on backend
-        await api.put(`/orders/${order._id}`, { status: 'Completed' });
-
-        // Update table status to Reserved when order is done
-        if (order.tableId) {
-          await tablesAPI.update(order.tableId, { status: 'Reserved' });
-        }
-
-        // Remove order from local display
-        setOrders((cur) => cur.filter(o => o._id !== order._id));
-      } catch (err) {
-        console.error('Failed to mark order as Done', err);
-        setError(err.response?.data?.message || err.message || 'Failed to mark order as Done');
-      }
-    })();
-  };
-
-  const handleClearAll = () => {
-    // remove completed orders locally
-    setOrders((cur) => cur.filter(o => !o.items.every(item => item.status === 'Served')));
   };
 
   const filteredOrders = filter === 'All' ? orders : orders.filter(o => o.type === filter);
@@ -270,6 +244,11 @@ export default function KitchenDisplay() {
                         key={item._id || idx}
                         className={`d-kot-item ${item.status === 'Served' ? 'completed' : ''}`}
                         onClick={() => toggleItem(order._id, idx)}
+                        aria-disabled={item.status === 'Served' || updatingItems[`${order._id}:${item._id}`]}
+                        style={{
+                          cursor: item.status === 'Served' || updatingItems[`${order._id}:${item._id}`] ? 'default' : 'pointer',
+                          opacity: updatingItems[`${order._id}:${item._id}`] ? 0.65 : 1,
+                        }}
                       >
                         <div className="d-kot-item-check">
                           {item.status === 'Served' ? (
@@ -290,17 +269,12 @@ export default function KitchenDisplay() {
                   {/* Card Footer - Actions */}
                   <div className="d-kot-card-footer">
 
-                    <button
-                      className="d-kot-action-btn d-kot-btn-ready"
-                      onClick={() => handleMarkReady(order.id)}
-                      disabled={!order.items.every(item => item.status === 'Ready')}
-                      style={{
-                        opacity: order.items.every(item => item.status === 'Ready') ? 1 : 0.5,
-                        cursor: order.items.every(item => item.status === 'Ready') ? 'pointer' : 'not-allowed'
-                      }}
-                    >
-                      <MdCheckCircle className="me-1" /> Done
-                    </button>
+                    <div className="d-kot-action-btn d-kot-btn-ready" aria-live="polite">
+                      <MdCheckCircle className="me-1" />
+                      {order.items.every(item => item.status === 'Served')
+                        ? 'Order served'
+                        : 'Serve each item to complete order'}
+                    </div>
                   </div>
                 </div>
               </Col>

@@ -538,7 +538,7 @@ router.post('/cancel/:id', auth, async (req, res) => {
 /* ─────────────────────────────────────────────
    UPDATE LEAVE REQUEST
  ───────────────────────────────────────────── */
-router.put('/:id', auth, authorizeRoles(...ADMIN_ROLES), async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -554,10 +554,15 @@ router.put('/:id', auth, authorizeRoles(...ADMIN_ROLES), async (req, res) => {
       return res.status(404).json({ message: 'Leave request not found' });
     }
 
+    const admin = isAdmin(req.user);
+    if (!admin && (String(leave.staffId) !== String(req.user.id) || leave.status !== 'pending')) {
+      return res.status(403).json({ message: 'Only your own pending leave request can be edited' });
+    }
+
     const updateData = {};
 
     // Staff assignment
-    if (staffId && String(staffId) !== String(leave.staffId)) {
+    if (admin && staffId && String(staffId) !== String(leave.staffId)) {
       const staff = await User.findById(staffId);
       if (!staff || staff.role === 'customer') {
         return res.status(404).json({ message: 'Staff member not found' });
@@ -585,8 +590,30 @@ router.put('/:id', auth, authorizeRoles(...ADMIN_ROLES), async (req, res) => {
 
     if (startTime !== undefined) updateData.startTime = startTime || null;
     if (endTime !== undefined) updateData.endTime = endTime || null;
-    if (type && LEAVE_TYPES.includes(type)) updateData.type = type;
+    if (type !== undefined) {
+      if (!LEAVE_TYPES.includes(type)) {
+        return res.status(400).json({ message: 'Invalid leave type' });
+      }
+      updateData.type = type;
+    }
     if (reason !== undefined) updateData.reason = reason;
+
+    if (reason !== undefined && !reason.trim()) {
+      return res.status(400).json({ message: 'A reason is required' });
+    }
+
+    if (!admin) {
+      const overlappingLeave = await Leave.findOne({
+        _id: { $ne: leave._id },
+        staffId: leave.staffId,
+        status: { $in: ['pending', 'approved'] },
+        startDate: { $lte: newEnd },
+        endDate: { $gte: newStart },
+      });
+      if (overlappingLeave) {
+        return res.status(400).json({ message: 'Staff already has a leave request for this period' });
+      }
+    }
 
     // Status changes are handled by the approve / reject / cancel endpoints
     delete req.body.status;

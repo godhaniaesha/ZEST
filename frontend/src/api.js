@@ -102,6 +102,7 @@ export const inventoryAPI = {
 export const reservationsAPI = {
   getAll: () => api.get('/reservations'),
   getMy: () => api.get('/reservations/my'),
+  checkAvailability: (params) => api.get('/reservations/availability', { params }),
   create: (data) => api.post('/reservations', data),
   createAdmin: (data) => api.post('/reservations/admin', data),
   update: (id, data) => api.put(`/reservations/${id}`, data),
@@ -120,7 +121,7 @@ export const paymentAPI = {
 };
 
 export const publicTablesAPI = {
-  getCafeTables: () => axios.get(`${API_BASE_URL}/tables/public`),
+  getCafeTables: (params) => axios.get(`${API_BASE_URL}/tables/public`, { params }),
 };
 
 export const categoriesAPI = {

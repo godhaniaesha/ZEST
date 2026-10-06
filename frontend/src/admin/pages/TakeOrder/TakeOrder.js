@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col, Badge } from 'react-bootstrap';
 import {
   MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant,
@@ -8,6 +8,12 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { menuAPI, reservationsAPI, ordersAPI, tablesAPI } from '../../../api';
 import { useAuth } from '../../../contexts/AuthContext';
+
+const ACTIVE_RESERVATION_STATUSES = ['Pending', 'Confirmed', 'Completed'];
+
+const isActiveReservation = (reservation) =>
+  ACTIVE_RESERVATION_STATUSES.includes(reservation.status) &&
+  !(reservation.status === 'Completed' && reservation.fullPaymentDone);
 
 export default function TakeOrder() {
   const [activeTab, setActiveTab] = useState('cafe'); // 'cafe' or 'bar'
@@ -19,6 +25,7 @@ export default function TakeOrder() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const alertedReservations = useRef(new Set());
 
   const itemHasType = (item, target) => {
     const types = Array.isArray(item?.type) ? item.type : item?.type ? [item.type] : [];
@@ -26,66 +33,93 @@ export default function TakeOrder() {
   };
 
   useEffect(() => {
-    const loadData = async () => {
+    let mounted = true;
+
+    const refreshTables = async () => {
       try {
-        setLoading(true);
-
-        // Fetch menu + tables in parallel; reservations may fail for non-manager roles
-        const [menuRes, tablesRes] = await Promise.all([
-          menuAPI.getAll(),
-          tablesAPI.getAll(),
-        ]);
-
-        setMenuItems(Array.isArray(menuRes.data) ? menuRes.data : []);
+        const tablesRes = await tablesAPI.getAll();
+        if (!mounted) return;
 
         const allTables = Array.isArray(tablesRes.data) ? tablesRes.data : [];
-
-        // Try fetching reservations (requires manager/superadmin/waiter role)
-        let confirmedReservations = [];
+        let activeReservations = [];
         try {
           const resRes = await reservationsAPI.getAll();
-          confirmedReservations = Array.isArray(resRes.data)
-            ? resRes.data.filter(r => r.status === 'Confirmed' && !r.fullPaymentDone)
+          activeReservations = Array.isArray(resRes.data)
+            ? resRes.data.filter(isActiveReservation)
             : [];
         } catch {
-          // Role may not allow reservation access — continue with tables only
+          // Reservations are not available to every staff role.
         }
+        if (!mounted) return;
 
-        // Build dropdown entries: one per table, enriched with reservation data if available
-        const entries = allTables.map(table => {
-          // Match reservation by table._id (reservation.table is populated object)
-          const reservation = confirmedReservations.find(r => {
-            const rTableId = r.table?._id || r.table;
-            return String(rTableId) === String(table._id);
-          });
-
+        const entries = allTables.map((table) => {
           const displayId = table.displayId
             || `${table.type === 'Bar' ? 'B' : 'C'}-${String(table.number).padStart(2, '0')}`;
+          const activeReservation = activeReservations.find((reservation) => {
+            const reservationTableId = reservation.table?._id || reservation.table;
+            return String(reservationTableId) === String(table._id);
+          });
+          const reservation = table.status === 'Reserved' ? activeReservation : null;
 
           return {
-            tableId:     table._id,
+            tableId: table._id,
             displayId,
-            capacity:    table.capacity,
-            type:        table.type,
-            location:    table.location,
-            status:      table.status,
+            capacity: table.capacity,
+            type: table.type,
+            location: table.location,
+            status: table.status,
             reservation: reservation || null,
-            // Use reservation _id as the select value when available, otherwise table _id
-            value:       reservation ? reservation._id : table._id,
-            label:       reservation
-              ? `${displayId} — ${reservation.customerName} (${reservation.guests} guests)`
-              : `${displayId} — ${table.capacity} seats (${table.status})`,
+            value: table._id,
+            label: `${displayId} — ${table.capacity} seats (${table.status})${reservation ? ` · ${reservation.customerName} (${reservation.guests} guests)` : ''}`,
           };
+        });
+
+        const tableById = new Map(allTables.map((table) => [String(table._id), table]));
+        activeReservations.forEach((reservation) => {
+          const reservationTableId = reservation.table?._id || reservation.table;
+          const table = tableById.get(String(reservationTableId));
+          if (
+            !reservation.reservationAlertDue ||
+            !table ||
+            table.status !== 'Reserved' ||
+            alertedReservations.current.has(String(reservation._id))
+          ) {
+            return;
+          }
+
+          alertedReservations.current.add(String(reservation._id));
+          const displayId = table.displayId
+            || `${table.type === 'Bar' ? 'B' : 'C'}-${String(table.number).padStart(2, '0')}`;
+          window.alert(
+            `Online reservation for ${displayId} (${reservation.customerName}) starts at ${reservation.time}. The table is now Reserved.`
+          );
         });
 
         setReservations(entries);
       } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
+        console.error('Error refreshing tables and reservations:', error);
       }
     };
+
+    const loadData = async () => {
+      try {
+        const menuRes = await menuAPI.getAll();
+        if (mounted) setMenuItems(Array.isArray(menuRes.data) ? menuRes.data : []);
+        await refreshTables();
+      } catch (error) {
+        console.error('Error loading menu:', error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
     loadData();
+    const refreshId = setInterval(refreshTables, 15000);
+
+    return () => {
+      mounted = false;
+      clearInterval(refreshId);
+    };
   }, []);
 
   const filteredMenuItems = menuItems.filter(item => 
@@ -124,7 +158,7 @@ export default function TakeOrder() {
   const handleSendToKitchen = async () => {
     if (cart.length === 0 || !selectedTable) return;
 
-    const entry = reservations.find(e => e.value === selectedTable);
+    const entry = reservations.find(e => e.tableId === selectedTable);
     const tableLabel = entry?.displayId || selectedTable;
     const tableId = entry?.tableId;
 

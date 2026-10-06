@@ -388,34 +388,37 @@ const h_res_css = `
   /* ── TABLE MAP ── */
   .h_table_grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1.2rem;
-    background: rgba(255,255,255,0.15);
-    border-radius: 26px;
-    border: 1px solid rgba(255,255,255,0.3);
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 1rem;
   }
 
   .h_table_node {
-    aspect-ratio: 1;
-    background: rgba(255,255,255,0.35);
-    border: 1px solid rgb(195 195 195 / 47%);
-    border-radius: 14px;
+    min-height: 142px;
+    padding: 1rem;
+    background: rgba(46,204,113,0.08);
+    border: 2px solid rgba(46,204,113,0.65);
+    border-radius: 16px;
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
+    align-items: stretch; justify-content: center;
     cursor: pointer; transition: var(--z-transition);
-    gap: 4px;
+    gap: 0.45rem;
   }
   .h_table_node:hover:not(.occupied):not(.unavailable) {
-    transform: translateY(-4px); background: rgba(255,255,255,0.6);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(17,41,35,0.12);
   }
   .h_table_node.selected { background: var(--z-emerald); color: var(--z-gold); border-color: var(--z-emerald); box-shadow: 0 10px 24px rgba(17,41,35,0.2); }
   .h_table_node.occupied { opacity: 0.15; cursor: not-allowed; }
-  .h_table_node.unavailable { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+  .h_table_node.unavailable { opacity: 0.55; cursor: not-allowed; border-color: rgba(201,168,76,0.75); border-style: dashed; background: rgba(201,168,76,0.1); }
 
-  .h_table_node .t_num { font-size: 1rem; font-weight: 800; }
-  .h_table_node .t_cap { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; opacity: 0.55; letter-spacing: 0.5px; }
+  .h_table_node .t_num { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 800; }
+  .h_table_node .t_cap { font-size: 0.76rem; font-weight: 600; opacity: 0.75; }
   .h_table_node.selected .t_cap { opacity: 0.7; }
+  .h_table_node .t_status { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #198754; }
+  .h_table_node.selected .t_status { color: var(--z-gold); }
+  .h_table_node.unavailable .t_status { color: #9a7624; }
+  .h_table_node .t_location { overflow: hidden; color: rgba(11,25,21,0.62); font-size: 0.7rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+  .h_table_node.selected .t_location { color: rgba(255,255,255,0.72); }
 
   .h_table_legend {
     margin-top: 1.5rem;
@@ -505,7 +508,7 @@ const h_res_css = `
     .h_schedule_layout { gap: 2rem; }
     .h_clock_face { width: 200px; height: 200px; }
     .h_clock_time { font-size: 2.8rem; }
-    .h_table_grid { grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .h_table_grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 1rem; }
   }
 
   /* ══════════════════════════════════════
@@ -662,7 +665,7 @@ const h_res_css = `
     .h_capsule_val { font-size: 1.5rem; }
 
     /* Table grid */
-    .h_table_grid { grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
+    .h_table_grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 0.75rem; }
 
     /* Payment */    
     .h_two_col_grid { grid-template-columns: 1fr; gap: 0; }
@@ -698,7 +701,7 @@ const h_res_css = `
     .h_clock_time { font-size: 2.6rem; }
     .h_clock_num { width: 29px; height: 29px; font-size: 0.72rem; }
 
-    .h_table_grid { grid-template-columns: repeat(3, 1fr); gap: 0.55rem; }
+    .h_table_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
 
     .h_inline_fields { grid-template-columns: 1fr; }
     .h_policy_check { font-size: 0.75rem; }
@@ -768,6 +771,7 @@ export default function ZestReservation() {
   const [selHour, setSelHour] = useState(7);
   const [selMin, setSelMin] = useState(30);
   const [selPeriod, setSelPeriod] = useState("PM");
+  const formattedTime = `${String(selHour).padStart(2, "0")}:${String(selMin).padStart(2, "0")} ${selPeriod}`;
   const [activeView, setActiveView] = useState("hour");
   const [clockSize, setClockSize] = useState(240);
   const [cardComplete, setCardComplete] = useState(false);
@@ -784,7 +788,10 @@ export default function ZestReservation() {
     const loadTables = async () => {
       try {
         setTablesLoading(true);
-        const res = await publicTablesAPI.getCafeTables();
+        const res = await publicTablesAPI.getCafeTables({
+          date: form.date,
+          time: formattedTime,
+        });
         setTables(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Failed to load tables:", err);
@@ -794,7 +801,7 @@ export default function ZestReservation() {
       }
     };
     loadTables();
-  }, []);
+  }, [form.date, formattedTime]);
 
   useEffect(() => {
     if (user) {
@@ -811,6 +818,18 @@ export default function ZestReservation() {
     setError("");
     setForm((p) => ({ ...p, [k]: v }));
   };
+  const refreshTablesForSlot = async () => {
+    try {
+      const res = await publicTablesAPI.getCafeTables({
+        date: form.date,
+        time: formattedTime,
+      });
+      setTables(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to refresh table availability:", err);
+      setError("Could not refresh table availability. Please try again.");
+    }
+  };
   const updateGuests = (n) => {
     const s = Math.max(1, Math.min(20, n));
     setError("");
@@ -822,7 +841,8 @@ export default function ZestReservation() {
         table:
           currentTable &&
             currentTable.capacity >= s &&
-            currentTable.status !== "Occupied"
+          currentTable.status !== "Occupied" &&
+          !currentTable.hasConflictingReservation
             ? p.table
             : null,
       };
@@ -991,7 +1011,12 @@ export default function ZestReservation() {
   useEffect(() => {
     if (!form.table) return;
     const t = tables.find((t) => t._id === form.table);
-    if (!t || t.capacity < form.guests || t.status === "Occupied") {
+    if (
+      !t ||
+      t.capacity < form.guests ||
+      t.status === "Occupied" ||
+      t.hasConflictingReservation
+    ) {
       update("table", null);
     }
   }, [form.guests, form.table, tables]);
@@ -1008,43 +1033,56 @@ export default function ZestReservation() {
       if (!emailOk) return setError("Please enter a valid email address.");
       if (phoneDigits.length < 10)
         return setError("Please enter a valid 10-digit phone number.");
-      if (!form.seatingArea) return setError("Please select a seating area.");
+      if (!selectedTable?.location) return setError("Please select a table with a seating area.");
       if (!form.agreePolicy)
         return setError("You must accept the reservation policy.");
     }
 
     if (step === 4) {
-      const paymentResult = await payReservationAdvance({
-        paymentMethod: form.paymentMethod,
-
-        // EXACT Stripe instance that created the card element
-        stripe:
-          form.paymentMethod === "Card"
-            ? stripeRef.current
-            : null,
-
-        cardElement:
-          form.paymentMethod === "Card"
-            ? cardElementRef.current
-            : null,
-
-        upiVpa: form.upiVpa.trim(),
-      });
-
-      setPaymentIntentId(paymentResult.paymentIntentId);
-
-      // Verify payment with backend
+      setLoading(true);
       try {
+        const availability = await reservationsAPI.checkAvailability({
+          table: form.table,
+          date: form.date,
+          time: formattedTime,
+        });
+        if (!availability.data.available) {
+          const message = availability.data.message || "This table is already booked at that time.";
+          setError(message);
+          window.alert(message);
+          await refreshTablesForSlot();
+          setStep(2);
+          setLoading(false);
+          return;
+        }
+
+        const paymentResult = await payReservationAdvance({
+          paymentMethod: form.paymentMethod,
+          stripe: form.paymentMethod === "Card" ? stripeRef.current : null,
+          cardElement: form.paymentMethod === "Card" ? cardElementRef.current : null,
+          upiVpa: form.upiVpa.trim(),
+        });
+
+        setPaymentIntentId(paymentResult.paymentIntentId);
         await paymentAPI.completeAdvancePayment({
           paymentIntentId: paymentResult.paymentIntentId,
         });
+        setLoading(false);
+        return setStep(5);
       } catch (err) {
-        console.error("Payment verification failed:", err);
-        setError(err.response?.data?.message || "Payment verification failed");
+        console.error("Reservation availability or payment failed:", err);
+        const message =
+          err.response?.data?.message ||
+          err.message ||
+          "Could not verify table availability or complete payment.";
+        setError(message);
+        if (err.response?.status === 409) {
+          window.alert(message);
+          setStep(2);
+        }
+        setLoading(false);
         return;
       }
-
-      return setStep(5);
     }
 
     if (step === 5) {
@@ -1068,7 +1106,7 @@ export default function ZestReservation() {
           time: formattedTime,
           guests: form.guests,
           table: form.table,
-          seatingArea: form.seatingArea,
+          seatingArea: selectedTable?.location || form.seatingArea,
           specialOccasion: form.specialOccasion,
           specialRequests: form.specialRequests,
           paymentMethod: form.paymentMethod,
@@ -1081,22 +1119,32 @@ export default function ZestReservation() {
 
         setLoading(false);
         setStep(6);
+        window.alert(`Your reservation is confirmed for ${formattedTime}.`);
       } catch (err) {
         console.error("Reservation Error:", err);
         console.error("Response:", err.response?.data);
 
         setLoading(false);
 
-        setError(
+        const message =
           err.response?.data?.message ||
           err.message ||
-          "Could not save reservation. Please try again.",
-        );
+          "Could not save reservation. Please try again.";
+        setError(message);
+        if (err.response?.status === 409) {
+          const alertMessage = err.response?.data?.refunded
+            ? `${message} Your advance payment has been refunded.`
+            : message;
+          window.alert(alertMessage);
+          await refreshTablesForSlot();
+          setPaymentIntentId("");
+          setStep(2);
+        }
       }
     } else setStep((p) => p + 1);
   };
 
-  const formattedTime = `${String(selHour).padStart(2, "0")}:${String(selMin).padStart(2, "0")} ${selPeriod}`;
+  const selectedTable = tables.find((table) => table._id === form.table);
   const clockRadius = Math.max(
     55,
     clockSize / 2 - (activeView === "hour" ? 32 : 22),
@@ -1406,24 +1454,55 @@ export default function ZestReservation() {
                 <h2>Pick your Table</h2>
                 {tablesLoading ? (
                   <p style={{ opacity: 0.6 }}>Loading available tables...</p>
-                ) : tables.length === 0 ? (
-                  <p style={{ opacity: 0.6 }}>No tables available right now.</p>
+                ) : !tables.some((table) => table.status !== "Occupied") ? (
+                  <p style={{ opacity: 0.6 }}>No tables avai
+                  lable right now.</p>
                 ) : (
                   <>
                     <div className="h_table_grid">
-                      {tables.map((t) => {
-                        const occupied = t.status === "Occupied";
+                      {tables.filter((table) => table.status !== "Occupied").map((t) => {
                         const tooSmall = t.capacity < form.guests;
+                        const alreadyBooked = t.hasConflictingReservation;
+                        const selected = form.table === t._id;
                         return (
                           <div
                             key={t._id}
-                            className={`h_table_node ${occupied ? "occupied" : ""} ${!occupied && tooSmall ? "unavailable" : ""} ${form.table === t._id ? "selected" : ""}`}
-                            onClick={() =>
-                              !occupied && !tooSmall && update("table", t._id)
-                            }
+                            className={`h_table_node ${tooSmall || alreadyBooked ? "unavailable" : ""} ${selected ? "selected" : ""}`}
+                            onClick={() => {
+                              if (alreadyBooked) {
+                                const message = "This table is already booked at that time. Please choose another table or a time at least 1 hour apart.";
+                                setError(message);
+                                window.alert(message);
+                                return;
+                              }
+                              if (tooSmall) return;
+                              setError("");
+                              setForm((current) => ({
+                                ...current,
+                                table: t._id,
+                                seatingArea: t.location,
+                              }));
+                            }}
+                            role="button"
+                            tabIndex={tooSmall || alreadyBooked ? -1 : 0}
+                            onKeyDown={(event) => {
+                              if (!tooSmall && !alreadyBooked && (event.key === "Enter" || event.key === " ")) {
+                                event.preventDefault();
+                                setError("");
+                                setForm((current) => ({
+                                  ...current,
+                                  table: t._id,
+                                  seatingArea: t.location,
+                                }));
+                              }
+                            }}
+                            aria-disabled={tooSmall || alreadyBooked}
+                            title={alreadyBooked ? "Already booked for this time" : tooSmall ? "Not enough seats" : "Available"}
                           >
-                            <span className="t_num">{t.number}</span>
-                            <span className="t_cap">{t.capacity} pax</span>
+                            <span className="t_num">{t.displayId || `${t.type === "Bar" ? "B" : "C"}-${String(t.number).padStart(2, "0")}`}</span>
+                            <span className="t_cap">{t.type} · {t.capacity} seats</span>
+                            <span className="t_status">{alreadyBooked ? "Already booked" : tooSmall ? "Too small" : selected ? "Selected" : "Available"}</span>
+                            <span className="t_location">{t.location}</span>
                           </div>
                         );
                       })}
@@ -1442,13 +1521,6 @@ export default function ZestReservation() {
                           style={{ background: "var(--z-emerald)" }}
                         />
                         Selected
-                      </div>
-                      <div className="h_table_legend_item">
-                        <div
-                          className="h_legend_dot"
-                          style={{ background: "rgba(0,0,0,0.06)" }}
-                        />
-                        Occupied
                       </div>
                       <div className="h_table_legend_item">
                         <div
@@ -1508,19 +1580,40 @@ export default function ZestReservation() {
                 </div>
                 <div className="h_two_col_grid">
                   <div className="h_input_box">
-                    <label>Seating Area</label>
-                    <div className="h_input_field_wrap">
-                      <FiMapPin className="h_input_icon" />
-                      <select
-                        value={form.seatingArea}
-                        onChange={(e) => update("seatingArea", e.target.value)}
-                      >
-                        <option value="">Select seating area</option>
-                        <option value="indoor-main">Indoor Main Hall</option>
-                        <option value="window-side">Window Side</option>
-                        <option value="private-lounge">Private Lounge</option>
-                        <option value="outdoor-patio">Outdoor Patio</option>
-                      </select>
+                    <label>Your Table & Seating Area</label>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "14px",
+                      minHeight: "74px",
+                      padding: "14px 16px",
+                      borderRadius: "14px",
+                      border: "1px solid rgba(17, 41, 35, 0.12)",
+                      background: "linear-gradient(135deg, rgba(17, 41, 35, 0.06), rgba(201, 168, 76, 0.12))",
+                    }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        flexShrink: 0,
+                        display: "grid",
+                        placeItems: "center",
+                        borderRadius: "12px",
+                        color: "#fff",
+                        background: "var(--z-emerald)",
+                        fontWeight: 700,
+                      }}>
+                        {selectedTable?.displayId || (selectedTable ? `T-${selectedTable.number}` : <FiMapPin />)}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: "var(--z-emerald)" }}>
+                          {selectedTable?.location || "No table selected"}
+                        </div>
+                        <div style={{ fontSize: "0.78rem", opacity: 0.65 }}>
+                          {selectedTable
+                            ? `${selectedTable.type} · Table ${selectedTable.number} · ${selectedTable.capacity} seats`
+                            : "Go back and select an available table"}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="h_input_box">
