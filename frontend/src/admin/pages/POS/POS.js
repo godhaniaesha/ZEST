@@ -3,7 +3,6 @@ import { Row, Col } from "react-bootstrap";
 import {
   MdShoppingCart,
   MdPayment,
-  MdSearch,
   MdDelete,
   MdAdd,
   MdRemove,
@@ -140,6 +139,10 @@ export default function POS() {
   );
   const [reservationOrders, setReservationOrders] = useState([]);
   const [cart, setCart] = useState([]);
+  const [showAddOrder, setShowAddOrder] = useState(false);
+  const [addOrderItems, setAddOrderItems] = useState([]);
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState(getSavedPaymentMethod);
   const [upiVpa, setUpiVpa] = useState("");
   const [cashAmount, setCashAmount] = useState("");
@@ -663,6 +666,128 @@ export default function POS() {
     );
   };
 
+  const addMenuItemToOrder = (menuItem) => {
+    setAddOrderItems((items) => {
+      const existingItem = items.find((item) => item._id === menuItem._id);
+      if (existingItem) {
+        return items.map((item) =>
+          item._id === menuItem._id ? { ...item, qty: item.qty + 1 } : item,
+        );
+      }
+      return [...items, { ...menuItem, qty: 1 }];
+    });
+  };
+
+  const updateAddOrderItemQty = (menuItemId, delta) => {
+    setAddOrderItems((items) =>
+      items
+        .map((item) =>
+          item._id === menuItemId
+            ? { ...item, qty: Math.max(0, item.qty + delta) }
+            : item,
+        )
+        .filter((item) => item.qty > 0),
+    );
+  };
+
+  const availableMenuItems = menuItems.filter(
+    (item) =>
+      item.status === "Available" &&
+      item.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
+  );
+
+  const handleAddOrder = async () => {
+    if ((!selectedReservation && !selectedOrder) || addOrderItems.length === 0) {
+      return;
+    }
+
+    const tableLabel = getTableLabel(selectedReservationData);
+    const addedItems = addOrderItems.map((item) => ({
+      name: item.name,
+      qty: item.qty,
+      price: item.price,
+      menuItemId: item._id,
+      status: "Pending",
+    }));
+    const addedAmount = addOrderItems.reduce(
+      (sum, item) => sum + Number(item.price) * item.qty,
+      0,
+    );
+    const currentTime = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const openOrder = reservationOrders
+      .filter(isUnpaidOrder)
+      .sort(
+        (first, second) =>
+          new Date(second.createdAt || 0) - new Date(first.createdAt || 0),
+      )[0];
+
+    try {
+      setOrderSubmitting(true);
+      setOrderError("");
+      let updatedOrder;
+
+      if (openOrder) {
+        const response = await ordersAPI.update(openOrder._id, {
+          items: [...(openOrder.items || []), ...addedItems],
+          amount: Number(openOrder.amount || 0) + addedAmount,
+          status: "Pending",
+          time: currentTime,
+        });
+        updatedOrder = response.data;
+      } else {
+        const response = await ordersAPI.create({
+          table: tableLabel,
+          waiter: "POS",
+          items: addedItems,
+          type:
+            selectedReservationData?.table?.type === "Bar"
+              ? "Bar"
+              : "Dine-in",
+          amount: addedAmount,
+          status: "Pending",
+          time: currentTime,
+          reservationId:
+            selectedReservation || selectedOrder?.reservationId || null,
+        });
+        updatedOrder = response.data;
+      }
+
+      if (!updatedOrder?._id) {
+        throw new Error(
+          "The order could not be updated. Please refresh and try again.",
+        );
+      }
+
+      const updatedOrders = reservationOrders.map((order) =>
+        order._id === updatedOrder._id ? updatedOrder : order,
+      );
+      if (!openOrder) updatedOrders.push(updatedOrder);
+      setReservationOrders(updatedOrders);
+      if (selectedOrder) setSelectedOrder(updatedOrder);
+      setCart(
+        buildBillFromOrders(
+          updatedOrders,
+          selectedReservationData?.advancePaid || 0,
+        ).items,
+      );
+      setAddOrderItems([]);
+      setShowAddOrder(false);
+      await loadPosData();
+    } catch (error) {
+      console.error("Error adding items to order:", error);
+      setOrderError(
+        error.response?.data?.message ||
+          error.message ||
+          "Could not add items to the order.",
+      );
+    } finally {
+      setOrderSubmitting(false);
+    }
+  };
+
   return (
     <>
       <div className="d-page-header">
@@ -827,6 +952,10 @@ export default function POS() {
                         setSelectedReservation(r._id);
                         setSelectedOrder(null);
                         setSelectedOrderId("");
+                        setShowAddOrder(false);
+                        setAddOrderItems([]);
+                        setOrderError("");
+                        setSearchQuery("");
                       }}
                       style={{
                         textAlign: "left",
@@ -923,6 +1052,10 @@ export default function POS() {
                         setSelectedOrder(order);
                         setSelectedOrderId(order._id);
                         setSelectedReservation("");
+                        setShowAddOrder(false);
+                        setAddOrderItems([]);
+                        setOrderError("");
+                        setSearchQuery("");
                       }}
                       style={{
                         textAlign: "left",
@@ -987,6 +1120,20 @@ export default function POS() {
               </div>
               {selectedReservationData && (
                 <div className="d-flex gap-2 flex-wrap align-items-center">
+                  {(selectedReservation || selectedOrder) && (
+                    <button
+                      type="button"
+                      className="d-btn-outline"
+                      style={{ fontSize: "0.72rem", padding: "4px 12px" }}
+                      onClick={() => {
+                        setShowAddOrder((open) => !open);
+                        setOrderError("");
+                      }}
+                    >
+                      <MdAdd className="me-1" />
+                      {showAddOrder ? "Close" : "Add Order"}
+                    </button>
+                  )}
                   {cart.length > 0 && (
                     <button
                       type="button"
@@ -1016,10 +1163,12 @@ export default function POS() {
                     }}
                   >
                     {selectedOrder
+                    ? selectedOrder.status === "Completed"
                       ? "Kitchen Done"
-                      : selectedReservationData.status === "Completed"
-                        ? "Items Served"
-                        : "Table Occupied"}
+                      : "Kitchen In Progress"
+                    : selectedReservationData.status === "Completed"
+                      ? "Items Served"
+                      : "Table Occupied"}
                   </span>
                   {selectedReservationData.fullPaymentDone && (
                     <span
@@ -1053,6 +1202,112 @@ export default function POS() {
                 </div>
               )}
             </div>
+            {showAddOrder && (selectedReservation || selectedOrder) && (
+              <div
+                className="mt-3 p-3"
+                style={{
+                  border: "1px solid var(--d-border,#e2e0da)",
+                  borderRadius: "12px",
+                  background: "var(--d-bg,#f5f4f0)",
+                }}
+              >
+                <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                  <strong>Add items for {getTableLabel(selectedReservationData)}</strong>
+                  <input
+                    className="form-control"
+                    style={{ maxWidth: "240px" }}
+                    type="search"
+                    placeholder="Search menu"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                  />
+                </div>
+                <div style={{ maxHeight: "260px", overflowY: "auto" }}>
+                  {availableMenuItems.length > 0 ? (
+                    availableMenuItems.map((item) => {
+                      const selectedItem = addOrderItems.find(
+                        (orderItem) => orderItem._id === item._id,
+                      );
+                      return (
+                        <div
+                          key={item._id}
+                          className="d-flex justify-content-between align-items-center gap-3 py-2"
+                          style={{
+                            borderBottom: "1px solid var(--d-border,#e2e0da)",
+                          }}
+                        >
+                          <div>
+                            <strong>{item.name}</strong>
+                            <div className="text-muted small">
+                              ₹{roundUpPrice(item.price)}
+                            </div>
+                          </div>
+                          {selectedItem ? (
+                            <div className="d-flex align-items-center gap-2">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-light p-1"
+                                aria-label={`Remove one ${item.name}`}
+                                disabled={orderSubmitting}
+                                onClick={() =>
+                                  updateAddOrderItemQty(item._id, -1)
+                                }
+                              >
+                                <MdRemove />
+                              </button>
+                              <span>{selectedItem.qty}</span>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-light p-1"
+                                aria-label={`Add one ${item.name}`}
+                                disabled={orderSubmitting}
+                                onClick={() => addMenuItemToOrder(item)}
+                              >
+                                <MdAdd />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="d-btn-outline"
+                              style={{ fontSize: "0.72rem", padding: "4px 12px" }}
+                              disabled={orderSubmitting}
+                              onClick={() => addMenuItemToOrder(item)}
+                            >
+                              <MdAdd className="me-1" /> Add
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-muted small py-3">
+                      No available menu items found.
+                    </div>
+                  )}
+                </div>
+                {orderError && (
+                  <div className="alert alert-danger py-2 small mt-3 mb-0">
+                    {orderError}
+                  </div>
+                )}
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                  <span className="text-muted small">
+                    {addOrderItems.reduce((sum, item) => sum + item.qty, 0)} item(s)
+                    selected
+                  </span>
+                  <button
+                    type="button"
+                    className="d-btn-gold"
+                    disabled={addOrderItems.length === 0 || orderSubmitting}
+                    onClick={handleAddOrder}
+                  >
+                    <MdShoppingCart className="me-2" />
+                    {orderSubmitting ? "Updating..." : "Add Items & Send"}
+                  </button>
+                </div>
+              </div>
+            )}
             {(selectedReservation || selectedOrder) && (
               <div className="d-table-wrap mt-3">
                 <table className="d-table">
