@@ -363,7 +363,7 @@ export default function Staff() {
           </div>
         </div>
         <div className="d-flex gap-2">
-          <button className="d-btn-outline d-hide-mobile">Shift Roster</button>
+          {/* <button className="d-btn-outline d-hide-mobile">Shift Roster</button> */}
           {canAddEditDelete && (
             <button className="d-btn-gold" onClick={handleAdd}>
               <MdAdd /> Add Member
