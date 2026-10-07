@@ -1222,69 +1222,79 @@ export default function POS() {
                     onChange={(event) => setSearchQuery(event.target.value)}
                   />
                 </div>
-                <div style={{ maxHeight: "260px", overflowY: "auto" }}>
-                  {availableMenuItems.length > 0 ? (
-                    availableMenuItems.map((item) => {
-                      const selectedItem = addOrderItems.find(
-                        (orderItem) => orderItem._id === item._id,
-                      );
-                      return (
-                        <div
-                          key={item._id}
-                          className="d-flex justify-content-between align-items-center gap-3 py-2"
-                          style={{
-                            borderBottom: "1px solid var(--d-border,#e2e0da)",
-                          }}
-                        >
-                          <div>
-                            <strong>{item.name}</strong>
-                            <div className="text-muted small">
-                              ₹{roundUpPrice(item.price)}
-                            </div>
-                          </div>
-                          {selectedItem ? (
-                            <div className="d-flex align-items-center gap-2">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-light p-1"
-                                aria-label={`Remove one ${item.name}`}
-                                disabled={orderSubmitting}
-                                onClick={() =>
-                                  updateAddOrderItemQty(item._id, -1)
-                                }
-                              >
-                                <MdRemove />
-                              </button>
-                              <span>{selectedItem.qty}</span>
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-light p-1"
-                                aria-label={`Add one ${item.name}`}
-                                disabled={orderSubmitting}
-                                onClick={() => addMenuItemToOrder(item)}
-                              >
-                                <MdAdd />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              className="d-btn-outline"
-                              style={{ fontSize: "0.72rem", padding: "4px 12px" }}
-                              disabled={orderSubmitting}
-                              onClick={() => addMenuItemToOrder(item)}
-                            >
-                              <MdAdd className="me-1" /> Add
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-muted small py-3">
-                      No available menu items found.
-                    </div>
-                  )}
+                <div className="d-pos-add-menu-table-wrap">
+                  <table className="d-pos-add-menu-table">
+                    <thead>
+                      <tr>
+                        <th>Menu Item</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availableMenuItems.length > 0 ? (
+                        availableMenuItems.map((item) => {
+                          const selectedItem = addOrderItems.find(
+                            (orderItem) => orderItem._id === item._id,
+                          );
+                          return (
+                            <tr key={item._id}>
+                              <td className="d-pos-add-menu-name">
+                                <strong title={item.name}>{item.name}</strong>
+                              </td>
+                              <td className="d-pos-add-menu-price">
+                                ₹{roundUpPrice(item.price)}
+                              </td>
+                              <td>
+                                {selectedItem ? (
+                                  <div className="d-pos-qty-control">
+                                    <button
+                                      type="button"
+                                      className="d-pos-qty-button"
+                                      aria-label={`Remove one ${item.name}`}
+                                      disabled={orderSubmitting}
+                                      onClick={() =>
+                                        updateAddOrderItemQty(item._id, -1)
+                                      }
+                                    >
+                                      <MdRemove />
+                                    </button>
+                                    <span className="d-pos-qty-value">
+                                      {selectedItem.qty}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className="d-pos-qty-button"
+                                      aria-label={`Add one ${item.name}`}
+                                      disabled={orderSubmitting}
+                                      onClick={() => addMenuItemToOrder(item)}
+                                    >
+                                      <MdAdd />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="d-pos-add-menu-button"
+                                    disabled={orderSubmitting}
+                                    onClick={() => addMenuItemToOrder(item)}
+                                  >
+                                    <MdAdd className="me-1" /> Add
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan="3" className="d-pos-add-menu-empty">
+                            No available menu items found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
                 {orderError && (
                   <div className="alert alert-danger py-2 small mt-3 mb-0">
@@ -1309,8 +1319,13 @@ export default function POS() {
               </div>
             )}
             {(selectedReservation || selectedOrder) && (
-              <div className="d-table-wrap mt-3">
-                <table className="d-table">
+              <div
+                className="d-table-wrap d-pos-bill-table-wrap mt-3"
+                style={{
+                  maxHeight: "282px",
+                }}
+              >
+                <table className="d-table d-pos-bill-table">
                   <thead>
                     <tr>
                       <th>Item</th>
@@ -1338,14 +1353,16 @@ export default function POS() {
                     ) : (
                       cart.map((item) => (
                         <tr key={item.id || item._id || item.name}>
-                          <td>
+                          <td className="d-pos-bill-item-name">
                             <strong>{item.name}</strong>
                           </td>
                           <td>₹{roundUpPrice(item.price)}</td>
                           <td>
-                            <div className="d-flex align-items-center gap-2">
+                            <div className="d-pos-qty-control">
                               <button
-                                className="btn btn-sm btn-light p-1"
+                                type="button"
+                                className="d-pos-qty-button"
+                                aria-label={`Decrease ${item.name} quantity`}
                                 onClick={() =>
                                   updateQty(
                                     item.id || item._id || item.name,
@@ -1355,9 +1372,11 @@ export default function POS() {
                               >
                                 <MdRemove />
                               </button>
-                              <span>{item.qty}</span>
+                              <span className="d-pos-qty-value">{item.qty}</span>
                               <button
-                                className="btn btn-sm btn-light p-1"
+                                type="button"
+                                className="d-pos-qty-button"
+                                aria-label={`Increase ${item.name} quantity`}
                                 onClick={() =>
                                   updateQty(item.id || item._id || item.name, 1)
                                 }
@@ -1371,7 +1390,9 @@ export default function POS() {
                           </td>
                           <td>
                             <button
-                              className="text-danger border-0 bg-transparent"
+                              type="button"
+                              className="d-pos-remove-item"
+                              aria-label={`Remove ${item.name} from bill`}
                               onClick={() =>
                                 removeFromCart(item.id || item._id || item.name)
                               }

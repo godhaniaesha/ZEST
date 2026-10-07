@@ -1952,6 +1952,453 @@ body {
 
 }
 
+.d-pos-bill-table-wrap {
+
+  overflow-x: auto;
+
+  overflow-y: auto;
+
+  scrollbar-width: thin;
+
+  scrollbar-color: var(--d-accent-muted) var(--d-bg);
+
+}
+
+.d-pos-bill-table-wrap::-webkit-scrollbar {
+
+  width: 8px;
+
+  height: 8px;
+
+}
+
+.d-pos-bill-table-wrap::-webkit-scrollbar-track {
+
+  background: var(--d-bg);
+
+}
+
+.d-pos-bill-table-wrap::-webkit-scrollbar-thumb {
+
+  background: var(--d-accent-muted);
+
+  border-radius: 8px;
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table {
+
+  min-width: 620px;
+
+  border-collapse: separate;
+
+  border-spacing: 0;
+
+  table-layout: fixed;
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table th {
+
+  position: sticky;
+
+  top: 0;
+
+  z-index: 1;
+
+  height: 42px;
+
+  padding: 8px 14px;
+
+  background: var(--d-primary, #16302b);
+
+  color: var(--d-accent, #f5f4f0);
+
+  border-bottom: 2px solid var(--d-gold, #c9a84c);
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table th:first-child,
+.d-pos-bill-table-wrap .d-pos-bill-table td:first-child {
+
+  width: 36%;
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table th:nth-child(2),
+.d-pos-bill-table-wrap .d-pos-bill-table td:nth-child(2) {
+
+  width: 16%;
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table th:nth-child(3),
+.d-pos-bill-table-wrap .d-pos-bill-table td:nth-child(3) {
+
+  width: 20%;
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table th:nth-child(4),
+.d-pos-bill-table-wrap .d-pos-bill-table td:nth-child(4) {
+
+  width: 18%;
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table th:last-child,
+.d-pos-bill-table-wrap .d-pos-bill-table td:last-child {
+
+  width: 10%;
+
+  text-align: center;
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table tbody tr {
+
+  height: 48px;
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table td {
+
+  height: 48px;
+
+  padding: 7px 14px;
+
+  background: var(--d-bg-card, #fff);
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table tbody tr:nth-child(even) td {
+
+  background: var(--d-bg, #f5f4f0);
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-table tbody tr:hover td {
+
+  background: var(--d-accent-soft);
+
+}
+
+.d-pos-bill-table-wrap .d-pos-bill-item-name strong {
+
+  display: block;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+}
+
+.d-pos-add-menu-table-wrap {
+
+  max-height: 282px;
+
+  overflow: auto;
+
+  border: 1px solid var(--d-border);
+
+  border-radius: var(--d-radius-md);
+
+  background: var(--d-bg-card);
+
+  scrollbar-width: thin;
+
+  scrollbar-color: var(--d-accent-muted) var(--d-bg);
+
+}
+
+.d-pos-add-menu-table-wrap::-webkit-scrollbar {
+
+  width: 8px;
+
+  height: 8px;
+
+}
+
+.d-pos-add-menu-table-wrap::-webkit-scrollbar-track {
+
+  background: var(--d-bg);
+
+}
+
+.d-pos-add-menu-table-wrap::-webkit-scrollbar-thumb {
+
+  background: var(--d-accent-muted);
+
+  border-radius: 8px;
+
+}
+
+.d-pos-add-menu-table {
+
+  width: 100%;
+
+  min-width: 480px;
+
+  border-collapse: separate;
+
+  border-spacing: 0;
+
+  table-layout: fixed;
+
+  font-family: "Lato", sans-serif;
+
+  font-size: 0.85rem;
+
+}
+
+.d-pos-add-menu-table th {
+
+  position: sticky;
+
+  top: 0;
+
+  z-index: 1;
+
+  height: 42px;
+
+  padding: 8px 14px;
+
+  background: var(--d-primary, #16302b);
+
+  color: var(--d-accent, #f5f4f0);
+
+  border-bottom: 2px solid var(--d-gold, #c9a84c);
+
+  text-align: left;
+
+  font-size: 0.7rem;
+
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+
+}
+
+.d-pos-add-menu-table th:first-child,
+.d-pos-add-menu-table td:first-child {
+
+  width: 52%;
+
+}
+
+.d-pos-add-menu-table th:nth-child(2),
+.d-pos-add-menu-table td:nth-child(2) {
+
+  width: 20%;
+
+}
+
+.d-pos-add-menu-table th:last-child,
+.d-pos-add-menu-table td:last-child {
+
+  width: 28%;
+
+}
+
+.d-pos-add-menu-table td {
+
+  height: 48px;
+
+  padding: 6px 14px;
+
+  border-bottom: 1px solid var(--d-border);
+
+  color: var(--d-text);
+
+  vertical-align: middle;
+
+}
+
+.d-pos-add-menu-table tbody tr:nth-child(even) td {
+
+  background: var(--d-bg, #f5f4f0);
+
+}
+
+.d-pos-add-menu-table tbody tr:hover td {
+
+  background: var(--d-accent-soft);
+
+}
+
+.d-pos-add-menu-name strong {
+
+  display: block;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+}
+
+.d-pos-add-menu-price {
+
+  font-weight: 700;
+
+  white-space: nowrap;
+
+}
+
+.d-pos-add-menu-table .d-pos-qty-control {
+
+  gap: 5px;
+
+}
+
+.d-pos-add-menu-table .d-pos-qty-button {
+
+  width: 28px;
+
+  height: 28px;
+
+}
+
+.d-pos-add-menu-button {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 5px 10px;
+
+  border: 1px solid var(--d-gold, #c9a84c);
+
+  border-radius: 8px;
+
+  background: var(--d-bg-card, #fff);
+
+  color: var(--d-primary, #16302b);
+
+  font-size: 0.72rem;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+}
+
+.d-pos-add-menu-button:hover:not(:disabled) {
+
+  background: var(--d-primary, #16302b);
+
+  color: var(--d-accent, #f5f4f0);
+
+}
+
+.d-pos-add-menu-button:disabled {
+
+  cursor: not-allowed;
+
+  opacity: 0.55;
+
+}
+
+.d-pos-add-menu-empty {
+
+  height: 70px;
+
+  text-align: center;
+
+  color: var(--d-text-muted);
+
+}
+
+.d-pos-qty-control {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+}
+
+.d-pos-qty-button {
+
+  display: inline-flex;
+
+  width: 30px;
+
+  height: 30px;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid var(--d-border);
+
+  border-radius: 8px;
+
+  background: var(--d-bg-card, #fff);
+
+  color: var(--d-primary, #16302b);
+
+  cursor: pointer;
+
+}
+
+.d-pos-qty-button:hover {
+
+  border-color: var(--d-gold, #c9a84c);
+
+  background: var(--d-accent-soft);
+
+}
+
+.d-pos-qty-value {
+
+  min-width: 18px;
+
+  text-align: center;
+
+  font-weight: 700;
+
+}
+
+.d-pos-remove-item {
+
+  display: inline-flex;
+
+  width: 30px;
+
+  height: 30px;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #d64545;
+
+  cursor: pointer;
+
+}
+
+.d-pos-remove-item:hover {
+
+  background: rgba(214, 69, 69, 0.1);
+
+}
 
 
 .d-table-status-grid {
@@ -4807,4 +5254,3 @@ body {
   }
 
 }
-
