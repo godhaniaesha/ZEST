@@ -546,7 +546,10 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(400).json({ message: 'Invalid leave request ID' });
     }
 
-    const { staffId, startDate, endDate, startTime, endTime, type, reason } = req.body;
+    const {
+      staffId, startDate, endDate, startTime, endTime, type, reason,
+      status, rejectionReason,
+    } = req.body;
 
     const leave = await Leave.findById(id);
 
@@ -557,6 +560,19 @@ router.put('/:id', auth, async (req, res) => {
     const admin = isAdmin(req.user);
     if (!admin && (String(leave.staffId) !== String(req.user.id) || leave.status !== 'pending')) {
       return res.status(403).json({ message: 'Only your own pending leave request can be edited' });
+    }
+    if (status !== undefined && !admin) {
+      return res.status(403).json({ message: 'Only an admin can change leave status' });
+    }
+    if (status !== undefined && !['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid leave status' });
+    }
+    const trimmedRejectionReason = typeof rejectionReason === 'string' ? rejectionReason.trim() : '';
+    if (status === 'rejected' && !trimmedRejectionReason) {
+      return res.status(400).json({ message: 'A rejection reason is required' });
+    }
+    if (status === 'approved' && leave.status !== 'approved' && String(leave.staffId) === String(req.user.id)) {
+      return res.status(400).json({ message: 'You cannot approve your own leave request' });
     }
 
     const updateData = {};
@@ -601,6 +617,7 @@ router.put('/:id', auth, async (req, res) => {
     if (reason !== undefined && !reason.trim()) {
       return res.status(400).json({ message: 'A reason is required' });
     }
+    if (status !== undefined) updateData.status = status;
 
     if (!admin) {
       const overlappingLeave = await Leave.findOne({
@@ -615,19 +632,35 @@ router.put('/:id', auth, async (req, res) => {
       }
     }
 
-    // Status changes are handled by the approve / reject / cancel endpoints
-    delete req.body.status;
-    delete updateData.status;
-
+    const previousStaffId = String(leave.staffId);
     const previousStatus = leave.status;
     const previousDays = leave.days;
 
     Object.assign(leave, updateData);
+    if (status === 'approved') {
+      leave.approvedBy = req.user.id;
+      leave.approvedDate = new Date();
+      leave.rejectionReason = undefined;
+    } else if (status === 'rejected') {
+      leave.approvedBy = req.user.id;
+      leave.approvedDate = new Date();
+      leave.rejectionReason = trimmedRejectionReason;
+    } else if (status === 'pending') {
+      leave.approvedBy = undefined;
+      leave.approvedDate = undefined;
+      leave.rejectionReason = undefined;
+    }
     const saved = await leave.save();
 
-    // If an approved leave is edited, re-sync the balance with the new day count
-    if (previousStatus === 'approved' && saved.days !== previousDays) {
-      await adjustLeavesTaken(saved.staffId, saved.days - previousDays);
+    const currentStaffId = String(saved.staffId);
+    const previousApprovedDays = previousStatus === 'approved' ? previousDays : 0;
+    const currentApprovedDays = saved.status === 'approved' ? saved.days : 0;
+    if (previousStaffId === currentStaffId) {
+      const daysDelta = currentApprovedDays - previousApprovedDays;
+      if (daysDelta !== 0) await adjustLeavesTaken(saved.staffId, daysDelta);
+    } else {
+      if (previousApprovedDays !== 0) await adjustLeavesTaken(previousStaffId, -previousApprovedDays);
+      if (currentApprovedDays !== 0) await adjustLeavesTaken(saved.staffId, currentApprovedDays);
     }
 
     res.json(saved);

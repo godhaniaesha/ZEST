@@ -789,7 +789,7 @@ export default function POS() {
   };
 
   return (
-    <>
+    <div className="pos-billing-page">
       <div className="d-page-header">
         <div>
           <div className="d-page-heading d-flex align-items-center gap-2">
@@ -808,12 +808,7 @@ export default function POS() {
 
       {/* ── LIVE STATS BAR ── */}
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
-          gap: "12px",
-          marginBottom: "20px",
-        }}
+        className="responsive-grid"
       >
         {[
           {
@@ -892,7 +887,7 @@ export default function POS() {
         ))}
       </div>
 
-      <Row className="g-4">
+      <Row className="g-4 pos-billing-layout">
         <Col xs={12} lg={8}>
           {/* ── PENDING PAYMENT TABLES (dynamic) ── */}
           <div className="d-card mb-4">
@@ -2228,6 +2223,6 @@ export default function POS() {
           font-size: 0.9rem;
         }
       `}</style>
-    </>
+    </div>
   );
 }

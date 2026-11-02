@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button } from 'react-bootstrap';
 import {
   MdTableRestaurant, MdFiberManualRecord, MdPeople,
-  MdCalendarToday, MdViewList, MdGridView, MdArrowBack
+  MdViewList, MdGridView, MdArrowBack
 } from 'react-icons/md';
 import { tablesAPI } from '../../../api';
 
 export default function TableBooking() {
   const [tables, setTables] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid'); // 'grid', 'list', or 'detail'
   const [selectedTable, setSelectedTable] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -74,13 +74,17 @@ export default function TableBooking() {
 
   const handleTableClick = (table) => {
     setSelectedTable(table);
-    setViewMode('list');
+    setViewMode('detail');
   };
 
   const handleBackToGrid = () => {
     setSelectedTable(null);
     setViewMode('grid');
   };
+
+  const getTableName = (table) => (
+    table.displayId || (table.type === 'Bar' ? 'B-' : 'C-') + String(table.number).padStart(2, '0')
+  );
 
   // Generate time slots from 10 AM to 10 PM
   const generateTimeSlots = () => {
@@ -98,7 +102,7 @@ export default function TableBooking() {
   const timeSlots = generateTimeSlots();
 
   return (
-    <>
+    <div className="table-booking-page">
       <div className="d-page-header">
         <div>
           <div className="d-page-heading d-flex align-items-center gap-2">
@@ -108,7 +112,6 @@ export default function TableBooking() {
         </div>
         <div className="d-flex gap-3 align-items-center flex-wrap">
           <div className="d-flex gap-2 align-items-center">
-            <MdCalendarToday />
             <input
               type="date"
               value={selectedDate}
@@ -123,7 +126,10 @@ export default function TableBooking() {
           </div>
           <div className="d-flex gap-2">
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={() => {
+                setSelectedTable(null);
+                setViewMode('grid');
+              }}
               style={{
                 padding: '8px 16px',
                 border: '1.5px solid var(--d-border)',
@@ -141,7 +147,10 @@ export default function TableBooking() {
               <MdGridView /> Grid View
             </button>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => {
+                setSelectedTable(null);
+                setViewMode('list');
+              }}
               style={{
                 padding: '8px 16px',
                 border: '1.5px solid var(--d-border)',
@@ -162,7 +171,7 @@ export default function TableBooking() {
         </div>
       </div>
 
-      <div className="d-flex gap-3 align-items-center mb-4">
+      <div className="d-flex flex-wrap gap-3 align-items-center mb-4 table-booking-legend">
         <div className="d-flex align-items-center gap-2 small fw-bold">
           <MdFiberManualRecord style={{ color: 'var(--d-success)' }} /> Free
         </div>
@@ -189,11 +198,7 @@ export default function TableBooking() {
               <p className="mt-3">No tables found</p>
             </div>
           ) : (
-            <div className="d-table-status-grid mt-4" style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '20px'
-            }}>
+            <div className="d-table-status-grid mt-4">
               {tables.map((table) => (
                 <Card
                   key={table._id}
@@ -215,7 +220,7 @@ export default function TableBooking() {
                       color: 'var(--d-primary)',
                       marginBottom: '8px'
                     }}>
-                      {table.displayId || (table.type === 'Bar' ? 'B-' : 'C-') + String(table.number).padStart(2, '0')}
+                      {getTableName(table)}
                     </div>
                     <div style={{
                       display: 'flex',
@@ -289,6 +294,48 @@ export default function TableBooking() {
 
       {viewMode === 'list' && (
         <div className="d-card">
+          <div className="d-section-title">Table Availability</div>
+          <div className="d-section-sub">
+            {loading ? 'Loading...' : `${tables.length} tables · ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
+          </div>
+          {loading ? (
+            <div className="text-center py-5 text-muted">Loading tables...</div>
+          ) : tables.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              <MdTableRestaurant fontSize="3rem" />
+              <p className="mt-3">No tables found</p>
+            </div>
+          ) : (
+            <div className="table-booking-list mt-3">
+              {tables.map((table) => (
+                <button
+                  type="button"
+                  key={table._id}
+                  className="table-booking-list-row"
+                  onClick={() => handleTableClick(table)}
+                >
+                  <span className="table-booking-list-name">{getTableName(table)}</span>
+                  <span className="table-booking-list-meta">
+                    <span><MdPeople /> {table.capacity} seats</span>
+                    <span>{table.type}</span>
+                    <span>{table.location || 'Location not set'}</span>
+                    <span>{table.reservations?.length || 0} reservations</span>
+                  </span>
+                  <span
+                    className="table-booking-list-status"
+                    style={{ color: getStatusColor(table.status), background: getStatusBg(table.status) }}
+                  >
+                    {table.status}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {viewMode === 'detail' && (
+        <div className="d-card">
           <div className="d-page-heading d-flex align-items-center gap-2 mb-3">
             <Button
               variant="outline-secondary"
@@ -300,7 +347,7 @@ export default function TableBooking() {
             </Button>
             {selectedTable && (
               <span>
-                {selectedTable.displayId || (selectedTable.type === 'Bar' ? 'B-' : 'C-') + String(selectedTable.number).padStart(2, '0')} - 
+                {getTableName(selectedTable)} -
                 {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             )}
@@ -393,6 +440,6 @@ export default function TableBooking() {
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }

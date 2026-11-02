@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import { 
   MdPerson, MdEmail, MdPhone, MdLocationOn, 
@@ -6,12 +6,21 @@ import {
   MdCameraAlt, MdVerified, MdRefresh
 } from 'react-icons/md';
 import { authAPI, usersAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function Profile() {
+  const { syncUser } = useAuth();
+  const profileFormRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   
   const [profileData, setProfileData] = useState({
     id: '',
@@ -56,7 +65,7 @@ export default function Profile() {
       setEditForm({
         name: userData.name,
         email: userData.email,
-        phone: userData.phone,
+        phone: userData.phone.replace(/\D/g, '').slice(0, 10),
         address: userData.address,
         image: null,
         imagePreview: userData.image
@@ -71,7 +80,8 @@ export default function Profile() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
+    const nextValue = name === 'phone' ? value.replace(/\D/g, '').slice(0, 10) : value;
+    setEditForm(prev => ({ ...prev, [name]: nextValue }));
   };
 
   const handleImageChange = (e) => {
@@ -91,7 +101,7 @@ export default function Profile() {
       setEditForm({
         name: profileData.name,
         email: profileData.email,
-        phone: profileData.phone,
+        phone: profileData.phone.replace(/\D/g, '').slice(0, 10),
         address: profileData.address,
         image: null,
         imagePreview: profileData.image
@@ -101,6 +111,8 @@ export default function Profile() {
   };
 
   const handleSave = async () => {
+    if (!profileFormRef.current?.reportValidity()) return;
+
     if (!profileData.id) {
       console.error('Save failed: profileData.id is missing', profileData);
       alert('Error: User ID not found. Please refresh the page.');
@@ -113,10 +125,10 @@ export default function Profile() {
       console.log('User ID:', profileData.id);
       
       const formData = new FormData();
-      formData.append('name', editForm.name);
-      formData.append('email', editForm.email);
+      formData.append('name', editForm.name.trim());
+      formData.append('email', editForm.email.trim());
       formData.append('phone', editForm.phone);
-      formData.append('address', editForm.address);
+      formData.append('address', editForm.address.trim());
       
       if (editForm.image) {
         formData.append('image', editForm.image);
@@ -136,6 +148,7 @@ export default function Profile() {
       alert('Profile updated successfully!');
       
       const updatedUser = response.data;
+      syncUser(updatedUser);
       setProfileData({
         ...profileData,
         name: updatedUser.name || '',
@@ -156,6 +169,40 @@ export default function Profile() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      alert('Please fill in all password fields.');
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      alert('New password must be at least 8 characters long.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      alert('New password and confirmation do not match.');
+      return;
+    }
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      alert('New password must be different from the current password.');
+      return;
+    }
+
+    try {
+      setPasswordSaving(true);
+      await authAPI.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      alert('Password updated successfully.');
+    } catch (error) {
+      console.error('Could not update password:', error);
+      alert(error.response?.data?.message || 'Could not update password.');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
@@ -171,13 +218,14 @@ export default function Profile() {
   }
 
   return (
-    <>
+    <div className="admin-profile-page">
       <div className="d-page-header">
         <div>
           <div className="d-page-heading">My Profile</div>
           <div className="d-page-sub">Manage your personal information and account settings</div>
         </div>
         <button 
+          type="button"
           className={isEditing ? 'd-btn-gold' : 'd-btn-outline'} 
           onClick={isEditing ? handleSave : handleEditToggle}
           disabled={saving}
@@ -260,16 +308,32 @@ export default function Profile() {
         <Col xs={12} lg={8}>
           <div className="d-card mb-4">
             <div className="d-section-title mb-4">Modify Your Details</div>
-            <Row className="g-3">
+            <form
+              ref={profileFormRef}
+              id="profile-edit-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (isEditing) handleSave();
+              }}
+            >
+              <Row className="g-3">
               <Col xs={12} md={6}>
                 <div className="mb-3">
-                  <label className="d-settings-label">Full Name</label>
+                  <label className="d-settings-label" htmlFor="profile-name">Full Name *</label>
                   <input 
                     className="d-settings-input" 
+                    id="profile-name"
+                    type="text"
                     name="name"
                     value={editForm.name}
                     onChange={handleInputChange}
                     disabled={!isEditing}
+                    required={isEditing}
+                    minLength={2}
+                    maxLength={80}
+                    pattern=".*\S.*"
+                    autoComplete="name"
+                    title="Enter a name between 2 and 80 characters."
                     placeholder="Enter full name"
                     style={{
                       width: '100%', padding: '10px 14px',
@@ -282,14 +346,19 @@ export default function Profile() {
               </Col>
               <Col xs={12} md={6}>
                 <div className="mb-3">
-                  <label className="d-settings-label">Email Address</label>
+                  <label className="d-settings-label" htmlFor="profile-email">Email Address *</label>
                   <input 
                     className="d-settings-input" 
+                    id="profile-email"
                     type="email"
                     name="email"
                     value={editForm.email}
                     onChange={handleInputChange}
+                    onBlur={() => setEditForm((prev) => ({ ...prev, email: prev.email.trim() }))}
                     disabled={!isEditing}
+                    required={isEditing}
+                    maxLength={254}
+                    autoComplete="email"
                     placeholder="Enter email address"
                     style={{
                       width: '100%', padding: '10px 14px',
@@ -302,14 +371,22 @@ export default function Profile() {
               </Col>
               <Col xs={12} md={6}>
                 <div className="mb-3">
-                  <label className="d-settings-label">Phone Number</label>
+                  <label className="d-settings-label" htmlFor="profile-phone">Phone Number *</label>
                   <input 
                     className="d-settings-input" 
+                    id="profile-phone"
+                    type="tel"
+                    inputMode="numeric"
                     name="phone"
                     value={editForm.phone}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    placeholder="+91 00000 00000"
+                    required={isEditing}
+                    pattern="[0-9]{10}"
+                    maxLength={10}
+                    autoComplete="tel-national"
+                    title="Enter exactly 10 digits."
+                    placeholder="10-digit phone number"
                     style={{
                       width: '100%', padding: '10px 14px',
                       border: '1.5px solid var(--d-border)', borderRadius: 'var(--d-radius-md)',
@@ -317,13 +394,17 @@ export default function Profile() {
                       fontSize: '0.9rem', outline: 'none'
                     }}
                   />
+                  {isEditing && (
+                    <small className="text-muted">Enter exactly 10 digits (numbers only).</small>
+                  )}
                 </div>
               </Col>
               <Col xs={12} md={6}>
                 <div className="mb-3">
-                  <label className="d-settings-label">Role</label>
+                  <label className="d-settings-label" htmlFor="profile-role">Role</label>
                   <input 
                     className="d-settings-input" 
+                    id="profile-role"
                     value={profileData.role}
                     disabled
                     style={{
@@ -337,14 +418,16 @@ export default function Profile() {
               </Col>
               <Col xs={12}>
                 <div className="mb-3">
-                  <label className="d-settings-label">Current Address</label>
+                  <label className="d-settings-label" htmlFor="profile-address">Current Address</label>
                   <textarea 
                     className="d-settings-input" 
+                    id="profile-address"
                     rows={3}
                     name="address"
                     value={editForm.address}
                     onChange={handleInputChange}
                     disabled={!isEditing}
+                    maxLength={250}
                     placeholder="Enter your current address"
                     style={{
                       width: '100%', padding: '10px 14px',
@@ -355,7 +438,8 @@ export default function Profile() {
                   />
                 </div>
               </Col>
-            </Row>
+              </Row>
+            </form>
           </div>
 
           <div className="d-card">
@@ -368,6 +452,8 @@ export default function Profile() {
                     <input 
                       className="d-settings-input" 
                       type={showPassword ? 'text' : 'password'}
+                      value={passwordForm.currentPassword}
+                      onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
                       placeholder="Enter current password"
                       style={{
                         width: '100%', padding: '10px 14px',
@@ -376,6 +462,7 @@ export default function Profile() {
                       }}
                     />
                     <button 
+                      type="button"
                       style={{
                         position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
                         background: 'none', border: 'none', cursor: 'pointer', color: 'var(--d-text-muted)'
@@ -393,6 +480,8 @@ export default function Profile() {
                   <input 
                     className="d-settings-input" 
                     type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
                     placeholder="Enter new password"
                     style={{
                       width: '100%', padding: '10px 14px',
@@ -408,6 +497,8 @@ export default function Profile() {
                   <input 
                     className="d-settings-input" 
                     type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
                     placeholder="Confirm new password"
                     style={{
                       width: '100%', padding: '10px 14px',
@@ -418,7 +509,14 @@ export default function Profile() {
                 </div>
               </Col>
               <Col xs={12}>
-                <button className="d-btn-gold"><MdLock /> Update Password</button>
+                <button
+                  type="button"
+                  className="d-btn-gold"
+                  onClick={handleChangePassword}
+                  disabled={passwordSaving}
+                >
+                  <MdLock /> {passwordSaving ? 'Updating...' : 'Update Password'}
+                </button>
               </Col>
             </Row>
           </div>
@@ -474,6 +572,6 @@ export default function Profile() {
           margin-right: auto;
         }
       `}</style>
-    </>
+    </div>
   );
 }

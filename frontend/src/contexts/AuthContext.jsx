@@ -120,6 +120,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const syncUser = (updatedUser) => {
+    setUser((currentUser) => currentUser ? { ...currentUser, ...updatedUser } : updatedUser);
+  };
+
   const changePassword = async (currentPassword, newPassword) => {
     try {
       await api.post('/auth/change-password', { currentPassword, newPassword });
@@ -130,7 +134,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile, updateProfileImage, changePassword }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile, updateProfileImage, syncUser, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

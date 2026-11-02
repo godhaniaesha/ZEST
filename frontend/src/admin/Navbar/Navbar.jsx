@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { MdNotifications, MdSearch, MdFullscreen, MdPerson, MdSettings, MdLogout } from 'react-icons/md';
 import LogoutConfirmModal from '../../components/LogoutConfirmModal';
@@ -40,11 +40,16 @@ const ROLE_LABELS = {
 export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRole }) {
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [avatarImageFailed, setAvatarImageFailed] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setAvatarImageFailed(false);
+  }, [user?.image]);
 
   const meta = PAGE_TITLES[location.pathname] || { title: 'Page', sub: '' };
 
@@ -156,19 +161,37 @@ export default function Navbar({ collapsed, sidebarOpen, onToggleSidebar, userRo
         <div className="d-divider-v" />
 
         <div className="d-profile-container">
-          <div
+          <button
+            type="button"
             className="d-avatar-wrap"
             onClick={() => setProfileOpen(!profileOpen)}
+            aria-haspopup="menu"
+            aria-expanded={profileOpen}
+            aria-label={`Open profile menu for ${user?.name || 'Admin User'}`}
           >
-            <div className="d-avatar">{getInitials(user?.name)}</div>
+            <div className="d-avatar">
+              {user?.image && !avatarImageFailed ? (
+                <img
+                  src={user.image}
+                  alt=""
+                  onError={() => setAvatarImageFailed(true)}
+                />
+              ) : (
+                getInitials(user?.name)
+              )}
+            </div>
             <div className="d-avatar-info">
               <span className="d-avatar-name">{user?.name || 'Admin User'}</span>
               <span className="d-avatar-role">{ROLE_LABELS[userRole] || 'Super Admin'}</span>
             </div>
-          </div>
+          </button>
 
           {profileOpen && (
-            <div className="d-profile-dropdown">
+            <div className="d-profile-dropdown" role="menu">
+              <div className="d-profile-menu-heading">
+                <strong>{user?.name || 'Admin User'}</strong>
+                <span>{ROLE_LABELS[userRole] || 'Super Admin'}</span>
+              </div>
               <Link to="/admin/profile" className="d-dropdown-item" onClick={() => setProfileOpen(false)}>
                 <MdPerson /> Profile
               </Link>

@@ -342,8 +342,12 @@ export default function LeaveManagement() {
       };
       if (currentItem) await leaveAPI.update(currentItem._id, dataToSend);
       else             await leaveAPI.create(dataToSend);
-      setShowForm(false); loadData();
-    } catch (e) { console.error(e); alert("Failed to save leave request"); }
+      setShowForm(false);
+      await loadData();
+    } catch (e) {
+      console.error(e);
+      alert(e.response?.data?.message || "Failed to save leave request");
+    }
   };
 
   const confirmDelete = async () => {
@@ -566,7 +570,7 @@ export default function LeaveManagement() {
           <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--d-gold, #C9A84C)', marginBottom: '12px' }}>
             📅 Leave Duration
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '10px', alignItems: 'center' }}>
+          <div className="rresponsive-grid">
             {/* Start Date */}
             <div>
               <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--d-text-muted, #6b7280)', marginBottom: '6px' }}>From</div>
