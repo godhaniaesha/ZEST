@@ -185,7 +185,7 @@ export default function TableBooking() {
 
       {viewMode === 'grid' && (
         <div className="d-card">
-          <div className="d-section-title">Table Availability - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+          <div className="d-section-title">Table Availability </div>
           <div className="d-section-sub">
             {loading ? 'Loading...' : `${tables.length} tables`}
           </div>
