@@ -724,21 +724,63 @@ export default function LeaveManagement() {
 
       </FormModal>
 
-      <Modal show={showView} onHide={() => setShowView(false)} centered>
+      <Modal
+        show={showView}
+        onHide={() => setShowView(false)}
+        centered
+        dialogClassName="leave-details-modal"
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Leave Request Details</Modal.Title>
+          <div>
+            <div className="leave-details-eyebrow"><MdEvent /> Leave request</div>
+            <Modal.Title>Request Details</Modal.Title>
+          </div>
         </Modal.Header>
         <Modal.Body>
           {currentItem && (
-            <div className="d-grid gap-2">
-              <div><strong>Staff:</strong> {currentItem.staffName} ({currentItem.role})</div>
-              <div><strong>Dates:</strong> {formatDateRange(currentItem.startDate, currentItem.endDate)}</div>
-              <div><strong>Duration:</strong> {currentItem.days} day{currentItem.days !== 1 ? "s" : ""}</div>
-              <div><strong>Working hours:</strong> {currentItem.startTime || "—"} - {currentItem.endTime || "—"}</div>
-              <div><strong>Leave type:</strong> {currentItem.type}</div>
-              <div><strong>Status:</strong> {currentItem.status}</div>
-              <div><strong>Reason:</strong> {currentItem.reason}</div>
-              {currentItem.rejectionReason && <div><strong>Rejection reason:</strong> {currentItem.rejectionReason}</div>}
+            <div className="leave-details-content">
+              <div className="leave-details-summary">
+                <div className="leave-details-avatar">
+                  {currentItem.staffName?.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="leave-details-staff">
+                  <strong>{currentItem.staffName}</strong>
+                  <span>{currentItem.role}</span>
+                </div>
+                <span className={`d-chip ${currentItem.status === "approved" ? "d-chip-green" : currentItem.status === "rejected" ? "d-chip-red" : "d-chip-gold"}`}>
+                  {currentItem.status}
+                </span>
+              </div>
+
+              <div className="leave-details-grid">
+                <div className="leave-details-item">
+                  <span className="leave-details-label">Dates</span>
+                  <strong>{formatDateRange(currentItem.startDate, currentItem.endDate)}</strong>
+                </div>
+                <div className="leave-details-item">
+                  <span className="leave-details-label">Duration</span>
+                  <strong>{currentItem.days} day{currentItem.days !== 1 ? "s" : ""}</strong>
+                </div>
+                <div className="leave-details-item">
+                  <span className="leave-details-label">Working hours</span>
+                  <strong>{currentItem.startTime || "—"} – {currentItem.endTime || "—"}</strong>
+                </div>
+                <div className="leave-details-item">
+                  <span className="leave-details-label">Leave type</span>
+                  <strong className="text-capitalize">{currentItem.type}</strong>
+                </div>
+              </div>
+
+              <div className="leave-details-note">
+                <span className="leave-details-label">Reason</span>
+                <p>{currentItem.reason || "No reason provided."}</p>
+              </div>
+              {currentItem.rejectionReason && (
+                <div className="leave-details-note leave-details-rejection">
+                  <span className="leave-details-label">Rejection reason</span>
+                  <p>{currentItem.rejectionReason}</p>
+                </div>
+              )}
             </div>
           )}
         </Modal.Body>

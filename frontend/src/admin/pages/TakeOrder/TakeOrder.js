@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Row, Col, Badge } from 'react-bootstrap';
+import { Row, Col, Badge, Dropdown } from 'react-bootstrap';
 import {
   MdSearch, MdLocalCafe, MdLocalBar, MdTableRestaurant,
   MdAdd, MdRemove, MdDeleteOutline, MdSend, MdHistory,
@@ -130,6 +130,7 @@ export default function TakeOrder() {
   const filteredItems = filteredMenuItems.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const selectedTableEntry = reservations.find((entry) => entry.value === selectedTable);
 
   const addToCart = (item) => {
     setCart(prev => {
@@ -252,19 +253,27 @@ export default function TakeOrder() {
             <div className="col-md-6">
               <div className="d-pos-table-select">
                 <MdTableRestaurant className="text-gold" fontSize="1.2rem" />
-                <select 
-                  value={selectedTable} 
-                  onChange={(e) => setSelectedTable(e.target.value)}
-                >
-                  <option className='d_cnf_tbl' value="">
-                    {loading ? 'Loading tables…' : reservations.length === 0 ? 'No tables available' : 'Select Table'}
-                  </option>
-                  {reservations.map(entry => (
-                    <option key={entry.value} value={entry.value}>
-                      {entry.label}
-                    </option>
-                  ))}
-                </select>
+                <Dropdown className="d-pos-table-dropdown">
+                  <Dropdown.Toggle className="d-pos-table-toggle">
+                    {selectedTable
+                      ? selectedTableEntry
+                        ? `${selectedTableEntry.displayId} — ${selectedTableEntry.capacity} seats (${selectedTableEntry.status})`
+                        : 'Select Table'
+                      : loading ? 'Loading tables…' : reservations.length === 0 ? 'No tables available' : 'Select Table'}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu className="d-pos-table-menu">
+                    {reservations.map((entry) => (
+                      <Dropdown.Item
+                        as="button"
+                        key={entry.value}
+                        active={entry.value === selectedTable}
+                        onClick={() => setSelectedTable(entry.value)}
+                      >
+                        {entry.label}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
               </div>
             </div>
           </div>

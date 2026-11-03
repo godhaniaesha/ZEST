@@ -8,6 +8,7 @@ import DeleteModal from '../../components/DeleteModal';
 import FormModal from '../../components/FormModal';
 import Pagination from '../../components/Pagination';
 import { inventoryAPI } from '../../../api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const STATUS_CLASS = { Good: 'd-chip-green', Low: 'd-chip-gold', Critical: 'd-chip-red' };
 
@@ -37,6 +38,8 @@ const getStatus = (qty, min) => {
 };
 
 export default function Inventory() {
+  const { user } = useAuth();
+  const isChef = user?.role === 'chef';
   const [stockList, setStockList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -311,8 +314,14 @@ export default function Inventory() {
                   <td><span className={`d-chip ${STATUS_CLASS[s.status]}`}>{s.status}</span></td>
                   <td>
                     <div className="d-flex gap-1">
-                      <button className="d-navbar-icon-btn" onClick={() => handleEdit(s)}><MdEdit /></button>
-                      <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(s)}><MdDelete /></button>
+                      <button className="d-navbar-icon-btn" onClick={() => handleEdit(s)} title="Edit stock" aria-label={`Edit ${s.name}`}>
+                        <MdEdit />
+                      </button>
+                      {!isChef && (
+                        <button className="d-navbar-icon-btn text-danger" onClick={() => handleDeleteClick(s)} title="Delete stock" aria-label={`Delete ${s.name}`}>
+                          <MdDelete />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
