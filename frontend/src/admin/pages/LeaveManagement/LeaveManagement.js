@@ -6,6 +6,7 @@ import {
 } from "react-icons/md";
 import DeleteModal from "../../components/DeleteModal";
 import FormModal from "../../components/FormModal";
+import Pagination from "../../components/Pagination";
 import { leaveAPI, usersAPI } from "../../../api";
 import { useAuth } from "../../../contexts/AuthContext";
 
@@ -419,11 +420,11 @@ export default function LeaveManagement() {
           <div className="d-navbar-search-box w-100">
             <MdSearch className="d-search-icon" />
             <input type="text" placeholder="Search by name, role, or reason..."
-              value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
           </div>
         </Col>
         <Col xs={12} md={6}>
-          <Form.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <Form.Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
@@ -463,9 +464,9 @@ export default function LeaveManagement() {
       </Row>
 
       {/* Table */}
-      <div className="d-card">
-        <div className="table-responsive">
-          <table className="table table-hover">
+      <div className="dtable-card">
+        <div className="d-table-wrap">
+          <table className="table table-hover mb-0">
             <thead>
               <tr><th>Staff</th><th>Role</th><th>Date Range</th><th>Days</th><th>Type</th><th>Reason</th><th>Status</th><th>Actions</th></tr>
             </thead>
@@ -512,25 +513,14 @@ export default function LeaveManagement() {
             </tbody>
           </table>
         </div>
+        {filtered.length > 0 && totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
-
-      {/* Pagination */}
-      {filtered.length > 0 && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <div className="text-muted small">
-            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filtered.length)} of {filtered.length} entries
-          </div>
-          <div className="d-flex gap-2">
-            <button className="d-btn-outline" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: "6px 12px", fontSize: "0.8rem" }}>Previous</button>
-            <div className="d-flex align-items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button key={n} className={`d-btn-outline ${currentPage === n ? "d-btn-gold" : ""}`} onClick={() => setCurrentPage(n)} style={{ padding: "6px 12px", fontSize: "0.8rem", minWidth: "40px" }}>{n}</button>
-              ))}
-            </div>
-            <button className="d-btn-outline" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: "6px 12px", fontSize: "0.8rem" }}>Next</button>
-          </div>
-        </div>
-      )}
 
       {/* Leave Request Form Modal */}
       <FormModal show={showForm} onHide={() => setShowForm(false)}

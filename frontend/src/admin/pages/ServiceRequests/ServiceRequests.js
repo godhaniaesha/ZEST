@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Badge } from 'react-bootstrap';
 import { MdNotificationsActive, MdCheck, MdMessage, MdPerson, MdTimer, MdEmail, MdPhone, MdDelete } from 'react-icons/md';
 import { contactAPI } from '../../../api';
+import Pagination from '../../components/Pagination';
 
 // Helper function to format time ago
 const formatTimeAgo = (dateString) => {
@@ -22,16 +23,30 @@ export default function ServiceRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(requests.length / itemsPerPage);
+  const currentRequests = requests.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
       const response = await contactAPI.getAll();
       setRequests(response.data);
+      setCurrentPage(1);
     } catch (err) {
       console.error('Error fetching contact requests:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to load contact requests';
@@ -89,7 +104,7 @@ export default function ServiceRequests() {
         </div>
       </div>
 
-      <div className="d-card">
+      <div className="dtable-card service-requests-table-card">
         <div className="d-section-title">Contact Form Submissions</div>
         <div className="d-section-sub">All messages received from customers</div>
         
@@ -124,7 +139,7 @@ export default function ServiceRequests() {
                 </tr>
               </thead>
               <tbody>
-                {requests.map((req) => (
+                {currentRequests.map((req) => (
                   <tr key={req._id}>
                     <td>
                       <div className="d-flex align-items-center gap-2">
@@ -215,6 +230,13 @@ export default function ServiceRequests() {
             </table>
           )}
         </div>
+        {!loading && !error && totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
 
       <style jsx>{`

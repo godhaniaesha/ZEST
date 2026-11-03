@@ -14,30 +14,64 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     }
   };
 
+  const firstVisiblePage = Math.max(1, currentPage - 2);
+  const lastVisiblePage = Math.min(totalPages, currentPage + 2);
+  const visiblePages = [];
+
+  if (firstVisiblePage > 1) {
+    visiblePages.push(1);
+    if (firstVisiblePage > 2) visiblePages.push(null);
+  }
+  for (let page = firstVisiblePage; page <= lastVisiblePage; page += 1) {
+    visiblePages.push(page);
+  }
+  if (lastVisiblePage < totalPages) {
+    if (lastVisiblePage < totalPages - 1) visiblePages.push(null);
+    visiblePages.push(totalPages);
+  }
+
   return (
-    <div className="d-flex align-items-center justify-content-between py-3">
-      <div className="text-muted small" style={{ fontFamily: 'Lato, sans-serif' }}>
+    <nav className="d-pagination" aria-label="Table pagination">
+      <div className="d-pagination-info">
         Showing page {currentPage} of {totalPages}
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-pagination-controls">
         <button
-          className="d-navbar-icon-btn"
+          type="button"
+          className="d-pagination-btn d-pagination-arrow"
           onClick={handlePrevious}
           disabled={currentPage === 1}
-          style={{ opacity: currentPage === 1 ? 0.5 : 1 }}
+          aria-label="Previous page"
         >
           <MdChevronLeft />
         </button>
+        {visiblePages.map((page, index) => (
+          page === null ? (
+            <span className="d-pagination-ellipsis" key={`ellipsis-${index}`} aria-hidden="true">…</span>
+          ) : (
+            <button
+              type="button"
+              key={page}
+              className={`d-pagination-btn${currentPage === page ? ' active' : ''}`}
+              onClick={() => onPageChange(page)}
+              aria-label={`Page ${page}`}
+              aria-current={currentPage === page ? 'page' : undefined}
+            >
+              {page}
+            </button>
+          )
+        ))}
         <button
-          className="d-navbar-icon-btn"
+          type="button"
+          className="d-pagination-btn d-pagination-arrow"
           onClick={handleNext}
           disabled={currentPage === totalPages}
-          style={{ opacity: currentPage === totalPages ? 0.5 : 1 }}
+          aria-label="Next page"
         >
           <MdChevronRight />
         </button>
       </div>
-    </div>
+    </nav>
   );
 };
 
